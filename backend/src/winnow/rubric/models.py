@@ -8,6 +8,8 @@ from winnow.evaluation.stats import Proportion
 from winnow.rubric.phrases import TextRange, uncovered_words
 from winnow.triage.models import TriageDecision
 
+DESCRIPTION_MAX = 2000  # characters
+
 
 class Rubric(BaseModel):
     """A Description's Phrases, the Criteria each became, and what a grasp is."""

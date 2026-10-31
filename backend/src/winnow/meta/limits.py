@@ -25,6 +25,9 @@ DEFAULT_LIMITS = {
     # 256 concurrent streams and 16,000 an hour, batch or streamed
     VOICE_TRANSCRIBE: Limit(in_flight=256, per_minute=16_000 / 60),
 }
+# For scripted and replayed transports, which answer at once and have no rate limit to respect:
+# the same caps on calls in flight, with no spacing between starts.
+UNPACED_LIMITS = {model: Limit(limit.in_flight) for model, limit in DEFAULT_LIMITS.items()}
 
 
 class Limiter:

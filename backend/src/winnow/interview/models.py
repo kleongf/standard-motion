@@ -4,11 +4,11 @@ and the answers, each kept with what undo needs to put back."""
 from datetime import UTC, datetime
 from typing import Annotated, Literal, get_args
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 from winnow.criteria.models import Criterion, Setting, Status
 from winnow.interview.bisection import Outcome
-from winnow.rubric.models import DraftPhrase
+from winnow.rubric.models import DraftPhrase, RubricDraft
 
 QuestionKind = Literal["phrase", "words", "threshold", "hard_soft", "setting", "disagree"]
 # accept: leave it unchecked; context: it checks nothing; pass / fail: the anchor Episode is
@@ -145,6 +145,13 @@ Question = Annotated[
 ]
 
 
+def asked_episode(question: Question) -> str | None:
+    """The anchor Episode a threshold, setting or disagree question is asked on."""
+    if isinstance(question, ThresholdQuestion | SettingQuestion | DisagreeQuestion):
+        return question.episode_id
+    return None
+
+
 class AnswerDraw(BaseModel):
     key: str  # the question's
     episode_id: str | None = None  # a threshold, setting or disagree question's anchor Episode
@@ -212,3 +219,19 @@ class Interview(BaseModel):
     hard_soft_left: int  # Criteria not yet confirmed hard or soft
     settings_left: int  # assumed grasp settings code can still ask about
     disagree_left: int  # Phrases whose Criteria disagree on an anchor Episode, not yet asked
+
+
+class TextDraw(BaseModel):
+    """The curator's own words: an answer to the question being asked, or, with no question, a
+    change to make to the Description."""
+
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+    question_key: str | None  # the question being asked; None to edit the Description
+
+
+class TextReply(BaseModel):
+    """What the curator's words did, and the one line Spark says back about it."""
+
+    interview: Interview
+    draft: RubricDraft
+    reply: str

@@ -1,0 +1,32 @@
+name: Set up ffmpeg
+description: >-
+  Puts ffmpeg and ffprobe on the PATH from a cached static build (BtbN's GPL build, with libx264,
+  from GitHub releases), which restores in seconds where apt takes 15-25. Falls back to apt if the
+  download fails. Recorded Meta replies match clips by path, not bytes, so the ffmpeg version
+  doesn't matter.
+runs:
+  using: composite
+  steps:
+    - id: cache
+      uses: actions/cache@v4
+      with:
+        path: ~/ffmpeg
+        key: ffmpeg-${{ runner.os }}-n8.1-gpl
+    - if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        url=https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.1-latest-linux64-gpl-8.1.tar.xz
+        mkdir -p ~/ffmpeg
+        if ! curl -fsSL --retry 3 "$url" | tar -xJ -C ~/ffmpeg --strip-components=2 --wildcards '*/bin/ffmpeg' '*/bin/ffprobe'; then
+          echo "::warning::static ffmpeg download failed; installing from apt"
+          rm -rf ~/ffmpeg
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+        fi
+    - shell: bash
+      run: |
+        bin=ffmpeg
+        if [[ -x ~/ffmpeg/ffmpeg ]]; then
+          echo ~/ffmpeg >> "$GITHUB_PATH"
+          bin=~/ffmpeg/ffmpeg
+        fi
+        "$bin" -hide_banner -version | sed -n 1p

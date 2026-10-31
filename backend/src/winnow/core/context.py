@@ -1,6 +1,7 @@
 """App-level wiring shared by the API and the CLI: one database, the stores, the job runner."""
 
 import sqlite3
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import cast
 
@@ -25,6 +26,7 @@ from winnow.jobs.store import JobStore
 from winnow.labels.store import LabelStore
 from winnow.meta.client import MetaClient
 from winnow.meta.costs import CostLog
+from winnow.meta.limits import UNPACED_LIMITS, Limit
 from winnow.meta.replay import ReplayTransport
 from winnow.meta.transport import Transport
 from winnow.reference_labels.store import ReferenceLabelStore
@@ -72,18 +74,29 @@ class AppContext:
 
 
 def _meta(
-    settings: Settings, db: sqlite3.Connection, transport: Transport | None
+    settings: Settings,
+    db: sqlite3.Connection,
+    transport: Transport | None,
+    limits: Mapping[str, Limit],
 ) -> MetaClient | None:
     if transport is None and settings.meta_replay is not None:
         transport = ReplayTransport(settings.meta_replay)
     if transport is not None:  # tests script or replay the Meta API here
-        return MetaClient(transport, db, CostLog(settings.cost_log_path, settings.meta_budget_usd))
+        costs = CostLog(settings.cost_log_path, settings.meta_budget_usd)
+        return MetaClient(transport, db, costs, limits)
     if settings.model_api_key is None:
         return None
     return MetaClient.from_settings(settings, db)
 
 
-def build_context(settings: Settings, transport: Transport | None = None) -> AppContext:
+def build_context(
+    settings: Settings,
+    transport: Transport | None = None,
+    limits: Mapping[str, Limit] = UNPACED_LIMITS,
+) -> AppContext:
+    """A `transport` (or `meta_replay`) stands in for the Meta API and answers at once, so its
+    calls skip the API's rate-limit spacing unless `limits` says otherwise, as when recording
+    through the real API. The real API's own client always uses `DEFAULT_LIMITS`."""
     db = open_db(settings.db_path)
     sources = sources_from(settings)
     episodes = EpisodeStore(db, settings.data_dir)
@@ -104,7 +117,7 @@ def build_context(settings: Settings, transport: Transport | None = None) -> App
     visual = VisualStore(db)
     reasons = SparkReasonStore(db)
     jobs = JobStore(db)
-    meta = _meta(settings, db, transport)
+    meta = _meta(settings, db, transport, limits)
     visual_sources = VisualSources(rubrics, episodes, boxes, tracks, targets, visual)
     steps: dict[str, Step] = {
         "ingest": ingest_step(episodes, sources),

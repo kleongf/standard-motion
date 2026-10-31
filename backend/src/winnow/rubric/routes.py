@@ -7,7 +7,13 @@ from pydantic import BaseModel, Field
 from winnow.core.context import AppContext, get_context
 from winnow.rubric.anchor_pool import AnchorPool, anchor_pool
 from winnow.rubric.edits import UnknownCriterionError
-from winnow.rubric.models import AnchorPreview, DraftEdit, RubricDraft, RubricVersion
+from winnow.rubric.models import (
+    DESCRIPTION_MAX,
+    AnchorPreview,
+    DraftEdit,
+    RubricDraft,
+    RubricVersion,
+)
 from winnow.rubric.service import (
     DraftChangedError,
     MetaUnavailableError,
@@ -18,6 +24,7 @@ from winnow.rubric.service import (
     preview_version,
     run_draft,
 )
+from winnow.visual.service import dry_run
 
 router = APIRouter(tags=["rubric"])
 
@@ -30,7 +37,7 @@ NO_DRAFT: dict[int | str, dict[str, object]] = {
 
 
 class CompileRequest(BaseModel):
-    description: str = Field(min_length=1, max_length=2000)
+    description: str = Field(min_length=1, max_length=DESCRIPTION_MAX)
     # Compile every Phrase anew, discarding the draft's Criteria, edits and interview.
     fresh: bool = False
 
@@ -76,16 +83,20 @@ async def get_draft(ctx: Context) -> RubricDraft | None:
 async def post_compile(request: CompileRequest, ctx: Context) -> RubricDraft:
     """Compile a Description into the Rubric draft: one Spark call, plus one repair turn when its
     answer fails code's checks. An edit of the draft's Description compiles only the changed
-    Phrases, keeping the rest with their Criteria; `fresh` compiles all of it."""
+    Phrases, keeping the rest with their Criteria; `fresh` compiles all of it. Then Spark is
+    asked the draft's visual Criteria it hasn't answered on the anchor pool, in the background
+    (the `visual-dry-run` job)."""
     description = request.description.strip()
     try:
-        return await compile_draft(ctx, description, request.fresh)
+        draft = await compile_draft(ctx, description, request.fresh)
     except MetaUnavailableError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except DraftChangedError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     except RuntimeError as error:  # the Meta API failed, or its answer couldn't be read
         raise HTTPException(status_code=502, detail=f"Compile failed: {error}") from error
+    dry_run(ctx, draft)
+    return draft
 
 
 def _on_draft[T](act: Callable[[], T]) -> T:
@@ -99,8 +110,12 @@ def _on_draft[T](act: Callable[[], T]) -> T:
 
 @router.patch("/rubric/draft", responses=NO_DRAFT)
 async def patch_draft(edit: DraftEdit, ctx: Context) -> RubricDraft:
-    """Direct edits on Criterion cards and the Rubric settings, saved; no model call."""
-    return _on_draft(lambda: edit_draft(ctx, edit))
+    """Direct edits on Criterion cards and the Rubric settings, saved; no model call. A grasp
+    setting's edit, or a visual Criterion switched on, asks Spark what it hasn't answered on
+    the anchor pool, in the background (the `visual-dry-run` job)."""
+    draft = _on_draft(lambda: edit_draft(ctx, edit))
+    dry_run(ctx, draft)
+    return draft
 
 
 @router.post("/rubric/draft/preview", responses=NO_DRAFT)

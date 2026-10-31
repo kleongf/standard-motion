@@ -11,13 +11,12 @@ from fastapi.testclient import TestClient
 
 from tests.evaluation.test_evaluation_api import reference_label
 from tests.helpers import ask_visual, wait_for_job
-from tests.record_meta import E2E_EPISODES, RECORDINGS
+from tests.record_meta import RECORDINGS
 from tests.record_visual import VISUAL_ANSWERS
 from tests.rubric.replay import CountingReplay
 from winnow.app import create_app
 from winnow.baseline.prompts import FROZEN
 from winnow.core.settings import Settings
-from winnow.episodes.fixtures import write_fixture_source
 from winnow.evaluation.models import EvaluationReport
 from winnow.evaluation.protocol_models import Disagreement
 from winnow.meta.costs import CostLog
@@ -30,9 +29,9 @@ EPISODES = ["droid_100:0", "droid_100:2", "droid_100:10"]
 
 
 @pytest.fixture(scope="module")
-def droid100_root(tmp_path_factory: pytest.TempPathFactory) -> Path:
+def droid100_root(e2e_droid100_root: Path) -> Path:
     """e2e's fixture source, which the replies were recorded against."""
-    return write_fixture_source(tmp_path_factory.mktemp("droid_100"), episodes=E2E_EPISODES)
+    return e2e_droid100_root
 
 
 @pytest.fixture

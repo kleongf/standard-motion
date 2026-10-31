@@ -94,6 +94,15 @@ class JobStore:
             for r in rows
         ]
 
+    def in_flight(self, kind: str) -> list[dict[str, object]]:
+        """The args of every item still queued or running in a job of `kind`."""
+        rows = self._db.execute(
+            "SELECT job_items.args FROM job_items JOIN jobs ON jobs.id = job_items.job_id "
+            "WHERE jobs.kind = ? AND job_items.status IN ('queued', 'running')",
+            (kind,),
+        )
+        return [json.loads(r["args"]) for r in rows]
+
     def set_status(self, job_id: int, position: int, status: Status, detail: str | None) -> None:
         self._db.execute(
             "UPDATE job_items SET status = ?, detail = ?, updated_at = ? "

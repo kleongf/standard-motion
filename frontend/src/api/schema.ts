@@ -579,6 +579,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/interview/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Text
+         * @description The curator's own words, read by Spark: to the question being asked, they pick one of its
+         *     answers, or recompile only the Phrase it asks about with them; with no question, they edit
+         *     the Description, which recompiles as an edit does. Template answers never ask a model.
+         */
+        post: operations["post_text_api_interview_text_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/jobs/latest": {
         parameters: {
             query?: never;
@@ -728,7 +750,9 @@ export interface paths {
         head?: never;
         /**
          * Patch Draft
-         * @description Direct edits on Criterion cards and the Rubric settings, saved; no model call.
+         * @description Direct edits on Criterion cards and the Rubric settings, saved; no model call. A grasp
+         *     setting's edit, or a visual Criterion switched on, asks Spark what it hasn't answered on
+         *     the anchor pool, in the background (the `visual-dry-run` job).
          */
         patch: operations["patch_draft_api_rubric_draft_patch"];
         trace?: never;
@@ -746,7 +770,9 @@ export interface paths {
          * Post Compile
          * @description Compile a Description into the Rubric draft: one Spark call, plus one repair turn when its
          *     answer fails code's checks. An edit of the draft's Description compiles only the changed
-         *     Phrases, keeping the rest with their Criteria; `fresh` compiles all of it.
+         *     Phrases, keeping the rest with their Criteria; `fresh` compiles all of it. Then Spark is
+         *     asked the draft's visual Criteria it hasn't answered on the anchor pool, in the background
+         *     (the `visual-dry-run` job).
          */
         post: operations["post_compile_api_rubric_draft_compile_post"];
         delete?: never;
@@ -2715,6 +2741,17 @@ export interface components {
             /** Run At */
             run_at: string;
         };
+        /**
+         * TextDraw
+         * @description The curator's own words: an answer to the question being asked, or, with no question, a
+         *     change to make to the Description.
+         */
+        TextDraw: {
+            /** Question Key */
+            question_key: string | null;
+            /** Text */
+            text: string;
+        };
         /** TextRange */
         TextRange: {
             /** End */
@@ -2723,6 +2760,16 @@ export interface components {
             start: number;
             /** Text */
             text: string;
+        };
+        /**
+         * TextReply
+         * @description What the curator's words did, and the one line Spark says back about it.
+         */
+        TextReply: {
+            draft: components["schemas"]["RubricDraft"];
+            interview: components["schemas"]["Interview"];
+            /** Reply */
+            reply: string;
         };
         /**
          * TextSpan
@@ -3963,6 +4010,67 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    post_text_api_interview_text_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDraw"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TextReply"];
+                };
+            };
+            /** @description No Description has been compiled yet, or no such answer */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not the question being asked, or the draft changed meanwhile */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Spark failed, or its reading of the words couldn't be used */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The Meta API isn't configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

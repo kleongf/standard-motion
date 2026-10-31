@@ -69,6 +69,26 @@ def test_identical_requests_in_flight_together_share_one_call(
     assert client.costs.spent_usd() == first.usd + second.usd
 
 
+def test_requests_in_flight_together_upload_their_shared_clip_once(
+    make_client: MakeClient, transport: FakeTransport, tmp_path: Path
+):
+    client = make_client()
+    clip = tmp_path / "placement.mp4"
+    clip.write_bytes(b"one encoding")
+
+    def about(question: str) -> SparkRequest:
+        return SparkRequest(SPARK_CONTRIBUTOR, (Text(question), Video(clip)), SCHEMA, "test")
+
+    async def three() -> list[SparkCall]:
+        questions = ("On the target?", "Resting on the target?", "Placed on the target?")
+        return await asyncio.gather(*(client.spark(about(q)) for q in questions))
+
+    asyncio.run(three())
+
+    assert len(transport.calls) == 3
+    assert len(transport.uploads) == 1
+
+
 def test_calls_in_flight_count_against_the_budget_before_they_settle(
     make_client: MakeClient, transport: FakeTransport
 ):

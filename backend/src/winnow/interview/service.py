@@ -1,5 +1,7 @@
 """The Describe interview on the Rubric draft: code picks each question, an answer changes the
-draft and may leave an interview label, and undo puts both back. No model call anywhere."""
+draft and may leave an interview label, and undo puts both back. No model call here: only an
+answer in the curator's own words asks Spark (`interview.text`), and what it maps to an offered
+answer is applied here like a picked one."""
 
 from dataclasses import dataclass
 
@@ -26,6 +28,7 @@ from winnow.interview.models import (
     SettingQuestion,
     StoredAnswer,
     ThresholdQuestion,
+    asked_episode,
 )
 from winnow.interview.questions import asked_on, phrase_questions, threshold_questions
 from winnow.interview.settings_answers import answer_hard_soft, answer_setting
@@ -181,9 +184,9 @@ def _asked(state: _State, draw: AnswerDraw) -> Question:
         raise StaleQuestionError("That question isn't the one being asked")
     if draw.answer not in {o.answer for o in asking.options}:
         raise StaleQuestionError(f"“{draw.answer}” doesn't answer this question")
-    on_episode = isinstance(asking, ThresholdQuestion | SettingQuestion | DisagreeQuestion)
-    if on_episode and draw.episode_id != asking.episode_id:
-        raise StaleQuestionError(f"The question is about {asking.episode_id} now")
+    episode = asked_episode(asking)
+    if episode is not None and draw.episode_id != episode:
+        raise StaleQuestionError(f"The question is about {episode} now")
     return asking
 
 

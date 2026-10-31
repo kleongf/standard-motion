@@ -3,32 +3,17 @@ disagree, does the Phrase pass? The answer is an interview label on that (Episod
 
 from typing import Any
 
-import pytest
 from fastapi.testclient import TestClient
 
-from tests.interview.client import answer, interview, recompile, skip_to
+from tests.interview.client import (
+    TIDY,
+    TIDY_DESCRIPTION,
+    answer,
+    interview,
+    recompile,
+    skip_to,
+)
 from tests.rubric.scripted import ScriptedCompile, criterion, phrase
-
-TIDY = "grasps it once without pausing"
-DESCRIPTION = f"A tidy pick: {TIDY}."
-
-
-def tidy_phrase(text: str = TIDY) -> dict[str, object]:
-    """Fixture Episode 2's three grasp attempts fail its first Criterion; no anchor Episode
-    pauses, so all pass its second."""
-    grasps = criterion("grasp_attempts", "<=", 1, assumptions=["One attempt is the most."])
-    pauses = criterion("longest_still_s", "<", 5, params={"speed_below_m_s": 0.01})
-    return phrase(text, criteria=[grasps, pauses])
-
-
-@pytest.fixture
-def disagreeing(api: TestClient, spark: ScriptedCompile) -> TestClient:
-    spark.answers.append(
-        {"phrases": [phrase("A tidy pick", "context", reason="Names the task."), tidy_phrase()]}
-    )
-    response = api.post("/api/rubric/draft/compile", json={"description": DESCRIPTION})
-    assert response.status_code == 200, response.text
-    return api
 
 
 def labels(api: TestClient, episode_id: str) -> list[Any]:
@@ -126,7 +111,7 @@ def test_a_recompile_carries_the_answer_on_a_phrase_it_left_alone(
 ):
     skip_to(disagreeing, "disagree")
     answer(disagreeing, "fail")
-    edited = DESCRIPTION.replace("A tidy pick", "A careful tidy pick")  # moves the Phrase
+    edited = TIDY_DESCRIPTION.replace("A tidy pick", "A careful tidy pick")  # moves the Phrase
 
     recompile(
         disagreeing, spark, edited, phrase("A careful tidy pick", "context", reason="Names it.")

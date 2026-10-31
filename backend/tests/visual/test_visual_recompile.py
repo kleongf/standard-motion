@@ -2,21 +2,17 @@
 only the changed visual Criteria call Spark."""
 
 from collections.abc import Iterator
-from dataclasses import dataclass
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
 from tests.helpers import ask_visual, reference_label, wait_for_job
-from tests.meta.fakes import NoTranscribe
-from tests.rubric.scripted import ScriptedCompile, criterion, phrase
+from tests.interview.scripted_text import ScriptedText
+from tests.rubric.scripted import phrase, video_criterion
 from tests.visual.answers import PARAPHRASES, QUESTION
-from tests.visual.scripted import ScriptedVisual
+from tests.visual.scripted import CompileAndAsk, ScriptedVisual
 from winnow.app import create_app
 from winnow.core.settings import Settings
-from winnow.meta.models import MetaContent
-from winnow.meta.transport import Reply
 
 ON_SAUCER = "puts the cup on the saucer"
 UPRIGHT = "keeps it upright"
@@ -25,39 +21,8 @@ DESCRIPTION = f"Tidy place: {ON_SAUCER}, and {UPRIGHT}."
 EPISODE = "droid_100:0"
 
 
-@dataclass
-class CompileAndAsk(NoTranscribe):
-    """Scripted compile answers, and scripted visual answers to whatever is asked."""
-
-    compile: ScriptedCompile
-    visual: ScriptedVisual
-
-    async def upload(self, path: Path) -> str:
-        return await self.visual.upload(path)
-
-    async def count_tokens(self, model: str, content: MetaContent) -> int:
-        return 1000
-
-    async def respond(self, model: str, content: MetaContent, options: dict[str, object]) -> Reply:
-        text_format = options.get("text")
-        if isinstance(text_format, dict) and text_format["format"]["name"] == "rubric":
-            return await self.compile.respond(model, content, options)
-        return await self.visual.respond(model, content, options)
-
-
-def visual(question: str, paraphrases: list[str]) -> dict[str, object]:
-    asked: dict[str, object] = {
-        "window": {"kind": "after_release", "seconds": None},
-        "views": ["exterior_image_1_left"],
-        "question": question,
-        "paraphrases": paraphrases,
-        "crop": "view",
-    }
-    return criterion("ask_video", ">=", 3, **asked)
-
-
 def stays(word: str) -> dict[str, object]:
-    return visual(
+    return video_criterion(
         f"Does the cup stay {word} throughout?",
         [f"Is the cup kept {word} the whole time?", f"Does the cup remain {word} all along?"],
     )
@@ -65,7 +30,7 @@ def stays(word: str) -> dict[str, object]:
 
 @pytest.fixture
 def spark() -> CompileAndAsk:
-    return CompileAndAsk(ScriptedCompile(answers=[]), ScriptedVisual())
+    return CompileAndAsk(ScriptedText(answers=[]), ScriptedVisual())
 
 
 @pytest.fixture
@@ -86,7 +51,7 @@ def compile_and_run(api: TestClient, spark: CompileAndAsk, description: str, ans
 
 
 def test_only_the_edited_visual_criterion_calls_spark(api: TestClient, spark: CompileAndAsk):
-    on_saucer = phrase(ON_SAUCER, criteria=[visual(QUESTION, PARAPHRASES)])
+    on_saucer = phrase(ON_SAUCER, criteria=[video_criterion(QUESTION, PARAPHRASES)])
     first = compile_and_run(
         api,
         spark,
