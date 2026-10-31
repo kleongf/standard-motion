@@ -10,23 +10,33 @@ import { draftKey, type RubricDraft } from "./useDraft";
 import { useDryRun } from "./useDryRun";
 
 type Job = components["schemas"]["Job"];
+type Status = components["schemas"]["JobItem"]["status"];
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function job(id: number, done: number, total = 2): Job {
+/** A dry run of one anchor Episode and visual Criterion: a crop, then a visual item. */
+function job(id: number, crop: Status, visual: Status): Job {
+  const items = [crop, visual].map((status, position) => ({
+    position,
+    step: position === 0 ? "crop" : "visual",
+    label: "droid_100:6 ask-video",
+    status,
+    detail: null,
+  }));
+  const count = (status: Status) => items.filter((item) => item.status === status).length;
   return {
     id,
     kind: DRY_RUN,
     created_at: "2026-10-31T00:00:00Z",
-    total,
-    queued: total - done,
-    running: 0,
-    done,
-    failed: 0,
-    finished: done === total,
-    items: [],
+    total: 2,
+    queued: count("queued"),
+    running: count("running"),
+    done: count("done"),
+    failed: count("failed"),
+    finished: count("queued") + count("running") === 0,
+    items,
   };
 }
 
@@ -66,19 +76,34 @@ function renderDryRun(draft: RubricDraft) {
 
 const DRAFT = { description: "Neat place" } as RubricDraft;
 
-test("refetches the draft's preview as the dry run's answers come in", async () => {
-  const latest = { job: job(1, 0) };
-  fakeBackend(latest);
-  const { result, client, previews } = renderDryRun(DRAFT);
+test("refetches the draft's preview as Spark's answers come in, not as clips are cut", async () => {
+  fakeBackend({ job: job(1, "running", "queued") });
+  const { client, previews } = renderDryRun(DRAFT);
   await waitFor(() => {
-    expect(result.current?.id).toBe(1);
+    expect(previews.count).toBe(2); // read on opening, and again on first sight of the dry run
   });
-  const before = previews.count;
 
-  client.setQueryData(latestJobKey(DRY_RUN), job(1, 1)); // a poll finds one answer in
+  client.setQueryData(latestJobKey(DRY_RUN), job(1, "done", "running")); // a clip, no answer
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(previews.count).toBe(2);
+
+  client.setQueryData(latestJobKey(DRY_RUN), job(1, "done", "done")); // Spark answered
+  await waitFor(() => {
+    expect(previews.count).toBe(3);
+  });
+});
+
+test("a clip that couldn't be cut refetches the preview: it says why Spark wasn't asked", async () => {
+  fakeBackend({ job: job(1, "running", "queued") });
+  const { client, previews } = renderDryRun(DRAFT);
+  await waitFor(() => {
+    expect(previews.count).toBe(2);
+  });
+
+  client.setQueryData(latestJobKey(DRY_RUN), job(1, "failed", "failed"));
 
   await waitFor(() => {
-    expect(previews.count).toBe(before + 1);
+    expect(previews.count).toBe(3);
   });
 });
 
@@ -91,7 +116,7 @@ test("a new draft looks for the dry run it queued, and refetches the preview onc
   });
   const before = previews.count;
 
-  latest.job = job(1, 2); // the compile queued it, and replayed answers finished it at once
+  latest.job = job(1, "done", "done"); // the compile queued it, and replay finished it at once
   rerender({ draft: { ...DRAFT, description: "Neat place, upright" } });
 
   await waitFor(() => {
@@ -103,7 +128,7 @@ test("a new draft looks for the dry run it queued, and refetches the preview onc
 });
 
 test("a dry run already finished on opening the page refetches nothing", async () => {
-  fakeBackend({ job: job(1, 2) });
+  fakeBackend({ job: job(1, "done", "done") });
   const { result, previews } = renderDryRun(DRAFT);
   await waitFor(() => {
     expect(result.current?.id).toBe(1);

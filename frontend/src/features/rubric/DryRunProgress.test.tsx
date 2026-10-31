@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { expect, test } from "vitest";
 
 import type { components } from "../../api/schema";
+import { DRY_RUN } from "./dryRun";
 import { DryRunProgress } from "./DryRunProgress";
 
 type Job = components["schemas"]["Job"];
@@ -16,7 +17,7 @@ function job(items: JobItem[]): Job {
   const count = (status: JobItem["status"]) => items.filter((i) => i.status === status).length;
   return {
     id: 1,
-    kind: "visual-dry-run",
+    kind: DRY_RUN,
     created_at: "2026-10-31T00:00:00Z",
     total: items.length,
     queued: count("queued"),
