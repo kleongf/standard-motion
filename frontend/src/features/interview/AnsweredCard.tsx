@@ -1,5 +1,8 @@
-// An answered question, collapsed to the answer and its effect. Clicking it shows the Criterion it
-// changed; Undo takes it back, with the later answers on the same question.
+// An answered question in the conversation, collapsed to the answer and its effect. Clicking it
+// shows the Criterion it changed on the Rubric card; Undo takes it back, with the later answers on
+// the same question.
+import { CheckCircle2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -53,14 +56,15 @@ export function AnsweredCard(props: {
     <article
       aria-label={`Answer: ${answer.subject}`}
       className={cn(
-        "rounded-lg border bg-muted/40 px-3 py-2 text-xs",
-        changed && "cursor-pointer hover:bg-muted",
+        "rounded-lg border bg-card/60 px-3 py-2 text-sm",
+        changed && "cursor-pointer hover:bg-muted/60",
       )}
       onClick={() => {
         if (changed) onShow(changed);
       }}
     >
       <div className="flex items-start gap-2">
+        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
         <p className="min-w-0 flex-1 font-medium">{heading(answer)}</p>
         <Button
           size="xs"
@@ -74,7 +78,7 @@ export function AnsweredCard(props: {
           Undo
         </Button>
       </div>
-      <p className="mt-0.5 text-muted-foreground" data-testid="answer-effect">
+      <p className="mt-0.5 pl-6 text-xs text-muted-foreground" data-testid="answer-effect">
         {answer.effect}
       </p>
     </article>

@@ -1,130 +1,24 @@
-// The Describe page: write a Description on the left and compile it, then answer the interview
-// under it; the live Rubric draft is on the right, edited directly on its cards, and an answer
-// highlights the Criterion it changed. Every number here comes from the anchor pool (the Dev
-// set), never the Test set. `?version=` shows a frozen Rubric version instead.
-import { useState } from "react";
+// The Describe page, as a conversation with Spark: the curator sends a Description, Spark compiles
+// it into the Rubric draft (a card in the conversation, edited directly on its Criterion cards),
+// then asks about what it assumed, one anchored question at a time. Editing the Description in
+// the composer recompiles only the changed Phrases; Run in the top bar freezes the draft. Every
+// number here comes from the anchor pool (the Dev set), never the Test set. `?version=` shows a
+// frozen Rubric version instead.
+import { useEffect, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-
-import { InfoTip } from "../core/InfoTip";
 import { useSearchParams } from "../core/url";
-import { InterviewTimeline } from "../interview/InterviewTimeline";
-import { ConfirmAfresh } from "./ConfirmAfresh";
+import { useInterview } from "../interview/useInterview";
+import { DescribeComposer } from "./DescribeComposer";
 import { DescribeHeader } from "./DescribeHeader";
-import { recompileNote } from "./recompileNote";
-import { RubricPanel } from "./RubricPanel";
-import { type RubricDraft, useCompile, useCompiling, useDraft } from "./useDraft";
+import { DescribeThread } from "./DescribeThread";
+import { useCompiling, useDraft } from "./useDraft";
 import { useDraftEditor } from "./useDraftEditor";
-import { useVersionPreview } from "./useDraftEdits";
-import { useRubric, useVersions } from "./useRubric";
+import { useRun, useVersionPreview } from "./useDraftEdits";
+import { useVersions } from "./useRubric";
 import { VersionPanel } from "./VersionPanel";
 
-/** Compile, or after an edit of the draft's Description, recompile only the changed Phrases. */
-function CompileRow(props: { editing: boolean; pending: boolean; empty: boolean }) {
-  const { editing, pending } = props;
-  return (
-    <div className="mt-2 flex items-center gap-3">
-      <Button type="submit" size="sm" disabled={pending || props.empty}>
-        {pending ? "Compiling…" : editing ? "Recompile changes" : "Compile"}
-      </Button>
-      {pending && (
-        <span className="text-xs text-muted-foreground">
-          {editing
-            ? "Spark is reading the changed Phrases against the catalog."
-            : "Spark is reading it against the catalog; this can take a minute."}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function RecompileNote(props: { draft: RubricDraft | null | undefined }) {
-  const note = recompileNote(props.draft?.recompiled, props.draft?.phrases ?? []);
-  if (!note) return null;
-  return (
-    <p className="mt-2 text-xs text-muted-foreground" data-testid="recompile-note">
-      {note}
-    </p>
-  );
-}
-
-function DescriptionForm() {
-  const draft = useDraft().data;
-  const latest = useRubric().data;
-  const compile = useCompile();
-  const [edited, setEdited] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState(false);
-  // Starts from the draft, or else the Rubric in use.
-  const text = edited ?? draft?.description ?? latest?.rubric.description ?? "";
-  const editing = draft ? text.trim() !== draft.description : false;
-  const run = () => {
-    compile.mutate(text.trim());
-  };
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        // The draft's own Description compiles afresh, losing its edits: confirm that first.
-        if (draft && !editing) setConfirming(true);
-        else run();
-      }}
-    >
-      <ConfirmAfresh open={confirming} onOpenChange={setConfirming} onConfirm={run} />
-      <div className="flex items-center gap-1.5">
-        <label htmlFor="description" className="text-sm font-medium">
-          Description
-        </label>
-        <InfoTip label="the Description">
-          What an expert Episode looks like, in plain English. Spark compiles it into Criteria;
-          after an edit, only the Phrases you changed.
-        </InfoTip>
-      </div>
-      <Textarea
-        id="description"
-        className="mt-2 min-h-32 text-[15px] leading-6"
-        value={text}
-        onChange={(e) => {
-          setEdited(e.target.value);
-        }}
-      />
-      <CompileRow editing={editing} pending={compile.isPending} empty={!text.trim()} />
-      {!compile.isPending && <RecompileNote draft={draft} />}
-      {compile.error && <p className="mt-2 text-sm text-destructive">{compile.error.message}</p>}
-    </form>
-  );
-}
-
-/** Select the words a Phrase card asks about in the Description, to rewrite and recompile. */
-function editSentence(start: number, end: number): void {
-  const box = document.getElementById("description");
-  if (!(box instanceof HTMLTextAreaElement)) return;
-  box.focus();
-  box.setSelectionRange(start, end);
-}
-
-/** The Description, and under it the interview while the draft is shown. */
-function LeftColumn(props: {
-  interview: boolean;
-  onShowCriterion: (id: string) => void;
-  onUndone: () => void;
-}) {
-  return (
-    <div className="sticky top-32 max-h-[calc(100vh-9rem)] self-start overflow-y-auto pb-4">
-      <DescriptionForm />
-      {props.interview && (
-        <InterviewTimeline
-          onShowCriterion={props.onShowCriterion}
-          onUndone={props.onUndone}
-          onEditSentence={editSentence}
-        />
-      )}
-    </div>
-  );
-}
-
-/** The Criterion an interview answer changed: highlighted on its card, scrolled into view, until
- * an undo takes the change back. */
+/** The Criterion an interview answer changed: highlighted on its card until an undo takes the
+ * change back. Clicking an answer scrolls up to it. */
 function useHighlight() {
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const show = (criterionId: string) => {
@@ -136,7 +30,24 @@ function useHighlight() {
   const clear = () => {
     setHighlighted(null);
   };
-  return { highlighted, show, clear };
+  return { highlighted, mark: setHighlighted, show, clear };
+}
+
+/** After the next render, scroll to the newest turn. */
+function scrollToEnd(behavior: ScrollBehavior = "smooth"): void {
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior });
+  });
+}
+
+/** Open a conversation where it left off: at its end, once what it shows is in. */
+function useResumeAtEnd(ready: boolean): void {
+  const resumed = useRef(false);
+  useEffect(() => {
+    if (!ready || resumed.current) return;
+    resumed.current = true;
+    scrollToEnd("auto");
+  }, [ready]);
 }
 
 function shownVersion(params: URLSearchParams): number | null {
@@ -144,43 +55,77 @@ function shownVersion(params: URLSearchParams): number | null {
   return Number.isInteger(version) && version > 0 ? version : null;
 }
 
-export function DescribePage() {
-  const version = shownVersion(useSearchParams());
-  const draft = useDraft();
-  const { editing, preview, error } = useDraftEditor(draft.data, useCompiling());
+function FrozenVersion(props: { version: number }) {
+  const { version } = props;
   const frozen = useVersions().data?.find((v) => v.version === version);
-  const frozenPreview = useVersionPreview(version).data;
-  const { highlighted, show, clear } = useHighlight();
+  const preview = useVersionPreview(version).data;
   return (
     <div>
-      <DescribeHeader
-        version={version}
-        draft={draft.data}
-        preview={version === null ? preview : frozenPreview}
-      />
-      <div className="grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-8 px-8 py-5">
-        <LeftColumn
-          interview={version === null && Boolean(draft.data)}
-          onShowCriterion={show}
-          onUndone={clear}
-        />
-        <div aria-label={version === null ? "Rubric draft" : "Rubric version"} role="region">
-          {error && <p className="mb-2 text-sm text-destructive">{error.message}</p>}
-          {version !== null ? (
-            frozen ? (
-              <VersionPanel version={frozen} preview={frozenPreview} />
-            ) : (
-              <p className="text-sm text-muted-foreground">Loading v{version}…</p>
-            )
-          ) : draft.data ? (
-            <RubricPanel draft={draft.data} editing={editing} highlighted={highlighted} />
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              {draft.isPending ? "Loading…" : "Compile a Description to see its Rubric draft."}
-            </p>
-          )}
-        </div>
+      <DescribeHeader version={version} preview={preview} />
+      <div aria-label="Rubric version" role="region" className="mx-auto max-w-3xl px-6 py-6">
+        {frozen ? (
+          <VersionPanel version={frozen} preview={preview} />
+        ) : (
+          <p className="text-sm text-muted-foreground">Loading v{version}…</p>
+        )}
       </div>
     </div>
   );
+}
+
+function Conversation() {
+  const draft = useDraft();
+  const compiling = useCompiling();
+  const interview = useInterview();
+  const { editing, preview, error } = useDraftEditor(draft.data, compiling);
+  const run = useRun();
+  const { highlighted, mark, show, clear } = useHighlight();
+  // The previews size the Rubric card's histograms: wait for them too, or the end moves.
+  useResumeAtEnd(
+    draft.isSuccess && (draft.data === null || (interview.isSuccess && preview !== undefined)),
+  );
+  return (
+    <div className="flex min-h-screen flex-col">
+      <DescribeHeader
+        version={null}
+        draft={draft.data}
+        preview={preview}
+        run={{
+          pending: run.isPending,
+          onRun: () => {
+            run.mutate(undefined, {
+              onSuccess: () => {
+                scrollToEnd();
+              },
+            });
+          },
+        }}
+      />
+      {run.error && <p className="px-8 pt-3 text-sm text-destructive">{run.error.message}</p>}
+      <DescribeThread
+        draft={draft.data}
+        compiling={compiling}
+        editing={editing}
+        error={error}
+        highlighted={highlighted}
+        ran={run.data?.version ?? null}
+        onChanged={mark}
+        onShowCriterion={show}
+        onUndone={clear}
+        onAnswered={() => {
+          scrollToEnd();
+        }}
+      />
+      <DescribeComposer
+        onSent={() => {
+          scrollToEnd();
+        }}
+      />
+    </div>
+  );
+}
+
+export function DescribePage() {
+  const version = shownVersion(useSearchParams());
+  return version === null ? <Conversation /> : <FrozenVersion version={version} />;
 }

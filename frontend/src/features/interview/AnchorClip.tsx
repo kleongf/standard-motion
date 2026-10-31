@@ -10,7 +10,7 @@ export function AnchorClip(props: { question: Clipped }) {
   if (!camera) return null;
   const src = `${clipUrl(episodeId, camera)}#t=${String(clip.start)},${String(clip.end)}`;
   return (
-    <div className="relative mt-2">
+    <div className="relative overflow-hidden rounded-xl border bg-black shadow-sm">
       <video
         key={src}
         src={src}
@@ -19,7 +19,7 @@ export function AnchorClip(props: { question: Clipped }) {
         autoPlay
         playsInline
         preload="auto"
-        className="block aspect-video max-h-44 w-full rounded bg-black object-contain"
+        className="block aspect-video max-h-[22rem] w-full bg-black object-contain"
         onTimeUpdate={(event) => {
           const video = event.currentTarget;
           if (video.currentTime >= clip.end) {

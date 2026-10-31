@@ -1,11 +1,14 @@
-// The question code is asking now, worded from a template. A Phrase card asks what to do with an
-// Unsupported Phrase or words in no Phrase; a threshold card asks whether one anchor Episode's
-// measured value is fine, one step of bisecting an assumed threshold; a hard/soft card asks
-// whether failing a Criterion rejects an Episode; a setting card asks whether the gripper is
-// closed (or lifted) at one anchor Episode's moment, one step of bisecting a grasp setting; a
-// disagree card asks whether a Phrase passes on an anchor Episode its Criteria disagree on.
+// The question code is asking now, worded from a template, as Spark's turn in the conversation. A
+// Phrase card asks what to do with an Unsupported Phrase or words in no Phrase; a threshold card
+// plays one anchor Episode's measured stretch and asks whether its value is fine, one step of
+// bisecting an assumed threshold; a hard/soft card asks whether failing a Criterion rejects an
+// Episode; a setting card asks whether the gripper is closed (or lifted) at one anchor Episode's
+// moment, one step of bisecting a grasp setting; a disagree card asks whether a Phrase passes on
+// an anchor Episode its Criteria disagree on.
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
+import { Pill } from "../triage/Pill";
 import { AnchorClip } from "./AnchorClip";
 import { DisagreeDetails } from "./DisagreeDetails";
 import type { AnswerValue, Question, SettingQuestion, ThresholdQuestion } from "./useInterview";
@@ -19,18 +22,33 @@ const KIND_LABELS: Record<Question["kind"], string> = {
   disagree: "Criteria disagree",
 };
 
+function Step(props: { episodeId: string; asked: number; max: number; children?: string }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <Pill tone="neutral" className="font-mono">
+        {props.episodeId}
+      </Pill>
+      {props.children && <Pill tone="unsure">{props.children}</Pill>}
+      <span className="text-xs text-muted-foreground">
+        Question {props.asked + 1} of at most {props.max}
+      </span>
+    </div>
+  );
+}
+
 function ThresholdDetails(props: { question: ThresholdQuestion }) {
   const { question } = props;
   return (
     <>
-      <p className="mt-1 text-xs text-muted-foreground">
-        {question.episode_id} · {question.english}
-      </p>
       <AnchorClip question={question} />
-      <p className="mt-1 text-[11px] text-muted-foreground">
-        Question {question.asked + 1} of at most {question.max_questions}
-        {question.near > 0 && ` · ${String(question.near)} anchor Episodes sit near it`}
-      </p>
+      <Step episodeId={question.episode_id} asked={question.asked} max={question.max_questions}>
+        {question.measurement}
+      </Step>
+      {question.near > 0 && (
+        <p className="-mt-1 text-xs text-muted-foreground">
+          {question.near} anchor Episodes sit near it
+        </p>
+      )}
     </>
   );
 }
@@ -39,15 +57,17 @@ function SettingDetails(props: { question: SettingQuestion }) {
   const { question } = props;
   return (
     <>
-      <p className="mt-1 text-xs text-muted-foreground">
-        {question.episode_id} · {question.name} · {question.assumption}
-      </p>
       <AnchorClip question={question} />
-      <p className="mt-1 text-[11px] text-muted-foreground">
-        Question {question.asked + 1} of at most {question.max_questions}
-      </p>
+      <Step episodeId={question.episode_id} asked={question.asked} max={question.max_questions} />
     </>
   );
+}
+
+/** What the question checks today, under its prompt. */
+function today(question: Question): string | null {
+  if (question.kind === "threshold") return `Today: ${question.english}`;
+  if (question.kind === "setting") return `${question.name} · ${question.assumption}`;
+  return null;
 }
 
 export function QuestionCard(props: {
@@ -57,33 +77,37 @@ export function QuestionCard(props: {
   onEditSentence?: (start: number, end: number) => void;
 }) {
   const { question, pending, onAnswer, onEditSentence } = props;
+  const now = today(question);
   return (
-    <section
-      aria-label="Question"
-      className="rounded-lg border-2 border-sky-300 bg-card p-3 dark:border-sky-800"
-    >
-      <div className="text-[11px] font-medium tracking-wide text-sky-800 uppercase dark:text-sky-300">
+    <section aria-label="Question" className="grid gap-3">
+      <p className="text-[11px] font-semibold tracking-wide text-primary uppercase">
         {KIND_LABELS[question.kind]}
-      </div>
-      <p className="mt-1 text-sm font-medium">{question.prompt}</p>
+      </p>
       {question.kind === "threshold" && <ThresholdDetails question={question} />}
       {question.kind === "setting" && <SettingDetails question={question} />}
       {question.kind === "disagree" && <DisagreeDetails question={question} />}
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <p className="text-lg leading-snug font-medium text-balance">{question.prompt}</p>
+      {now && <p className="text-xs text-muted-foreground">{now}</p>}
+      <div className="grid gap-2 sm:grid-cols-2">
         {question.options.map((option) => (
-          <Button
+          <button
             key={option.answer}
-            size="sm"
-            variant={option.answer === "skip" ? "ghost" : "outline"}
+            type="button"
             disabled={pending}
             onClick={() => {
               onAnswer(option.answer);
             }}
+            className={cn(
+              "rounded-xl border bg-card px-4 py-3 text-left text-sm font-medium shadow-xs transition-colors hover:border-primary/50 hover:bg-primary/5 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50",
+              option.answer === "skip" && "border-dashed font-normal text-muted-foreground",
+            )}
           >
             {option.label}
-          </Button>
+          </button>
         ))}
-        {(question.kind === "phrase" || question.kind === "words") && onEditSentence && (
+      </div>
+      {(question.kind === "phrase" || question.kind === "words") && onEditSentence && (
+        <div>
           <Button
             size="sm"
             variant="ghost"
@@ -93,8 +117,8 @@ export function QuestionCard(props: {
           >
             Edit the sentence
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
