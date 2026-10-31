@@ -23,8 +23,25 @@ export interface JobTitle {
 
 const INGEST: JobTitle = { running: "Ingesting", finished: "Last ingest" };
 
-export function JobProgress(props: { job: Job; title?: JobTitle }) {
+/** One quiet line, for a bar above other work: what runs, how far, how many failed; no detail. */
+function CompactProgress(props: { job: Job; title: JobTitle }) {
+  const { job, title } = props;
+  const settled = job.done + job.failed;
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums"
+      data-testid="job-progress"
+    >
+      {job.finished ? title.finished : title.running} · {settled} of {job.total}
+      {job.failed > 0 && ` · ${String(job.failed)} failed`}
+      <Progress value={(settled / job.total) * 100} className="h-1 w-12" />
+    </span>
+  );
+}
+
+export function JobProgress(props: { job: Job; title?: JobTitle; compact?: boolean }) {
   const { job, title = INGEST } = props;
+  if (props.compact) return <CompactProgress job={job} title={title} />;
   const settled = job.done + job.failed;
   const failed = job.items.filter((item) => item.status === "failed");
   const running = job.items.filter((item) => item.status === "running");
