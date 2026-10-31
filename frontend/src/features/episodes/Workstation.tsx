@@ -106,7 +106,7 @@ export function Workstation(props: {
       </section>
       <aside className="flex min-w-0 flex-col gap-4 self-start rounded-xl border bg-card p-4">
         {renderActions(props.actions, playhead)}
-        {awaiting && <AwaitingLabelNote />}
+        {awaiting && <AwaitingLabelNote episodeId={episode.id} />}
         {triage && (
           <TriagePanel
             triage={triage}

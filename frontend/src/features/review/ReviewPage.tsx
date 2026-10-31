@@ -1,7 +1,10 @@
 // Review: the Needs review queue, strictly least confident first. The Workstation shows one
 // Episode with "Your call" in its actions slot; an answer that decides the Episode takes it out
 // of the queue and the next least confident one opens. `?episode=` picks another from Up next.
+import { LoopNote } from "../calibration/LoopNote";
+import { NextStep } from "../core/NextStep";
 import { Page, PageHeader } from "../core/PageHeader";
+import { useFlow } from "../core/useFlow";
 import { navigate, useSearchParams } from "../core/url";
 import { useEpisodes, type Episode } from "../episodes/useEpisodes";
 import { Workstation } from "../episodes/Workstation";
@@ -22,6 +25,7 @@ export function ReviewPage() {
   return (
     <Page width="full">
       <ReviewHeader reviewed={queue.data?.reviewed ?? 0} left={items.length} current={current} />
+      <LoopNote />
       {current ? (
         <>
           {episode && (
@@ -43,11 +47,27 @@ export function ReviewPage() {
   );
 }
 
-/** What shows without an Episode to review: loading, an error, or an empty queue. */
+/** What shows without an Episode to review: loading, an error, or an empty queue and what to do
+ * first if nothing could be in it yet. */
 function QueueStatus(props: { queue: ReturnType<typeof useReviewQueue> }) {
   const { queue } = props;
+  const flow = useFlow();
   if (queue.isPending) return <p className="text-sm text-muted-foreground">Loading the queue…</p>;
   if (queue.isError) return <p className="text-sm text-destructive">{queue.error.message}</p>;
+  if (flow.labelled === 0) {
+    return (
+      <NextStep page="reference" action="Go to Reference labels">
+        Nothing to review yet: an Episode joins the queue only once it has a Reference label.
+      </NextStep>
+    );
+  }
+  if (flow.version === null) {
+    return (
+      <NextStep page="describe" action="Go to Describe & run">
+        Nothing to review yet: compile and run a Rubric first.
+      </NextStep>
+    );
+  }
   return (
     <p className="text-sm text-muted-foreground">
       The queue is empty: every Episode with a Reference label is decided.
