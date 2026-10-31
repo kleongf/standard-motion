@@ -37,7 +37,8 @@ def tally(replies: Sequence[VisualReply]) -> str:
 
 
 def _not_asked() -> Measurement:
-    evidence = [TextSpan(text="Spark hasn't been asked yet: Run the Rubric to ask it.")]
+    why = "Spark hasn't answered yet: it may still be asking, or hasn't been asked."
+    evidence = [TextSpan(text=why)]
     return Measurement(
         None, "not asked", evidence, [], status="unsure", uncertainty="source missing"
     )

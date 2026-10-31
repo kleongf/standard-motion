@@ -2,7 +2,7 @@
 frozen question and each paraphrase about it, every sample every time (no short-circuit).
 
 Each step records its failure against the Criterion before failing its item, so the result is
-unsure with the error as Evidence.
+unsure with the error as Evidence; except going over the Meta budget, which leaves it not asked.
 """
 
 import asyncio
@@ -20,9 +20,10 @@ from winnow.episodes.models import Episode
 from winnow.episodes.store import EpisodeStore, clip_path
 from winnow.jobs.models import Step, WorkItem
 from winnow.meta.client import MetaClient
+from winnow.meta.costs import BudgetExceededError
 from winnow.meta.models import SparkCall, SparkRequest, Text, Video
 from winnow.meta.pricing import SPARK_CONTRIBUTOR
-from winnow.rubric.models import RubricVersion
+from winnow.rubric.models import RubricDraft, RubricVersion
 from winnow.rubric.store import RubricStore
 from winnow.tracking.store import TrackStore
 from winnow.tracking.target_store import TargetBoxStore
@@ -48,6 +49,12 @@ class VisualSources:
     answers: VisualStore
 
 
+def _crop_then_ask(items: list[WorkItem], args: Mapping[str, object], criterion_id: str) -> None:
+    label = f"{args['episode_id']} {criterion_id}"
+    items.append(WorkItem("crop", args, label))
+    items.append(WorkItem("visual", args, label, after=len(items) - 1))
+
+
 def visual_items(version: RubricVersion, episode_ids: list[str]) -> list[WorkItem]:
     """A crop, then a visual item after it, per visual Criterion and Episode."""
     items: list[WorkItem] = []
@@ -60,9 +67,23 @@ def visual_items(version: RubricVersion, episode_ids: list[str]) -> list[WorkIte
                 "rubric_version": version.version,
                 "criterion_id": criterion.id,
             }
-            label = f"{episode_id} {criterion.id}"
-            items.append(WorkItem("crop", args, label))
-            items.append(WorkItem("visual", args, label, after=len(items) - 1))
+            _crop_then_ask(items, args, criterion.id)
+    return items
+
+
+def draft_visual_items(draft: RubricDraft, asks: list[tuple[str, Criterion]]) -> list[WorkItem]:
+    """A crop, then a visual item after it, per (Episode id, visual Criterion) of the draft. A
+    draft has no version to resolve its Criteria from, so each item carries its Criterion and
+    the draft's Rubric settings."""
+    settings = draft.settings.model_dump(mode="json")
+    items: list[WorkItem] = []
+    for episode_id, criterion in asks:
+        args = {
+            "episode_id": episode_id,
+            "criterion": criterion.model_dump(mode="json"),
+            "settings": settings,
+        }
+        _crop_then_ask(items, args, criterion.id)
     return items
 
 
@@ -74,10 +95,25 @@ class _Asked:
     key: str
 
 
+def _carried(args: Mapping[str, object]) -> tuple[Criterion, RubricSettings]:
+    """The draft's Criterion and Rubric settings a `draft_visual_items` item carries."""
+    return Criterion.model_validate(args["criterion"]), RubricSettings.model_validate(
+        args["settings"]
+    )
+
+
+def draft_item_ask(args: Mapping[str, object]) -> tuple[str, str]:
+    """The Episode id and ask key a `draft_visual_items` item is about."""
+    return str(args["episode_id"]), ask_key(*_carried(args))
+
+
 def _asked(sources: VisualSources, args: Mapping[str, object]) -> _Asked:
     episode = sources.episodes.get(str(args["episode_id"]))
     if episode is None:
         raise LookupError(f"No Episode {args['episode_id']}")
+    if "criterion" in args:  # a draft's, carried inline
+        criterion, settings = _carried(args)
+        return _Asked(episode, criterion, settings, ask_key(criterion, settings))
     version = sources.rubrics.get(int(str(args["rubric_version"])))
     criteria = version.rubric.criteria if version else []
     criterion = next((c for c in criteria if c.id == args["criterion_id"]), None)
@@ -107,7 +143,11 @@ async def _crop(sources: VisualSources, asked: _Asked) -> str | None:
     grasps = find_grasps(signals, asked.settings)
     window = resolve_window(criterion.window, grasps, signals.fps)
     if window is None:
-        return "window empty: nothing to ask"
+        # Kept, so a dry run doesn't ask again; scoring finds the window empty first, and never
+        # reads it. The key holds the window and grasp settings, so it stays true for the key.
+        nothing = "window empty: nothing to ask"
+        sources.answers.save_error(episode.id, asked.key, nothing)
+        return nothing
     start = float(signals.timestamps[0])
     t = [float(v) - start for v in signals.timestamps]
     plan = plan_crop(criterion, t, window, _placement(sources, episode))
@@ -163,6 +203,9 @@ async def _ask(meta: MetaClient, sources: VisualSources, asked: _Asked) -> str |
         for p in asking
     ]
     results = await asyncio.gather(*(meta.spark(r) for r in requests), return_exceptions=True)
+    over = next((r for r in results if isinstance(r, BudgetExceededError)), None)
+    if over is not None:  # not the Episode's failure: it stays not asked, to ask again later
+        raise over
     samples = [_sample(p, r) for p, r in zip(asking, results, strict=True)]
     sources.answers.save_samples(asked.episode.id, asked.key, samples)
     errors = [s.error for s in samples if s.error]

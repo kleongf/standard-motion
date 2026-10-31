@@ -170,7 +170,8 @@ def preview_version(ctx: AppContext, version: RubricVersion) -> AnchorPreview:
 def run_draft(ctx: AppContext) -> RubricVersion:
     """Freezes the draft into the next Rubric version, which every Episode is then scored
     against. Never waits for unconfirmed assumptions, and never asks Spark its visual Criteria:
-    those are asked only on request (`POST /api/visual/ask`, `winnow ask`). With the Meta API,
+    those are asked of every Episode only on request (`POST /api/visual/ask`, `winnow ask`), and
+    of the anchor pool by the draft's dry run (`visual.service.dry_run`). With the Meta API,
     Spark's Reasons for the new version are queued in the background."""
     version = ctx.rubrics.add(current_draft(ctx).rubric())
     queue_reasons(ctx)

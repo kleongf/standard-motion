@@ -9,18 +9,17 @@ from fastapi.testclient import TestClient
 
 from tests.helpers import reference_label, wait_for_job
 from tests.meta.test_transcribe import write_wav
-from tests.record_meta import E2E_EPISODES, RECORDINGS
+from tests.record_meta import RECORDINGS
 from tests.record_voice import MARKS, SAID, VOICE_ANSWERS, VOICE_EPISODE
 from winnow.app import create_app
 from winnow.core.settings import Settings
-from winnow.episodes.fixtures import write_fixture_source
 from winnow.meta.replay import ReplayTransport
 
 
 @pytest.fixture(scope="module")
-def droid100_root(tmp_path_factory: pytest.TempPathFactory) -> Path:
+def droid100_root(e2e_droid100_root: Path) -> Path:
     """e2e's fixture source, which the voice replies were recorded against."""
-    return write_fixture_source(tmp_path_factory.mktemp("droid_100"), episodes=E2E_EPISODES)
+    return e2e_droid100_root
 
 
 @pytest.fixture

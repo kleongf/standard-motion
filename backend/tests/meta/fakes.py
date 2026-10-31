@@ -33,7 +33,9 @@ class FakeTransport:
 
     async def upload(self, path: Path) -> str:
         self.uploads.append(path)
-        return f"file-{len(self.uploads)}"
+        file_id = f"file-{len(self.uploads)}"
+        await asyncio.sleep(0)  # a real upload yields while it sends
+        return file_id
 
     async def count_tokens(self, model: str, content: MetaContent) -> int:
         return 1000

@@ -10,6 +10,9 @@
     "prepare": "lefthook install",
     "dev": "node scripts/dev.ts",
     "verify": "bash scripts/verify.sh",
+    "verify:backend": "bash scripts/verify.sh backend",
+    "verify:frontend": "bash scripts/verify.sh frontend",
+    "verify:e2e": "bash scripts/verify.sh e2e",
     "exercise": "node scripts/exercise.ts",
     "gen:api": "bash scripts/gen-api.sh",
     "format": "pnpm --filter winnow-frontend format && prettier --write scripts e2e playwright.config.ts && uv run --project backend ruff format backend"

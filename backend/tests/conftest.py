@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.helpers import wait_for_job
+from tests.record_meta import E2E_EPISODES
 from tests.tracking.scripted_sam import ScriptedSam
 from tests.visual.scripted import ScriptedVisual
 from winnow.app import create_app
@@ -25,6 +26,13 @@ def droid100_root(tmp_path_factory: pytest.TempPathFactory) -> Path:
     return write_fixture_source(
         root, episodes=5, corrupt=(CORRUPT_EPISODE,), open_gripper=(OPEN_GRIPPER_EPISODE,)
     )
+
+
+@pytest.fixture(scope="session")
+def e2e_droid100_root(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """e2e's fixture source, which every recorded reply was recorded against. Replay modules
+    override `droid100_root` with it."""
+    return write_fixture_source(tmp_path_factory.mktemp("e2e_droid_100"), episodes=E2E_EPISODES)
 
 
 @pytest.fixture(scope="session")

@@ -12,7 +12,7 @@ Describe what a good robot demonstration looks like in English; Winnow judges ev
 pnpm verify
 ```
 
-Runs backend and frontend typecheck, lint, format check, and tests; checks the generated API types are current and file sizes are in limits; then boots the app and runs the Playwright e2e tests.
+Runs backend and frontend typecheck, lint, format check, and tests; checks the generated API types are current and file sizes are in limits; then boots the app and runs the Playwright e2e tests. Its three parts run alone as `pnpm verify:backend`, `verify:frontend` and `verify:e2e`, which CI runs as parallel jobs.
 
 **Done means** `pnpm verify` passes **and** you have exercised the change in the running app: `pnpm exercise <path> [--click <text>]...` saves screenshots plus console and network errors to `artifacts/exercise/`. Look at the screenshots.
 

@@ -1,12 +1,18 @@
-"""Asking a Rubric version's visual Criteria of the Dataset's Episodes, in the background."""
+"""Asking a Rubric version's visual Criteria of the Dataset's Episodes, and the draft's of the
+anchor pool (its dry run), in the background."""
 
 from pathlib import Path
 
 from winnow.core.context import AppContext
-from winnow.rubric.models import RubricVersion
+from winnow.criteria.models import Criterion
+from winnow.rubric.anchor_pool import anchor_episodes
+from winnow.rubric.models import RubricDraft, RubricVersion
 from winnow.triage.reason_service import queue_reasons
 from winnow.visual.crop import clips_folder
-from winnow.visual.steps import visual_items
+from winnow.visual.keys import ask_key
+from winnow.visual.steps import draft_item_ask, draft_visual_items, visual_items
+
+DRY_RUN = "visual-dry-run"
 
 
 class MetaUnavailableError(RuntimeError):
@@ -27,6 +33,36 @@ def ask_visual(
     if not items:
         return None
     return ctx.runner.submit("visual", items, then=lambda: queue_reasons(ctx))
+
+
+def _unasked(ctx: AppContext, draft: RubricDraft) -> list[tuple[str, Criterion]]:
+    """Each anchor Episode and switched-on visual Criterion of the draft with nothing stored
+    for its ask key, no answer and no error, and no dry run asking it already."""
+    visual = [c for c in draft.rubric().criteria if c.kind == "visual"]
+    if not visual:
+        return []
+    asking = {draft_item_ask(args) for args in ctx.jobs.in_flight(DRY_RUN)}
+    unasked: list[tuple[str, Criterion]] = []
+    for episode in anchor_episodes(ctx):
+        for criterion in visual:
+            key = ask_key(criterion, draft.settings)
+            found = ctx.visual.get(episode.id, key)
+            answered = found is not None and (found.samples or found.error is not None)
+            if not answered and (episode.id, key) not in asking:
+                unasked.append((episode.id, criterion))
+    return unasked
+
+
+def dry_run(ctx: AppContext, draft: RubricDraft) -> int | None:
+    """Asks Spark, in the background, the draft's visual Criteria that the anchor pool has no
+    answers to yet, so the Describe page's preview shows their pass rates before Run. Returns
+    the job's id, or None without the Meta API, with the Meta budget spent, or when there's
+    nothing to ask. Must be called with an event loop running, as from a route."""
+    costs = None if ctx.meta is None else ctx.meta.costs
+    if costs is None or costs.spent_usd() >= costs.budget_usd:
+        return None  # over budget, every item would fail again: it stays not asked
+    items = draft_visual_items(draft, _unasked(ctx, draft))
+    return ctx.runner.submit(DRY_RUN, items) if items else None
 
 
 def visual_clip(ctx: AppContext, episode_id: str, name: str) -> Path | None:

@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from tests.interview.scripted_text import TEXT_FORMATS, ScriptedText
 from tests.meta.fakes import NoTranscribe
 from tests.tracking.scripted_sam import ScriptedSam
 from winnow.meta.models import MetaContent
@@ -49,3 +50,31 @@ class ScriptedVisual(NoTranscribe):
             "observation": f"The marker rests in the pot (sample {sample + 1}).",
         }
         return Reply(json.dumps(answer), USAGE)
+
+
+@dataclass
+class CompileAndAsk(NoTranscribe):
+    """Scripted compile answers and readings of the curator's words, and scripted visual answers
+    to whatever is asked."""
+
+    compile: ScriptedText
+    visual: ScriptedVisual
+
+    async def upload(self, path: Path) -> str:
+        return await self.visual.upload(path)
+
+    async def count_tokens(self, model: str, content: MetaContent) -> int:
+        return 1000
+
+    async def respond(self, model: str, content: MetaContent, options: dict[str, object]) -> Reply:
+        if response_format(options) in ("rubric", *TEXT_FORMATS):
+            return await self.compile.respond(model, content, options)
+        return await self.visual.respond(model, content, options)
+
+
+def response_format(options: dict[str, object]) -> str | None:
+    """The name of the structured answer a Spark call asks for; None for SAM's calls."""
+    text_format = options.get("text")
+    if not isinstance(text_format, dict):
+        return None
+    return str(text_format["format"]["name"])  # pyright: ignore[reportUnknownArgumentType]

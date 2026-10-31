@@ -33,6 +33,7 @@ from winnow.episodes.store import episode_id
 from winnow.jobs.models import WorkItem
 from winnow.meta.audio import wav_duration_ms
 from winnow.meta.costs import CostEntry
+from winnow.meta.limits import DEFAULT_LIMITS
 from winnow.meta.models import MetaContent, Transcript
 from winnow.meta.openai_transport import OpenAITransport
 from winnow.meta.pricing import SAM, sam_cost, spark_cost, transcribe_cost
@@ -123,7 +124,7 @@ async def _run(ctx: AppContext, kind: str, items: list[WorkItem]) -> int:
 
 
 async def _record(settings: Settings, transport: Transport) -> int:
-    ctx = build_context(settings, transport)
+    ctx = build_context(settings, transport, DEFAULT_LIMITS)  # records from the real API
     try:
         indices = list(range(E2E_EPISODES))
         failed = await _run(ctx, "ingest", ingest_items("droid_100", indices, with_meta=True))

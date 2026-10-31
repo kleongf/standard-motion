@@ -91,6 +91,7 @@ class MetaClient:
         self.costs = costs
         self._limiters = {model: Limiter(limit, clock, sleep) for model, limit in limits.items()}
         self._pending: dict[str, asyncio.Task[_Outcome]] = {}
+        self._uploading: dict[str, asyncio.Task[str]] = {}  # by file content
         self._clock = clock
         self._sleep = sleep
 
@@ -276,10 +277,19 @@ class MetaClient:
                 self._cache.forget_upload(file_sha256(part.path))
 
     async def _file_id(self, path: Path) -> str:
+        """Uploads each file content once, however many requests in flight send it."""
         sha = file_sha256(path)
         known = self._cache.upload_id(sha)
         if known is not None:
             return known
+        task = self._uploading.get(sha)
+        if task is None:
+            task = asyncio.ensure_future(self._upload(sha, path))
+            self._uploading[sha] = task
+            task.add_done_callback(lambda _: self._uploading.pop(sha, None))
+        return await task
+
+    async def _upload(self, sha: str, path: Path) -> str:
         file_id = await self._transport.upload(path)
         self._cache.remember_upload(sha, file_id)
         return file_id

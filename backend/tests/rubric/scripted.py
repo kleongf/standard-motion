@@ -35,6 +35,19 @@ def criterion(
     return answer | fields
 
 
+def video_criterion(question: str, paraphrases: list[str]) -> dict[str, object]:
+    """An `ask_video` Criterion as Spark writes one: the whole first exterior view after the
+    release, asked `question` and its paraphrases."""
+    asked: dict[str, object] = {
+        "window": {"kind": "after_release", "seconds": None},
+        "views": ["exterior_image_1_left"],
+        "question": question,
+        "paraphrases": paraphrases,
+        "crop": "view",
+    }
+    return criterion("ask_video", ">=", 3, **asked)
+
+
 def phrase(
     text: str,
     status: str = "checked",

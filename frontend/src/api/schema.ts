@@ -750,7 +750,9 @@ export interface paths {
         head?: never;
         /**
          * Patch Draft
-         * @description Direct edits on Criterion cards and the Rubric settings, saved; no model call.
+         * @description Direct edits on Criterion cards and the Rubric settings, saved; no model call. A grasp
+         *     setting's edit, or a visual Criterion switched on, asks Spark what it hasn't answered on
+         *     the anchor pool, in the background (the `visual-dry-run` job).
          */
         patch: operations["patch_draft_api_rubric_draft_patch"];
         trace?: never;
@@ -768,7 +770,9 @@ export interface paths {
          * Post Compile
          * @description Compile a Description into the Rubric draft: one Spark call, plus one repair turn when its
          *     answer fails code's checks. An edit of the draft's Description compiles only the changed
-         *     Phrases, keeping the rest with their Criteria; `fresh` compiles all of it.
+         *     Phrases, keeping the rest with their Criteria; `fresh` compiles all of it. Then Spark is
+         *     asked the draft's visual Criteria it hasn't answered on the anchor pool, in the background
+         *     (the `visual-dry-run` job).
          */
         post: operations["post_compile_api_rubric_draft_compile_post"];
         delete?: never;
