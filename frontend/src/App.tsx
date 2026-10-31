@@ -14,7 +14,7 @@ export function App() {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar page={page} onPage={setPage} />
-      <main className="flex-1 overflow-y-auto">
+      <main className="min-w-0 flex-1 overflow-x-clip">
         {page === "prepare" && <PreparePage />}
         {page === "select" && <SelectionPage />}
         {page === "describe" && <DescribePage />}
