@@ -7,7 +7,13 @@ from pydantic import BaseModel, Field
 from winnow.core.context import AppContext, get_context
 from winnow.rubric.anchor_pool import AnchorPool, anchor_pool
 from winnow.rubric.edits import UnknownCriterionError
-from winnow.rubric.models import AnchorPreview, DraftEdit, RubricDraft, RubricVersion
+from winnow.rubric.models import (
+    DESCRIPTION_MAX,
+    AnchorPreview,
+    DraftEdit,
+    RubricDraft,
+    RubricVersion,
+)
 from winnow.rubric.service import (
     DraftChangedError,
     MetaUnavailableError,
@@ -30,7 +36,7 @@ NO_DRAFT: dict[int | str, dict[str, object]] = {
 
 
 class CompileRequest(BaseModel):
-    description: str = Field(min_length=1, max_length=2000)
+    description: str = Field(min_length=1, max_length=DESCRIPTION_MAX)
     # Compile every Phrase anew, discarding the draft's Criteria, edits and interview.
     fresh: bool = False
 

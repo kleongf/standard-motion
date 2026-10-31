@@ -7,12 +7,12 @@ from winnow.interview.carry import carried
 from winnow.meta.client import MetaClient
 from winnow.rubric.anchor_pool import anchor_episodes
 from winnow.rubric.compile import Compiled, compile_rubric
-from winnow.rubric.diff import DescriptionDiff, diff_description
+from winnow.rubric.diff import DescriptionDiff, clarify_diff, diff_description
 from winnow.rubric.edits import apply_edit
 from winnow.rubric.manifest import capabilities_manifest
 from winnow.rubric.models import AnchorPreview, DraftEdit, RubricDraft, RubricVersion
 from winnow.rubric.preview import anchor_labels, anchor_preview, revealed_anchor_facts
-from winnow.rubric.recompile import ask_changes, recompile_rubric
+from winnow.rubric.recompile import ask_changes, ask_clarified, recompile_rubric
 from winnow.rubric.seed import SEEDED_SETTINGS
 from winnow.triage.reason_service import queue_reasons
 
@@ -27,6 +27,9 @@ class NoDraftError(LookupError):
 
 class DraftChangedError(Exception):
     """The draft's Description changed while Spark read an edit of it."""
+
+
+_CLARIFY_CHANGED = "The draft changed while Spark read your answer: answer again"
 
 
 async def compile_draft(ctx: AppContext, description: str, fresh: bool = False) -> RubricDraft:
@@ -67,8 +70,49 @@ def _save_recompiled(
         raise DraftChangedError(
             "The Description changed while Spark was reading the edit: recompile the changes"
         )
-    draft = ctx.drafts.save(recompile_rubric(now, description, redo, compiled))
-    for answer in carried(ctx.interview.answers(now.compiled_at), redo, draft):
+    return _store_recompiled(ctx, now, description, redo, compiled)
+
+
+async def clarify_draft(
+    ctx: AppContext, compiled_at: str, start: int, end: int, text: str
+) -> RubricDraft:
+    """Recompiles only the draft's text at [start, end), a Phrase or words in no Phrase, with the
+    curator's own words about it, `text`, and saves it. Every other Phrase keeps its Criteria,
+    edits and labels, and the interview answers that still hold carry over, as for an edit. The
+    labels answers about that text left stay too: its text is unchanged, and they say how
+    Episodes fare on it.
+
+    Raises DraftChangedError, saving nothing, unless the draft is the one compiled at
+    `compiled_at`, before and once Spark answers, with the same Phrases around that text and
+    no interview answer added or undone meanwhile (direct edits may come in between)."""
+    draft, answered = _clarifying(ctx, compiled_at)
+    diff = clarify_diff(draft.description, draft.phrases, start, end)
+    manifest = _manifest(ctx, draft.settings)
+    compiled = await ask_clarified(_meta(ctx), draft.description, manifest, diff, text)
+    now, still = _clarifying(ctx, compiled_at)
+    redo = clarify_diff(now.description, now.phrases, start, end)
+    if still != answered or _spans(redo) != _spans(diff):
+        raise DraftChangedError(_CLARIFY_CHANGED)
+    return _store_recompiled(ctx, now, now.description, redo, compiled)
+
+
+def _clarifying(ctx: AppContext, compiled_at: str) -> tuple[RubricDraft, list[int]]:
+    """The draft, if it is still the one compiled at `compiled_at`, and its interview answers'
+    ids."""
+    draft = current_draft(ctx)
+    if draft.compiled_at != compiled_at:
+        raise DraftChangedError(_CLARIFY_CHANGED)
+    return draft, [a.id for a in ctx.interview.answers(compiled_at)]
+
+
+def _store_recompiled(
+    ctx: AppContext, now: RubricDraft, description: str, diff: DescriptionDiff, compiled: Compiled
+) -> RubricDraft:
+    """Spark's answer applied to the draft `now`, saved with the interview answers that still
+    hold. `diff` is from `now`'s Description to `description`, which may be the same
+    (`clarify_diff`)."""
+    draft = ctx.drafts.save(recompile_rubric(now, description, diff, compiled))
+    for answer in carried(ctx.interview.answers(now.compiled_at), diff, draft):
         ctx.interview.add(draft.compiled_at, answer)
     return draft
 

@@ -1,4 +1,5 @@
-"""Recompile: after a Description edit, Spark is asked about only the changed text.
+"""Recompile: after a Description edit, Spark is asked about only the changed text; after the
+curator answers an interview question in their own words, about only the text it asked about.
 
 Every Phrase the edit left alone is kept as it was, with its Criteria: their ids, thresholds,
 hard/soft and on/off survive, and so do labels, which hang off the Phrase's text. A Criterion
@@ -22,7 +23,7 @@ from winnow.rubric.compile import (
 )
 from winnow.rubric.diff import DescriptionDiff
 from winnow.rubric.models import RubricDraft
-from winnow.rubric.prompt import recompile_prompt
+from winnow.rubric.prompt import clarify_prompt, recompile_prompt
 
 
 def _scope(description: str, diff: DescriptionDiff) -> Scope:
@@ -38,6 +39,16 @@ async def ask_changes(
     Phrase changes that Phrase, which is asked about again."""
     kept, changed = [p.text for p in diff.kept], [s.text for s in diff.stretches]
     prompt = recompile_prompt(description, manifest, kept, changed)
+    return await ask_phrases(meta, prompt, _scope(description, diff))
+
+
+async def ask_clarified(
+    meta: MetaClient, description: str, manifest: str, diff: DescriptionDiff, text: str
+) -> Compiled:
+    """Spark's answer about the one stretch of `diff` (`diff.clarify_diff`), read with the
+    curator's own words about it, `text`: one call, and its repair turn."""
+    kept, (stretch,) = [p.text for p in diff.kept], diff.stretches
+    prompt = clarify_prompt(description, manifest, kept, stretch.text, text)
     return await ask_phrases(meta, prompt, _scope(description, diff))
 
 

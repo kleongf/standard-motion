@@ -27,6 +27,18 @@ def pauses_phrase(text: str = NO_PAUSES) -> dict[str, object]:
     return phrase(text, criteria=[pauses])
 
 
+# Fixture Episode 2's three grasp attempts fail TIDY's first Criterion; no anchor Episode pauses,
+# so all pass its second: its Criteria disagree on Episode 2.
+TIDY = "grasps it once without pausing"
+TIDY_DESCRIPTION = f"A tidy pick: {TIDY}."
+
+
+def tidy_phrase(text: str = TIDY) -> dict[str, object]:
+    grasps = criterion("grasp_attempts", "<=", 1, assumptions=["One attempt is the most."])
+    pauses = criterion("longest_still_s", "<", 5, params={"speed_below_m_s": 0.01})
+    return phrase(text, criteria=[grasps, pauses])
+
+
 def compile_answer() -> dict[str, object]:
     grasps = criterion("grasp_attempts", "<=", 1, assumptions=["One attempt is the most."])
     return {
@@ -50,6 +62,14 @@ def answer(api: TestClient, value: str) -> Any:
     question = interview(api)["question"]
     body = {"key": question["key"], "episode_id": question.get("episode_id"), "answer": value}
     response = api.post("/api/interview/answers", json=body)
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def say(api: TestClient, text: str, key: str | None) -> Any:
+    """The curator's own words: to the question with `key`, or, with None, about the
+    Description."""
+    response = api.post("/api/interview/text", json={"text": text, "question_key": key})
     assert response.status_code == 200, response.text
     return response.json()
 

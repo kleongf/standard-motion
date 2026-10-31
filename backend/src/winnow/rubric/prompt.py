@@ -56,8 +56,7 @@ def recompile_prompt(
     description: str, manifest: str, kept: Sequence[str], changed: Sequence[str]
 ) -> str:
     """The compile call after an edit: the whole Description, answered only for what changed."""
-    unchanged = "\n".join(f"- {json.dumps(k)}" for k in kept)
-    asked = "\n".join(f"- {json.dumps(c)}" for c in changed)
+    unchanged, asked = _listed(kept), _listed(changed)
     return f"""{compile_prompt(description, manifest)}
 
 The curator edited this Description after it was compiled. These Phrases are unchanged and \
@@ -67,6 +66,29 @@ already compiled, so leave them out of your answer:
 Answer only for the changed text below, split into Phrases as above. Each Phrase is still \
 copied exactly from the Description and overlaps none of the unchanged Phrases:
 {asked}"""
+
+
+def clarify_prompt(
+    description: str, manifest: str, kept: Sequence[str], phrase: str, text: str
+) -> str:
+    """The compile call after the curator answered, in their own words, a question about one
+    Phrase (or words in no Phrase): the unchanged Description, answered only for that text, read
+    as the curator's answer means it."""
+    return f"""{compile_prompt(description, manifest)}
+
+This Description is compiled already. These Phrases stay as they are, so leave them out of your \
+answer:
+{_listed(kept)}
+
+The curator's answer about {json.dumps(phrase)}: {json.dumps(text)}
+
+Answer only for {json.dumps(phrase)}, split into Phrases as above and read as the curator's \
+answer says it is meant. Each Phrase is still copied exactly from the Description and overlaps \
+none of the Phrases that stay."""
+
+
+def _listed(texts: Sequence[str]) -> str:
+    return "\n".join(f"- {json.dumps(t)}" for t in texts)
 
 
 def repair_prompt(errors: Sequence[str], whole: bool) -> str:

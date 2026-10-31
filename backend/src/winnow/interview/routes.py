@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from winnow.core.context import AppContext, get_context
-from winnow.interview.models import AnswerDraw, Interview
+from winnow.interview.models import AnswerDraw, Interview, TextDraw, TextReply
 from winnow.interview.service import (
     StaleQuestionError,
     UnknownAnswerError,
@@ -12,8 +12,9 @@ from winnow.interview.service import (
     current,
     undo,
 )
+from winnow.interview.text import answer_text
 from winnow.labels.service import UnknownPhraseError
-from winnow.rubric.service import NoDraftError
+from winnow.rubric.service import DraftChangedError, MetaUnavailableError, NoDraftError
 
 router = APIRouter(tags=["interview"])
 
@@ -47,6 +48,32 @@ async def post_answer(draw: AnswerDraw, ctx: Context) -> Interview:
     """Answer the question being asked. A threshold answer is also an interview label on the
     anchor Episode's Phrase; the answer that settles a threshold changes the Criterion."""
     return _on_interview(lambda: answer(ctx, draw))
+
+
+@router.post(
+    "/interview/text",
+    responses={
+        **NO_DRAFT,
+        409: {"description": "Not the question being asked, or the draft changed meanwhile"},
+        502: {"description": "Spark failed, or its reading of the words couldn't be used"},
+        503: {"description": "The Meta API isn't configured"},
+    },
+)
+async def post_text(draw: TextDraw, ctx: Context) -> TextReply:
+    """The curator's own words, read by Spark: to the question being asked, they pick one of its
+    answers, or recompile only the Phrase it asks about with them; with no question, they edit
+    the Description, which recompiles as an edit does. Template answers never ask a model."""
+    try:
+        return await answer_text(ctx, draw)
+    except MetaUnavailableError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except NoDraftError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except (StaleQuestionError, UnknownPhraseError, DraftChangedError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except RuntimeError as error:  # the Meta API failed, or its answer couldn't be read
+        detail = f"Reading your words failed: {error}"
+        raise HTTPException(status_code=502, detail=detail) from error
 
 
 @router.delete("/interview/answers/{answer_id}", responses=NO_DRAFT)

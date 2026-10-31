@@ -135,3 +135,18 @@ def diff_description(old: str, phrases: Sequence[DraftPhrase], new: str) -> Desc
         else:
             kept.append(phrase.model_copy(update={"start": now[0], "end": now[1]}))
     return DescriptionDiff(kept, _stretches(changed, after, new), alignment)
+
+
+def clarify_diff(
+    description: str, phrases: Sequence[DraftPhrase], start: int, end: int
+) -> DescriptionDiff:
+    """The Description unchanged, with only its text at [start, end) to be asked about again, as
+    if an edit had replaced it with itself: every Phrase outside it is kept where it is, and any
+    text that overlaps it counts as touched."""
+    tokens = _tokens(description)
+    span = _span(tokens, start, end)
+    same = {i: i for i in range(len(tokens))}
+    alignment = _Alignment(description, description, tokens, tokens, same, [_Edit(span, span)])
+    kept = [p for p in phrases if p.end <= start or end <= p.start]
+    stretch = TextRange(start=start, end=end, text=description[start:end])
+    return DescriptionDiff(kept, [stretch], alignment)

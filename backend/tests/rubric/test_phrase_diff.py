@@ -1,6 +1,6 @@
 """Which Phrases a Description edit leaves alone, and which changed text compile asks about."""
 
-from winnow.rubric.diff import diff_description
+from winnow.rubric.diff import clarify_diff, diff_description
 from winnow.rubric.models import DraftPhrase
 from winnow.rubric.phrases import locate
 
@@ -149,3 +149,15 @@ def test_a_word_added_inside_a_phrase_changes_it():
         ["Tidy"],
         ["No very long pauses"],
     )
+
+
+def test_clarifying_one_phrase_asks_about_it_alone_and_leaves_the_rest_where_it_is():
+    never = DRAFT[2]
+
+    diff = clarify_diff(OLD, DRAFT, never.start, never.end)
+
+    assert [p.text for p in diff.kept] == ["Tidy pick", "one grasp only", "no long pauses"]
+    assert [p.start for p in diff.kept] == [DRAFT[0].start, DRAFT[1].start, DRAFT[3].start]
+    assert [s.text for s in diff.stretches] == ["never drops it"]
+    assert diff.moved(never.start, never.end) is None  # its answers drop out
+    assert diff.moved(DRAFT[3].start, DRAFT[3].end) == (DRAFT[3].start, DRAFT[3].end)
