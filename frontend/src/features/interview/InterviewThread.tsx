@@ -3,6 +3,8 @@
 // next. It is done once every Phrase is covered; assumed thresholds, hard or soft, assumed grasp
 // settings and Phrases whose Criteria disagree can still be asked after that, and Run never waits
 // for them.
+import type { ReactNode } from "react";
+
 import { AgentRow } from "../rubric/ThreadParts";
 import { AnsweredCard } from "./AnsweredCard";
 import { QuestionCard } from "./QuestionCard";
@@ -43,6 +45,8 @@ export function InterviewThread(props: {
   onUndone: () => void;
   onEditSentence: (start: number, end: number) => void;
   onAnswered: () => void;
+  /** Turns between the answers and the current question: the curator's own words this session. */
+  notes?: ReactNode;
 }) {
   const interview = useInterview();
   const answer = useAnswer();
@@ -72,6 +76,7 @@ export function InterviewThread(props: {
           </ol>
         </AgentRow>
       )}
+      {props.notes}
       <AgentRow>
         <div className="grid gap-4">
           <Status interview={data} />

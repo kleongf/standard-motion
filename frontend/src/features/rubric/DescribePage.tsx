@@ -1,18 +1,20 @@
 // The Describe page, as a conversation with Spark: the curator sends a Description, Spark compiles
 // it into the Rubric draft (a card in the conversation, edited directly on its Criterion cards),
-// then asks about what it assumed, one anchored question at a time. Editing the Description in
-// the composer recompiles only the changed Phrases; Run in the top bar freezes the draft. Every
+// then asks about what it assumed, one anchored question at a time. The curator answers, or says
+// what they mean in their own words; editing the Description recompiles only the changed Phrases;
+// Run in the top bar freezes the draft. Every
 // number here comes from the anchor pool (the Dev set), never the Test set. `?version=` shows a
 // frozen Rubric version instead.
 import { useEffect, useRef, useState } from "react";
 
 import { useSearchParams } from "../core/url";
 import { useInterview } from "../interview/useInterview";
-import { DescribeComposer } from "./DescribeComposer";
+import { type ComposerMode, DescribeComposer } from "./DescribeComposer";
 import { DescribeHeader } from "./DescribeHeader";
 import { DescribeThread } from "./DescribeThread";
 import { useCompiling, useDraft } from "./useDraft";
 import { useDraftEditor } from "./useDraftEditor";
+import { useExchanges } from "./useExchanges";
 import { useRun, useVersionPreview } from "./useDraftEdits";
 import { useVersions } from "./useRubric";
 import { VersionPanel } from "./VersionPanel";
@@ -80,6 +82,10 @@ function Conversation() {
   const { editing, preview, error } = useDraftEditor(draft.data, compiling);
   const run = useRun();
   const { highlighted, mark, show, clear } = useHighlight();
+  const [mode, setMode] = useState<ComposerMode>({ kind: "chat" });
+  const talk = useExchanges(() => {
+    scrollToEnd();
+  });
   // The previews size the Rubric card's histograms: wait for them too, or the end moves.
   useResumeAtEnd(
     draft.isSuccess && (draft.data === null || (interview.isSuccess && preview !== undefined)),
@@ -115,11 +121,23 @@ function Conversation() {
         onAnswered={() => {
           scrollToEnd();
         }}
+        exchanges={talk.exchanges}
+        onEditDescription={() => {
+          setMode({ kind: "edit", selection: null });
+        }}
+        onEditSentence={(start, end) => {
+          setMode({ kind: "edit", selection: { start, end } });
+        }}
       />
       <DescribeComposer
-        onSent={() => {
+        mode={mode}
+        onMode={setMode}
+        onCompiled={() => {
           scrollToEnd();
         }}
+        question={interview.data?.question ?? null}
+        text={{ pending: talk.pending, error: talk.error }}
+        onSendText={talk.say}
       />
     </div>
   );

@@ -13,7 +13,7 @@ import { AnchorClip } from "./AnchorClip";
 import { DisagreeDetails } from "./DisagreeDetails";
 import type { AnswerValue, Question, SettingQuestion, ThresholdQuestion } from "./useInterview";
 
-const KIND_LABELS: Record<Question["kind"], string> = {
+export const KIND_LABELS: Record<Question["kind"], string> = {
   phrase: "Unsupported Phrase",
   words: "In no Phrase",
   threshold: "Assumed threshold",
