@@ -1,9 +1,13 @@
 // The Describe conversation, rebuilt from the server's state each time, so a reload resumes it:
 // Spark's greeting; the curator's Description, each Phrase tinted and linked to its section; what
 // the compile made of it; the Rubric draft as a card that updates in place; the interview; and
-// what Run froze, once it has run here.
+// what Run froze, once it has run here. What the curator says to Spark in their own words shows
+// just above the current question.
+import { PencilLine } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+
 import { InterviewThread } from "../interview/InterviewThread";
-import { editSentence } from "./DescribeComposer";
 import { AnchorPoolLine } from "./DescribeHeader";
 import { DescriptionText } from "./DescriptionText";
 import { recompileNote } from "./recompileNote";
@@ -12,6 +16,7 @@ import type { DraftEditing } from "./RubricPanel";
 import { RunCard } from "./RunCard";
 import { AgentRow, TypingIndicator, UserBubble } from "./ThreadParts";
 import type { RubricDraft } from "./useDraft";
+import type { Exchange } from "./useExchanges";
 
 function plural(n: number, one: string, many: string): string {
   return `${String(n)} ${n === 1 ? one : many}`;
@@ -61,6 +66,35 @@ function CompileSummary(props: { draft: RubricDraft; compiling: boolean }) {
   );
 }
 
+function DescriptionBubble(props: { draft: RubricDraft; onEdit: () => void }) {
+  return (
+    <div className="grid justify-items-end gap-1">
+      <UserBubble>
+        <DescriptionText draft={props.draft} />
+      </UserBubble>
+      <Button size="xs" variant="ghost" onClick={props.onEdit}>
+        <PencilLine data-icon="inline-start" />
+        Edit the Description
+      </Button>
+    </div>
+  );
+}
+
+function Exchanges(props: { exchanges: Exchange[] }) {
+  return props.exchanges.map((x) => (
+    <div key={x.id} className="grid gap-6">
+      <UserBubble className="whitespace-pre-wrap">{x.text}</UserBubble>
+      {x.reply === null ? (
+        <TypingIndicator label="Spark is reading that…" />
+      ) : (
+        <AgentRow>
+          <p data-testid="spark-reply">{x.reply}</p>
+        </AgentRow>
+      )}
+    </div>
+  ));
+}
+
 export function DescribeThread(props: {
   draft: RubricDraft | null | undefined;
   compiling: boolean;
@@ -72,6 +106,9 @@ export function DescribeThread(props: {
   onShowCriterion: (criterionId: string) => void;
   onUndone: () => void;
   onAnswered: () => void;
+  exchanges: Exchange[];
+  onEditDescription: () => void;
+  onEditSentence: (start: number, end: number) => void;
 }) {
   const { draft } = props;
   return (
@@ -79,9 +116,7 @@ export function DescribeThread(props: {
       <Greeting />
       {draft && (
         <>
-          <UserBubble>
-            <DescriptionText draft={draft} />
-          </UserBubble>
+          <DescriptionBubble draft={draft} onEdit={props.onEditDescription} />
           <CompileSummary draft={draft} compiling={props.compiling} />
           <AgentRow mark={false}>
             <RubricCard
@@ -95,8 +130,9 @@ export function DescribeThread(props: {
             onChanged={props.onChanged}
             onShowCriterion={props.onShowCriterion}
             onUndone={props.onUndone}
-            onEditSentence={editSentence}
+            onEditSentence={props.onEditSentence}
             onAnswered={props.onAnswered}
+            notes={<Exchanges exchanges={props.exchanges} />}
           />
         </>
       )}

@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
-import { freezeDevSet } from "./helpers.ts";
+import { freezeDevSet, openDescription } from "./helpers.ts";
 
 // The frozen Description, and the same with its grasp Phrase edited: both the compile and the
 // recompile of the edit are recorded (backend/tests/record_meta.py, EDITED).
@@ -60,6 +60,7 @@ test("editing a sentence recompiles only its Phrase, keeps the rest, and re-sort
   });
   const hard = pauses.getByRole("switch", { name: "Hard" });
   await expect(hard).toBeEnabled();
+  await openDescription(page);
   await page.getByLabel("Description", { exact: true }).fill(EDITED);
   await page.getByRole("button", { name: "Recompile changes" }).click();
   await expect(page.getByRole("button", { name: "Compiling…" })).toBeVisible();
@@ -77,6 +78,7 @@ test("editing a sentence recompiles only its Phrase, keeps the rest, and re-sort
   await expect(pauses).toContainText("soft · never rejects"); // a kept Criterion keeps its edit
   await expect(hard).toBeEnabled();
   // The Description is the draft's own again: compiling it would start afresh, so it asks first.
+  await openDescription(page);
   await page.getByRole("button", { name: "Compile", exact: true }).click();
   const confirm = page.getByRole("alertdialog", { name: "Start the draft afresh?" });
   await expect(confirm).toBeVisible();
@@ -105,6 +107,7 @@ test("compiling the unchanged Description starts afresh only once confirmed", as
   expect((await request.patch("/api/rubric/draft", { data: edit })).ok()).toBe(true);
 
   await page.goto("/?page=describe");
+  await openDescription(page);
   const compile = page.getByRole("button", { name: "Compile", exact: true });
   const confirm = page.getByRole("alertdialog", { name: "Start the draft afresh?" });
   await compile.click();
@@ -117,6 +120,7 @@ test("compiling the unchanged Description starts afresh only once confirmed", as
 
   await expect(confirm).toBeHidden();
   await expect.poll(async () => (await grasps())?.threshold).not.toBe(0); // compiled afresh
-  await expect(compile).toBeEnabled();
+  // Compiled, the composer is a chat with Spark again.
+  await expect(page.getByRole("textbox", { name: "Message Spark" })).toBeVisible();
   expect(errors).toEqual([]);
 });

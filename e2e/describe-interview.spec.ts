@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { clickCompile, freezeDevSet } from "./helpers.ts";
+import { clickCompile, freezeDevSet, openDescription } from "./helpers.ts";
 
 // The frozen Description, whose compile against the Dev set is recorded: every Phrase is covered,
 // and Spark assumed its thresholds, the pause one among them.
@@ -18,6 +18,7 @@ test("with every Phrase covered, a bisection card confirms the pause threshold",
   await freezeDevSet(request); // one Dev set Episode, which never pauses
 
   await page.goto("/?page=describe");
+  await openDescription(page);
   await page.getByLabel("Description", { exact: true }).fill(FROZEN);
   // Other specs (and earlier runs) leave drafts behind: read the interview only once it is the
   // one for this compile, fetched after the compile returned.

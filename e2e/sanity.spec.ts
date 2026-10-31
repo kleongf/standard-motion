@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import type { components } from "../frontend/src/api/schema.ts";
-import { clickCompile, episodeId, freezeDevSet, DEV_SET } from "./helpers.ts";
+import { clickCompile, DEV_SET, episodeId, freezeDevSet, openDescription } from "./helpers.ts";
 
 type DraftEdit = components["schemas"]["DraftEdit"];
 
@@ -23,6 +23,7 @@ test("a Criterion that fails nothing warns, and the Episode only a Criterion rej
   page.on("pageerror", (err) => errors.push(err.message));
   await freezeDevSet(request);
   await page.goto("/?page=describe");
+  await openDescription(page);
   await page.getByLabel("Description", { exact: true }).fill(FROZEN);
   await clickCompile(page, request, FROZEN);
 

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { clickCompile, freezeDevSet } from "./helpers.ts";
+import { clickCompile, freezeDevSet, openDescription } from "./helpers.ts";
 
 // The frozen Description, whose compile against the Dev set is recorded.
 const FROZEN =
@@ -18,6 +18,7 @@ test("dragging a threshold re-sorts the anchor pool, and the edit is kept", asyn
   await freezeDevSet(request);
 
   await page.goto("/?page=describe");
+  await openDescription(page);
   await page.getByLabel("Description", { exact: true }).fill(FROZEN);
   await clickCompile(page, request, FROZEN);
 
