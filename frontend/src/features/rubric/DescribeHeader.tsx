@@ -137,11 +137,14 @@ export function DescribeHeader(props: {
     <header className="sticky top-0 z-20 border-b bg-background/85 backdrop-blur">
       <div className="flex h-14 items-center gap-3 px-8">
         <div className="min-w-0 flex-1">
-          <h1 className="text-base leading-tight font-semibold">Describe &amp; run</h1>
+          {/* The dry run sits beside the title: the line under it is full with the sort. */}
+          <div className="flex items-center gap-3 truncate">
+            <h1 className="text-base leading-tight font-semibold">Describe &amp; run</h1>
+            {drafting && <DraftDryRun draft={props.draft} />}
+          </div>
           <div className="flex gap-1 truncate">
             <AnchorSort preview={props.preview} />
             <SanityCount preview={props.preview} />
-            {drafting && <DraftDryRun draft={props.draft} />}
           </div>
         </div>
         {drafting && props.draft && <RubricChip />}

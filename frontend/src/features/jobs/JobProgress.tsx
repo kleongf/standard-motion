@@ -23,19 +23,20 @@ export interface JobTitle {
 
 const INGEST: JobTitle = { running: "Ingesting", finished: "Last ingest" };
 
-/** One quiet line, for a bar above other work: what runs, how far, how many failed; no detail. */
+/** One quiet line, for a bar above other work: how far, what runs, how many failed; no detail.
+ * The progress bar leads, so a narrow top bar clips only the counts. */
 function CompactProgress(props: { job: Job; title: JobTitle }) {
   const { job, title } = props;
   const settled = job.done + job.failed;
   return (
-    <span
+    <div
       className="inline-flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums"
       data-testid="job-progress"
     >
+      <Progress value={(settled / job.total) * 100} className="h-1 w-10 shrink-0" />
       {job.finished ? title.finished : title.running} · {settled} of {job.total}
       {job.failed > 0 && ` · ${String(job.failed)} failed`}
-      <Progress value={(settled / job.total) * 100} className="h-1 w-12" />
-    </span>
+    </div>
   );
 }
 

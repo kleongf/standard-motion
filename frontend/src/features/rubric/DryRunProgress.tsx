@@ -11,8 +11,8 @@ export function DryRunProgress(props: { job: Job | null | undefined }) {
   const { job } = props;
   if (!job || job.finished) return null;
   return (
-    <p className="text-xs text-muted-foreground" data-testid="dry-run">
-      · <JobProgress job={job} title={dryRunTitle(job.items)} compact />
-    </p>
+    <div className="min-w-0 truncate" data-testid="dry-run">
+      <JobProgress job={job} title={dryRunTitle(job.items)} compact />
+    </div>
   );
 }
