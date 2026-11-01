@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from tests.conftest import OPEN_GRIPPER_EPISODE
 from tests.helpers import app_context, reference_label, wait_for_job
+from winnow.calibration import service as calibration_service
 from winnow.criteria.facts import EpisodeFacts
 from winnow.criteria.models import Criterion
 from winnow.evaluation import service as evaluation_service
@@ -259,3 +260,21 @@ def test_an_evaluation_scores_the_version_with_its_s(
 
     assert report.status_code == 200, report.text
     assert seen and set(seen) == {2.0}
+
+
+def test_calibrating_and_accepting_queue_spark_reasons(
+    anchored: TestClient, monkeypatch: pytest.MonkeyPatch
+):
+    # Either can change Criterion results, and with them the Reasons Spark wrote.
+    queued: list[int] = []
+
+    def spy(ctx: object) -> None:
+        queued.append(app_context(anchored).rubrics.latest().version)
+
+    monkeypatch.setattr(calibration_service, "queue_reasons", spy)
+    contradict_the_path(anchored)
+
+    run(anchored)
+    assert queued == [2]
+    assert accept(anchored).status_code == 201
+    assert queued == [2, 3]

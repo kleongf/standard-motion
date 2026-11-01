@@ -4,7 +4,8 @@ they suggest.
 Only anchor-pool Episodes with a Reference label take part (the Dev set, never the Test set),
 with only their interview and review labels: audit labels measure Keep precision alone. Each is
 scored with no label applied, so the labels judge Winnow's own results. Everything is the pure
-scoring function over stored facts, so calibrating makes no model call.
+scoring function over stored facts, so calibrating makes no model call; with the Meta API, the
+Spark Reasons a new s or threshold puts out of date are then queued in the background.
 """
 
 from winnow.calibration.labelled import LabelledEpisode, patterns, suggestions
@@ -14,6 +15,7 @@ from winnow.core.context import AppContext
 from winnow.criteria.models import Criterion
 from winnow.rubric.models import RubricDraft, RubricVersion
 from winnow.rubric.preview import anchor_labels, revealed_anchor_facts
+from winnow.triage.reason_service import queue_reasons
 
 
 class NoLabelsError(ValueError):
@@ -64,6 +66,7 @@ def calibrate(ctx: AppContext) -> Calibration:
     ctx.calibrations.add(
         version.version, found.s, found.n, found.errors, found.bound_met, unstable(pairs)
     )
+    queue_reasons(ctx)
     return _calibration(ctx, version, episodes)
 
 
@@ -124,4 +127,5 @@ def accept_suggestion(ctx: AppContext, criterion_id: str) -> AcceptedSuggestion:
         added = ctx.rubrics.add(rubric.model_copy(update={"criteria": criteria}))
         if draft is not None:
             ctx.drafts.save(draft)
+    queue_reasons(ctx)
     return AcceptedSuggestion(version=added, draft_updated=draft is not None, draft_note=note)
