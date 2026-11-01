@@ -1,6 +1,7 @@
 """Queueing Spark's Reasons: one work item per Reject and Needs review whose inputs have no Reason
-stored yet. Queued on request (`POST /api/reasons`, `winnow reasons`), after a Run, and when a
-visual job finishes, as each can change an Episode's results."""
+stored yet and that no Reason job is writing already. Queued on request (`POST /api/reasons`,
+`winnow reasons`), after a Run, calibrating, accepting a threshold suggestion or saving a review
+label, and when a visual job finishes, as each can change an Episode's results."""
 
 from winnow.core.context import AppContext
 from winnow.jobs.models import WorkItem
@@ -16,10 +17,13 @@ def reason_items(ctx: AppContext) -> list[WorkItem]:
     episodes = ctx.episodes.list()
     version, triages = template_triages(ctx, episodes)
     stored = ctx.reasons.keys()
+    # A queued item reads the Episode's triage when it runs, so it writes the Reason as it is then.
+    writing = {str(args["episode_id"]) for args in ctx.jobs.in_flight("reason")}
     return [
         WorkItem("reason", {"episode_id": episode.id}, episode.id)
         for episode, triage in zip(episodes, triages, strict=True)
         if triage.decision != "keep"
+        and episode.id not in writing
         and (episode.id, reason_key(version.version, triage)) not in stored
     ]
 

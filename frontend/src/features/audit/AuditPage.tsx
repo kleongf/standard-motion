@@ -1,7 +1,8 @@
 // Audit: a seeded sample of Winnow's own Keeps (and a few Rejects), drawn once per Rubric version
 // and margin multiplier s (calibrating the version changes its Keeps, so it is drawn afresh)
 // from the Episodes outside the Test set. The auditor marks each Good or Bad; the header states
-// Keep precision. The first unmarked item opens; `?episode=` picks another from the strip.
+// Keep precision over the Keeps still kept, and how many marked Rejects were good Episodes. The
+// first unmarked item opens; `?episode=` picks another from the strip.
 import { Button } from "@/components/ui/button";
 
 import { sText } from "../calibration/calibrationText";
@@ -10,7 +11,7 @@ import { navigate, useSearchParams } from "../core/url";
 import { useEpisodes, type Episode } from "../episodes/useEpisodes";
 import { Workstation } from "../episodes/Workstation";
 import { AuditCall } from "./AuditCall";
-import { precisionText } from "./precisionText";
+import { goodRejectsText, precisionText } from "./precisionText";
 import { SampleStrip } from "./SampleStrip";
 import { useAudit, useDrawSample, useMarkItem, type AuditItem, type AuditSample } from "./useAudit";
 
@@ -108,22 +109,32 @@ function AuditHeader(props: { sample: AuditSample | undefined; current: AuditIte
           : `${String(marked)} of ${String(items.length)} marked · Rubric v${String(sample.rubric_version)} · seed ${String(sample.seed)} · drawn at s = ${sText(sample.s)}`
       }
       progress={sample?.seed == null ? undefined : marked / Math.max(1, items.length)}
-      actions={
-        sample?.seed != null && (
-          <div className="text-right text-sm">
-            <div className="text-xs text-muted-foreground">Keep precision</div>
-            <div className="font-medium tabular-nums" data-testid="audit-precision">
-              {precisionText(sample.precision)}
-            </div>
-            {current && (
-              <div className="text-xs text-muted-foreground" data-testid="audit-current">
-                {current.episode_id}
-              </div>
-            )}
-          </div>
-        )
-      }
+      actions={sample?.seed != null && <AuditStats sample={sample} current={current} />}
     />
+  );
+}
+
+/** Keep precision, the good Episodes rejected once a Reject is marked, and the item open. */
+function AuditStats(props: { sample: AuditSample; current: AuditItem | undefined }) {
+  const { sample, current } = props;
+  const rejected = goodRejectsText(sample.good_rejects);
+  return (
+    <div className="text-right text-sm">
+      <div className="text-xs text-muted-foreground">Keep precision</div>
+      <div className="font-medium tabular-nums" data-testid="audit-precision">
+        {precisionText(sample.precision)}
+      </div>
+      {rejected && (
+        <div className="text-xs text-muted-foreground" data-testid="audit-good-rejects">
+          Good Episodes rejected: {rejected}
+        </div>
+      )}
+      {current && (
+        <div className="text-xs text-muted-foreground" data-testid="audit-current">
+          {current.episode_id}
+        </div>
+      )}
+    </div>
   );
 }
 

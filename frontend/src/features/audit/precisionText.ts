@@ -1,7 +1,11 @@
 // Keep precision as the Audit tab states it: the count first, then its 95% Wilson interval, plus
-// the one-sided bound when every marked Keep is good. Never "±".
+// the one-sided bound when every marked Keep is good. Never "±". Marked Rejects say how many
+// good Episodes Winnow rejected.
+import type { components } from "../../api/schema";
 import { interval } from "../evaluation/reportText";
 import type { KeepPrecision } from "./useAudit";
+
+type Proportion = components["schemas"]["Proportion"];
 
 /** e.g. "14/15 good · 95% CI 0.70–0.99", or "15/15 good · 95% CI 0.80–1.00 · ≥ 0.86 (90%)". */
 export function precisionText(precision: KeepPrecision): string {
@@ -15,4 +19,10 @@ export function precisionText(precision: KeepPrecision): string {
     parts.push(`≥ ${bound.toFixed(2)} (${String(confidence)}%)`);
   }
   return parts.join(" · ");
+}
+
+/** e.g. "1 of 3 marked Rejects good", or null when no Reject is marked. */
+export function goodRejectsText(goodRejects: Proportion): string | null {
+  if (goodRejects.of === 0) return null;
+  return `${String(goodRejects.count)} of ${String(goodRejects.of)} marked Rejects good`;
 }

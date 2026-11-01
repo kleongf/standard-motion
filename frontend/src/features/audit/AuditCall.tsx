@@ -1,10 +1,12 @@
 // The Audit Workstation's actions: mark the Episode Good (it meets every Phrase) or Bad, picking
 // the Phrase that fails so the mark names why. Marks are `audit` labels: they measure Keep
-// precision and never change the Triage decision.
+// precision and never change the Triage decision. An item whose decision changed since the draw
+// no longer counts, and says so.
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
+import { DECISION_LABELS } from "../triage/useTriage";
 import type { AuditItem } from "./useAudit";
 
 const KIND_TEXT: Record<AuditItem["kind"], string> = {
@@ -28,6 +30,11 @@ export function AuditCall(props: {
         Audit · {KIND_TEXT[item.kind]}
       </div>
       <p className="mt-1 text-sm leading-snug">Does it meet every Phrase of the Description?</p>
+      {item.decision !== item.kind && (
+        <p className="mt-1 text-xs text-amber-800 dark:text-amber-300" data-testid="audit-moved">
+          Its Triage decision is now {DECISION_LABELS[item.decision]}, so its mark isn’t counted.
+        </p>
+      )}
       <MarkLine item={item} />
       {picking ? (
         <div className="mt-2">

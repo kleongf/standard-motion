@@ -4,7 +4,8 @@ they suggest.
 Only anchor-pool Episodes with a Reference label take part (the Dev set, never the Test set),
 with only their interview and review labels: audit labels measure Keep precision alone. Each is
 scored with no label applied, so the labels judge Winnow's own results. Everything is the pure
-scoring function over stored facts, so calibrating makes no model call.
+scoring function over stored facts, so calibrating makes no model call; with the Meta API, the
+Spark Reasons a new s or threshold puts out of date are then queued in the background.
 """
 
 from winnow.calibration.labelled import LabelledEpisode, patterns, suggestions
@@ -14,6 +15,7 @@ from winnow.core.context import AppContext
 from winnow.criteria.models import Criterion
 from winnow.rubric.models import RubricDraft, RubricVersion
 from winnow.rubric.preview import anchor_labels, revealed_anchor_facts
+from winnow.triage.reason_service import queue_reasons
 
 
 class NoLabelsError(ValueError):
@@ -64,6 +66,7 @@ def calibrate(ctx: AppContext) -> Calibration:
     ctx.calibrations.add(
         version.version, found.s, found.n, found.errors, found.bound_met, unstable(pairs)
     )
+    queue_reasons(ctx)
     return _calibration(ctx, version, episodes)
 
 
@@ -98,12 +101,21 @@ def _draft_change(
     )
 
 
+def _keep_calibration(ctx: AppContext, source: int, target: int) -> None:
+    record = ctx.calibrations.latest(source)
+    if record is not None:
+        ctx.calibrations.add(
+            target, record.s, record.n_labels, record.errors, record.bound_met, record.unstable
+        )
+
+
 def accept_suggestion(ctx: AppContext, criterion_id: str) -> AcceptedSuggestion:
     """Freezes the latest Rubric version with the threshold and margin labels suggest for
-    `criterion_id` as the next version, which starts at s = 1, and carries them into the draft
-    so the next Run keeps them, unless the draft's Criterion now checks something else. The
-    suggested value is no longer an assumption. Both writes happen together or not at all.
-    Raises NoSuggestionError when labels suggest nothing for it now."""
+    `criterion_id` as the next version, and carries them into the draft so the next Run keeps
+    them, unless the draft's Criterion now checks something else. The suggestion was made at the
+    version's s, so the new version keeps its calibration, if it has one (a Run's version starts
+    at s = 1). The suggested value is no longer an assumption. Every write happens together or
+    not at all. Raises NoSuggestionError when labels suggest nothing for it now."""
     version = ctx.rubrics.latest()
     found = next((x for x in calibration(ctx).suggestions if x.criterion_id == criterion_id), None)
     if found is None:
@@ -122,6 +134,8 @@ def accept_suggestion(ctx: AppContext, criterion_id: str) -> AcceptedSuggestion:
     with ctx.db:
         ctx.db.execute("BEGIN IMMEDIATE")
         added = ctx.rubrics.add(rubric.model_copy(update={"criteria": criteria}))
+        _keep_calibration(ctx, version.version, added.version)
         if draft is not None:
             ctx.drafts.save(draft)
+    queue_reasons(ctx)
     return AcceptedSuggestion(version=added, draft_updated=draft is not None, draft_note=note)

@@ -2,16 +2,19 @@
 multiplier s from Winnow's own decisions (no label decided them) outside the Test set, then
 stored: calibrating the version changes s, and with it the Keeps, so the next draw is fresh. The
 auditor's marks are `audit` labels given against the version, which scoring never reads, so Keep
-precision measures Winnow alone, and an Episode drawn again at a new s keeps its mark."""
+precision measures Winnow alone, and an Episode drawn again at a new s keeps its mark. An item
+counts only while its Triage decision is still the one it was drawn with: a Keep a reviewer has
+since rejected is no longer one of Winnow's Keeps. Marked Rejects count the good Episodes
+Winnow rejected."""
 
 import random
 from collections.abc import Sequence
 
-from winnow.audit.models import AuditItem, AuditMark, AuditSample, KeepPrecision
+from winnow.audit.models import AuditItem, AuditKind, AuditMark, AuditSample, KeepPrecision
 from winnow.audit.store import Pick, StoredSample
 from winnow.core.context import AppContext
 from winnow.episodes.models import Episode
-from winnow.evaluation.stats import clopper_pearson_lower, wilson
+from winnow.evaluation.stats import Proportion, clopper_pearson_lower, wilson
 from winnow.rubric.models import RubricVersion
 from winnow.triage.models import EpisodeTriage
 from winnow.triage.service import plain_reason, scored
@@ -90,22 +93,33 @@ def audit_sample(ctx: AppContext) -> AuditSample:
         drawn_at=None if stored is None else stored.created_at,
         phrases=version.rubric.phrases,
         items=items,
-        precision=keep_precision([i.mark for i in items if i.kind == "keep"]),
+        precision=keep_precision([i.mark for i in _still(items, "keep")]),
+        good_rejects=_good(_still(items, "reject")),
     )
+
+
+def _still(items: list[AuditItem], kind: AuditKind) -> list[AuditItem]:
+    """The items drawn as `kind` whose Triage decision still is."""
+    return [i for i in items if i.kind == kind and i.decision == kind]
+
+
+def _good(items: list[AuditItem]) -> Proportion:
+    marked = [i.mark for i in items if i.mark is not None]
+    return wilson(marked.count("good"), len(marked))
 
 
 def _items(ctx: AppContext, version: RubricVersion, stored: StoredSample) -> list[AuditItem]:
     episodes = [ctx.episodes.get(p.episode_id) for p in stored.picks]
     _, triages = scored(ctx, [e for e in episodes if e is not None])
-    reasons = {t.episode_id: plain_reason(t) for t in triages}
+    now = {t.episode_id: t for t in triages}
     return [
-        _item(ctx, version, pick, reasons[pick.episode_id])
+        _item(ctx, version, pick, now[pick.episode_id])
         for pick in stored.picks
-        if pick.episode_id in reasons
+        if pick.episode_id in now
     ]
 
 
-def _item(ctx: AppContext, version: RubricVersion, pick: Pick, reason: str) -> AuditItem:
+def _item(ctx: AppContext, version: RubricVersion, pick: Pick, triage: EpisodeTriage) -> AuditItem:
     """Marked by the newest audit label on each Phrase given against this Rubric version."""
     labels = {
         label.phrase: label.value
@@ -120,5 +134,10 @@ def _item(ctx: AppContext, version: RubricVersion, pick: Pick, reason: str) -> A
     elif all(labels.get(p) == "pass" for p in phrases):
         mark = "good"
     return AuditItem(
-        episode_id=pick.episode_id, kind=pick.kind, reason=reason, mark=mark, failed=failed
+        episode_id=pick.episode_id,
+        kind=pick.kind,
+        decision=triage.decision,
+        reason=plain_reason(triage),
+        mark=mark,
+        failed=failed,
     )

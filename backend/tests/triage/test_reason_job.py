@@ -1,5 +1,6 @@
-"""Spark's Reasons are written in the background: queued on request, after a Run and when a visual
-job finishes, for every Reject and Needs review whose inputs have no Reason yet."""
+"""Spark's Reasons are written in the background: queued on request, after a Run, calibrating,
+accepting a threshold suggestion or saving a review label, and when a visual job finishes, for
+every Reject and Needs review whose inputs have no Reason yet and none being written."""
 
 import time
 from collections.abc import Iterator
@@ -7,13 +8,14 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.helpers import ask_visual, reference_label, track_cleanly, wait_for_job
+from tests.helpers import app_context, ask_visual, reference_label, track_cleanly, wait_for_job
 from tests.rubric.scripted import ScriptedCompile, criterion, phrase
 from tests.triage.scripted import ScriptedReason
 from winnow.app import create_app
 from winnow.baseline.prompts import FROZEN
 from winnow.cli import main
 from winnow.core.settings import Settings
+from winnow.jobs.models import WorkItem
 
 NEVER_DROPS = FROZEN.phrases[1]
 KEPT, UNSURE, REJECTED = "droid_100:0", "droid_100:1", "droid_100:2"
@@ -72,20 +74,36 @@ def test_a_finished_visual_job_queues_a_reason_for_each_reject_and_needs_review(
 def test_asking_again_queues_only_episodes_whose_reason_is_out_of_date(
     written: TestClient,
 ):
-    first = finished_reason_job(written)
+    finished_reason_job(written)
+
     again = written.post("/api/reasons")
+
     assert (again.status_code, again.json()) == (202, {"job_id": None})
 
-    label = {"phrase": NEVER_DROPS, "value": "fail", "source": "review"}
-    written.post(f"/api/episodes/{UNSURE}/labels", json=label)
-    assert triage(written, UNSURE)["reason_source"] == "template"
-    started = written.post("/api/reasons")
 
-    assert started.status_code == 202
-    job = wait_for_job(written, started.json()["job_id"])
-    assert int(str(job["id"])) > int(str(first["id"]))
+def test_saving_a_review_label_queues_the_reason_it_puts_out_of_date(written: TestClient):
+    first = finished_reason_job(written)
+
+    label = {"phrase": NEVER_DROPS, "value": "fail", "source": "review"}
+    assert written.post(f"/api/episodes/{UNSURE}/labels", json=label).status_code == 201
+
+    job = finished_reason_job(written, after=int(str(first["id"])))
     assert labels(job) == {UNSURE}
     assert triage(written, UNSURE)["reason_source"] == "spark"
+
+
+def test_a_reason_being_written_is_not_queued_again(settings: Settings, spark: ScriptedReason):
+    with TestClient(create_app(settings, transport=spark)) as api:
+        job = api.post("/api/episodes/ingest", json={"source": "droid_100", "indices": [2]})
+        wait_for_job(api, job.json()["job_id"])
+        reference_label(api, REJECTED)
+        jobs = app_context(api).jobs
+        writing = jobs.create("reason", [WorkItem("reason", {"episode_id": REJECTED}, REJECTED)])
+
+        assert api.post("/api/reasons").json() == {"job_id": None}
+
+        jobs.set_status(writing, 0, "done", None)  # no longer in flight: out of date again
+        assert api.post("/api/reasons").json()["job_id"] is not None
 
 
 def test_an_answer_citing_a_time_not_given_keeps_the_template(
