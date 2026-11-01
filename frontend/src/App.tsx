@@ -4,6 +4,7 @@ import { Sidebar } from "./features/core/Sidebar";
 import { PreparePage } from "./features/dataset/PreparePage";
 import { EpisodesPage } from "./features/episodes/EpisodesPage";
 import { EvaluationPage } from "./features/evaluation/EvaluationPage";
+import { ExportPage } from "./features/export/ExportPage";
 import { ReferenceLabelsPage } from "./features/referenceLabels/ReferenceLabelsPage";
 import { ReviewPage } from "./features/review/ReviewPage";
 import { DescribePage } from "./features/rubric/DescribePage";
@@ -21,6 +22,7 @@ export function App() {
         {page === "episodes" && <EpisodesPage />}
         {page === "review" && <ReviewPage />}
         {page === "audit" && <AuditPage />}
+        {page === "export" && <ExportPage />}
         {page === "reference" && <ReferenceLabelsPage />}
         {page === "evaluation" && <EvaluationPage />}
       </main>

@@ -2,12 +2,13 @@
 // has a Reference label; until then it's awaiting one and has no Triage decision), filterable by
 // Phrase, Uncertainty signal and set, and sortable by confidence or quality; a row opens the
 // full-page Workstation. The tab, filters, sort, open Episode and its start time live in the URL;
-// J/K step through the Episodes shown. Export writes out the kept ones.
+// J/K step through the Episodes shown. Export opens the Export page.
+import { Button } from "@/components/ui/button";
+
 import { NextStep } from "../core/NextStep";
+import { goTo } from "../core/pages";
 import { Page, PageHeader } from "../core/PageHeader";
 import { navigate, useSearchParams } from "../core/url";
-import { ExportButton } from "../export/ExportButton";
-import { ExportStatus } from "../export/ExportStatus";
 import { AwaitingLabelBanner } from "../referenceLabels/AwaitingLabel";
 import { useRubric } from "../rubric/useRubric";
 import { setsByEpisode, useSets } from "../sets/useSets";
@@ -78,6 +79,21 @@ function OpenEpisode(props: { episode: Episode; ids: string[]; t: string | null 
   );
 }
 
+function ExportLink() {
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      title="Write the kept Episodes in LeRobot format, with a Reason for each one left out"
+      onClick={() => {
+        goTo("export");
+      }}
+    >
+      Export
+    </Button>
+  );
+}
+
 export function EpisodesPage() {
   const params = useSearchParams();
   const tab = parseTriageTab(params.get("triage"));
@@ -97,8 +113,7 @@ export function EpisodesPage() {
 
   return (
     <Page width="content">
-      <PageHeader title="Episodes" subtitle={summary} actions={<ExportButton />} />
-      <ExportStatus />
+      <PageHeader title="Episodes" subtitle={summary} actions={<ExportLink />} />
       {episodes.length === 0 && loaded && (
         <NextStep page="prepare" action="Go to Prepare">
           No Episodes yet: ingest some on the Prepare page.
