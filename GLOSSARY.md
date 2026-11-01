@@ -53,7 +53,7 @@ Why a Criterion result is unsure rather than pass or fail, e.g. a measurement ne
 _Avoid_: Flag, warning
 
 **Margin multiplier**:
-The one number, s, that widens or narrows every measured and tracked Criterion's margin: effective margin = max(noise floor, interview gap) × s. It is 1 until calibration tunes it on the Dev set's interview and review labels, per Rubric version (a new version starts at 1 again), and is shown as "s = 1.0 · tuned on N labels", never as a guarantee.
+The one number, s, that widens or narrows every measured and tracked Criterion's margin: effective margin = max(noise floor, interview gap) × s. It is 1 until calibration tunes it on the Dev set's interview and review labels, per Rubric version (a new version from Run starts at 1 again; one made by accepting a Threshold suggestion keeps the s the suggestion was made at), and is shown as "s = 1.0 · tuned on N labels", never as a guarantee.
 _Avoid_: Scale, temperature, tolerance
 
 **Threshold suggestion**:

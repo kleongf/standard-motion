@@ -101,12 +101,21 @@ def _draft_change(
     )
 
 
+def _keep_calibration(ctx: AppContext, source: int, target: int) -> None:
+    record = ctx.calibrations.latest(source)
+    if record is not None:
+        ctx.calibrations.add(
+            target, record.s, record.n_labels, record.errors, record.bound_met, record.unstable
+        )
+
+
 def accept_suggestion(ctx: AppContext, criterion_id: str) -> AcceptedSuggestion:
     """Freezes the latest Rubric version with the threshold and margin labels suggest for
-    `criterion_id` as the next version, which starts at s = 1, and carries them into the draft
-    so the next Run keeps them, unless the draft's Criterion now checks something else. The
-    suggested value is no longer an assumption. Both writes happen together or not at all.
-    Raises NoSuggestionError when labels suggest nothing for it now."""
+    `criterion_id` as the next version, and carries them into the draft so the next Run keeps
+    them, unless the draft's Criterion now checks something else. The suggestion was made at the
+    version's s, so the new version keeps its calibration, if it has one (a Run's version starts
+    at s = 1). The suggested value is no longer an assumption. Every write happens together or
+    not at all. Raises NoSuggestionError when labels suggest nothing for it now."""
     version = ctx.rubrics.latest()
     found = next((x for x in calibration(ctx).suggestions if x.criterion_id == criterion_id), None)
     if found is None:
@@ -125,6 +134,7 @@ def accept_suggestion(ctx: AppContext, criterion_id: str) -> AcceptedSuggestion:
     with ctx.db:
         ctx.db.execute("BEGIN IMMEDIATE")
         added = ctx.rubrics.add(rubric.model_copy(update={"criteria": criteria}))
+        _keep_calibration(ctx, version.version, added.version)
         if draft is not None:
             ctx.drafts.save(draft)
     queue_reasons(ctx)

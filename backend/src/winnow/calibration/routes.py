@@ -46,7 +46,7 @@ async def post_calibration_run(ctx: Context) -> Calibration:
 )
 async def post_accept_suggestion(criterion_id: str, ctx: Context) -> AcceptedSuggestion:
     """Freezes the latest Rubric version with the suggested threshold and margin as the next
-    version, which starts at s = 1 until calibrated, and applies them to the draft too unless
+    version, which keeps the s it was calibrated with, and applies them to the draft too unless
     the draft's Criterion now compares differently; the reply says which."""
     try:
         return accept_suggestion(ctx, criterion_id)

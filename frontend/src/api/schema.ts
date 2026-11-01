@@ -139,7 +139,7 @@ export interface paths {
         /**
          * Post Accept Suggestion
          * @description Freezes the latest Rubric version with the suggested threshold and margin as the next
-         *     version, which starts at s = 1 until calibrated, and applies them to the draft too unless
+         *     version, which keeps the s it was calibrated with, and applies them to the draft too unless
          *     the draft's Criterion now compares differently; the reply says which.
          */
         post: operations["post_accept_suggestion_api_calibration_suggestions__criterion_id__accept_post"];
