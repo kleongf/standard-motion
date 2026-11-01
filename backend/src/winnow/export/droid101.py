@@ -22,6 +22,16 @@ def _only(table: pa.Table, indices: list[int]) -> pa.Table:
     return table.take(pa.array(order, type=pa.int64()))
 
 
+def _same(clip: Path, source: str, start: float, length: int) -> bool:
+    """Whether `clip` holds `length` frames, its first and last the source's from `start`."""
+    if probe(clip)[0] != length:
+        return False
+    last = (length - 1) / FPS
+    return all(
+        frame_checksum(str(clip), t) == frame_checksum(source, start + t) for t in (0.0, last)
+    )
+
+
 class Droid101Export:
     fps: float = FPS
 
@@ -62,18 +72,15 @@ class Droid101Export:
         return _only(self._data[1], [int(row["episode_index"])])
 
     def write_video(self, row: Mapping[str, Any], key: str, out: Path) -> float:
-        """A stream copy of the Episode's stretch; re-encoded instead (as lossless H.264, so
-        every frame decodes the same) if the copy came out short of any of its frames or doesn't
-        start on the Episode's first one."""
+        """A stream copy of exactly the Episode's frames; re-encoded instead (as lossless H.264,
+        so every frame decodes the same) if it doesn't start on a keyframe, or the copy came out
+        with another number of frames or another first or last frame than the source's."""
         prefix = f"videos/{key}"
         path = VIDEO.format(
             key=key, chunk=row[f"{prefix}/chunk_index"], file=row[f"{prefix}/file_index"]
         )
         source, start = self._files.video_input(path), float(row[f"{prefix}/from_timestamp"])
         length = int(row["length"])
-        offset = copy_cut(source, start, length / FPS, out)
-        whole = probe(out)[0] >= round(offset * FPS) + length
-        if whole and frame_checksum(str(out), offset) == frame_checksum(source, start):
-            return offset
-        cut_h264(source, start, length, out, lossless=True)
+        if not (copy_cut(source, start, length, out) and _same(out, source, start, length)):
+            cut_h264(source, start, length, out, lossless=True)
         return 0.0

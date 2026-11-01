@@ -2,7 +2,6 @@
 Reason beside it. The Test set is never exported."""
 
 import json
-import subprocess
 from collections.abc import Iterator
 from pathlib import Path
 from typing import cast
@@ -13,13 +12,13 @@ import pyarrow.parquet as pq
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.helpers import app_context, reference_label, wait_for_job
+from tests.helpers import app_context, decoded, reference_label, wait_for_job
 from winnow.app import create_app
 from winnow.baseline.prompts import FROZEN
 from winnow.cli import main
 from winnow.core.settings import Settings
 from winnow.episodes.droid100 import CAMERAS
-from winnow.episodes.droid101 import Droid101
+from winnow.episodes.droid101 import CAMERA_KEYS, FPS, Droid101
 from winnow.episodes.droid101_files import LocalFiles
 from winnow.episodes.fixtures import clip_path
 from winnow.episodes.models import EpisodeSignals
@@ -32,6 +31,7 @@ DROID100 = [0, 1, 2, 4]  # 0 grasps cleanly, 1 releases high, 2 regrasps, 4 neve
 DROID101 = [0, 1, 2, 3]  # each grasps cleanly
 TEST_SET = ["droid_1.0.1:1", "droid_100:0"]  # kept, but never exported
 UNLABELLED = "droid_1.0.1:3"  # its Triage decision stays hidden, so it isn't exported
+KEPT_101 = [0, 2]  # the droid_1.0.1 Episodes exported, in order
 NEVER_DROPS = FROZEN.phrases[1]
 
 
@@ -76,17 +76,6 @@ def exported(api: TestClient, tmp_path_factory: pytest.TempPathFactory) -> Path:
     return out
 
 
-def decoded(clip: Path) -> list[str]:
-    """Each decoded frame's checksum."""
-    out = subprocess.run(
-        ["ffmpeg", "-loglevel", "error", "-i", str(clip), "-f", "framemd5", "-"],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
-    return [line.rsplit(",", 1)[1].strip() for line in out.splitlines() if not line.startswith("#")]
-
-
 def assert_same_signals(exported: EpisodeSignals, source: EpisodeSignals) -> None:
     assert exported.fps == source.fps
     assert exported.dataset_outcome == source.dataset_outcome
@@ -117,6 +106,33 @@ def test_droid101_exports_only_kept_episodes_the_reader_loads_unchanged(
             frames = decoded(tmp_path / f"ours-{new}-{camera}.mp4")
             assert len(frames) == source.meta(old).length
             assert frames == decoded(tmp_path / f"theirs-{new}-{camera}.mp4")
+
+
+def episodes_of(export: Path) -> list[dict[str, object]]:
+    path = export / "meta" / "episodes" / "chunk-000" / "file-000.parquet"
+    return pq.read_table(path).to_pylist()  # pyright: ignore[reportUnknownMemberType]
+
+
+def test_every_exported_clip_holds_exactly_its_episodes_frames(
+    exported: Path, droid100_root: Path, droid101_root: Path
+):
+    # droid_1.0.1 Episodes share a video per camera: each clip is its own stretch, no more.
+    source = Droid101(LocalFiles(droid101_root))
+    for row, old in zip(episodes_of(exported / "droid_1.0.1"), KEPT_101, strict=True):
+        new, length = int(str(row["episode_index"])), source.meta(old).length
+        for key in CAMERA_KEYS.values():
+            video = f"videos/observation.images.{key}"
+            assert row[f"{video}/from_timestamp"] == 0.0
+            shared = decoded(droid101_root / video / "chunk-000" / "file-000.mp4")
+            start = round(float(source.meta(old).row[f"{video}/from_timestamp"]) * FPS)
+            clip = exported / "droid_1.0.1" / video / "chunk-000" / f"file-{new:03d}.mp4"
+            assert decoded(clip) == shared[start : start + length]
+    # droid_100's are copies of the Episode's own clip.
+    [row] = episodes_of(exported / "droid_100")
+    for camera in CAMERAS:
+        clip = exported / "droid_100" / "videos" / f"observation.images.{camera}" / "chunk-000"
+        assert decoded(clip / "file-000.mp4") == decoded(clip_path(droid100_root, 1, camera))
+        assert len(decoded(clip / "file-000.mp4")) == row["length"]
 
 
 def test_droid100_exports_every_column_of_its_kept_episode_renumbered(

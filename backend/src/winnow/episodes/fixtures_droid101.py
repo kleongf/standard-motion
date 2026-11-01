@@ -1,5 +1,7 @@
 """Synthetic droid_1.0.1-layout Episodes: meta/episodes and data parquet, and one shared mp4
-per camera holding every Episode back to back, as the real dataset stores them."""
+per camera holding every Episode back to back, as the real dataset stores them: LeRobot encodes
+each Episode on its own and joins them, so each starts on a keyframe, and droid_1.0.1's AV1 has
+one every 2 frames and no B-frames."""
 
 from pathlib import Path
 
@@ -56,7 +58,18 @@ def _data(lengths: tuple[int, ...]) -> pa.Table:
     return pa.table(rows)  # pyright: ignore[reportUnknownMemberType]
 
 
-def write_droid101_fixture(root: Path, lengths: tuple[int, ...] = LENGTHS) -> Path:
+def _keyframes(lengths: tuple[int, ...]) -> list[str]:
+    """x264 options for a keyframe every 2 frames and on each Episode's first, no B-frames."""
+    starts = np.concatenate([[0], np.cumsum(lengths)[:-1]])
+    forced = "+".join(f"eq(n,{int(s)})" for s in starts)
+    return ["-g", "2", "-bf", "0", "-force_key_frames", f"expr:{forced}"]
+
+
+def write_droid101_fixture(
+    root: Path, lengths: tuple[int, ...] = LENGTHS, episode_keyframes: bool = True
+) -> Path:
+    """Without `episode_keyframes`, the shared videos are encoded in one go with x264's defaults:
+    their only keyframe is the first."""
     for folder, table in (
         ("meta/episodes/chunk-000", _meta(lengths)),
         ("data/chunk-000", _data(lengths)),
@@ -67,5 +80,5 @@ def write_droid101_fixture(root: Path, lengths: tuple[int, ...] = LENGTHS) -> Pa
         CAMERA_KEYS.values(), ("testsrc", "testsrc2", "smptebars"), strict=True
     ):
         path = root / "videos" / f"observation.images.{key}" / "chunk-000" / "file-000.mp4"
-        write_clip(path, sum(lengths), pattern)
+        write_clip(path, sum(lengths), pattern, *(_keyframes(lengths) if episode_keyframes else []))
     return root
