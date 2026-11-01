@@ -14,7 +14,8 @@ export function ExportButton() {
   const job = useLatestJob("export").data;
   const start = useStartExport();
   const scope = useExportScope();
-  const [unlabelled, setUnlabelled] = useState<number | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [unlabelled, setUnlabelled] = useState(0); // kept while the warning closes
   const running = job ? !job.finished : false;
   const run = () => {
     start.mutate();
@@ -28,19 +29,19 @@ export function ExportButton() {
         title="Write the kept Episodes in LeRobot format, with a Reason for each one left out"
         onClick={() => {
           void scope.refetch().then(({ data }) => {
-            if (data && data.unlabelled > 0) setUnlabelled(data.unlabelled);
-            else if (data) run();
+            if (!data) return;
+            setUnlabelled(data.unlabelled);
+            if (data.unlabelled > 0) setConfirming(true);
+            else run();
           });
         }}
       >
         Export
       </Button>
       <ConfirmExport
-        open={unlabelled !== null}
-        unlabelled={unlabelled ?? 0}
-        onOpenChange={(open) => {
-          if (!open) setUnlabelled(null);
-        }}
+        open={confirming}
+        unlabelled={unlabelled}
+        onOpenChange={setConfirming}
         onConfirm={run}
       />
     </>
