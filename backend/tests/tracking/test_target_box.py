@@ -176,10 +176,11 @@ def test_the_target_is_the_selection_passs_else_the_instructions(scripted_api: T
     assert episode_target(with_one.model_copy(update={"task_target": "bowl"})) == "bowl"
 
 
-def test_an_instruction_the_labeller_writes_prompts_the_target_box_again(
+def test_an_instruction_the_labeller_writes_queues_the_baseline_and_the_target_box(
     scripted_api: TestClient, sam: ScriptedSam
 ):
     save_box(scripted_api, "droid_100:2")
+    asked = (sam.spark.baseline_calls, sam.spark.failbench_calls)  # Episodes 0 and 1 at ingest
     phrases = scripted_api.get("/api/reference-labels/description").json()["phrases"]
     label = {
         "phrases": [{"phrase": p, "passed": True, "interval": None} for p in phrases],
@@ -195,3 +196,9 @@ def test_an_instruction_the_labeller_writes_prompts_the_target_box_again(
     assert call.prompt == "pot"
     target = target_of(scripted_api, "droid_100:2")
     assert target is not None and (target["status"], target["target"]) == ("found", "pot")
+    # Skipped at ingest without an instruction, the baseline runs now, with the one written.
+    baseline = scripted_api.get("/api/jobs/latest", params={"kind": "baseline"}).json()
+    item = step_item(wait_for_job(scripted_api, baseline["id"]), "baseline")
+    assert (item["label"], item["status"], item["detail"]) == ("droid_100:2", "done", None)
+    assert (sam.spark.baseline_calls, sam.spark.failbench_calls) == (asked[0] + 3, asked[1] + 1)
+    assert all("Put the marker in the pot" in p for p in sam.spark.prompts[-4:])

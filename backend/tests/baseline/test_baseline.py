@@ -9,7 +9,7 @@ from tests.conftest import CORRUPT_EPISODE
 from tests.helpers import app_context, wait_for_job
 from winnow.app import create_app
 from winnow.baseline.prompts import FROZEN_DESCRIPTION, Description
-from winnow.baseline.service import run_baseline
+from winnow.baseline.service import SKIPPED_NO_INSTRUCTION, run_baseline
 from winnow.core.settings import Settings
 
 
@@ -91,6 +91,18 @@ def test_no_baseline_without_its_episode(app_api: TestClient, spark: ScriptedSpa
     assert [i["status"] for i in job["items"]] == ["failed"] * 3  # type: ignore[union-attr]
     assert job["items"][1]["detail"] == f"skipped: droid_100:{CORRUPT_EPISODE} failed"  # type: ignore[index]
     assert spark.baseline_calls == 0
+
+
+def test_an_episode_without_an_instruction_is_not_judged_until_it_has_one(
+    app_api: TestClient, spark: ScriptedSpark
+):
+    job = ingest(app_api, 2)  # the fixture's Episode 2 has no instruction
+
+    baseline_item = job["items"][1]  # type: ignore[index]
+    assert (baseline_item["status"], baseline_item["detail"]) == ("done", SKIPPED_NO_INSTRUCTION)
+    assert (spark.baseline_calls, spark.failbench_calls) == (0, 0)
+    answers = app_context(app_api).baseline.answers("droid_100:2", FROZEN_DESCRIPTION)
+    assert (answers.samples, answers.failbench) == ([], None)
 
 
 def test_no_response_the_ui_reads_shows_a_baseline_result(app_api: TestClient):
