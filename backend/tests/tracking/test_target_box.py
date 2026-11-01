@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from tests.helpers import app_context, wait_for_job
 from tests.tracking.boxing import BOX, EXTERIOR_2, save_box
 from tests.tracking.scripted_sam import SAMPLE_BOX, ScriptedSam
-from winnow.tracking.target import chosen_target_box
+from winnow.tracking.target import chosen_target_box, episode_target
 
 # Fixture instructions: Episode 0 "Put the marker in the pot", Episode 1 "Move the black remote
 # control to the left" (a direction, no target), Episode 2 none.
@@ -150,6 +150,30 @@ def test_without_meta_a_target_box_can_still_be_drawn(api: TestClient):
     target = target_of(api, "droid_100:0")
     assert target is not None and (target["origin"], target["target"]) == ("hand", "pot")
     assert api.get("/api/dataset").json()["target_boxes"] == 1
+
+
+def test_the_selection_passs_target_prompts_sam_without_an_instruction(
+    scripted_api: TestClient, sam: ScriptedSam
+):
+    app_context(scripted_api).episodes.set_task("droid_100:2", "marker", "pot")
+
+    save_box(scripted_api, "droid_100:2")
+
+    [call] = sam.made("000002/exterior_image_2_left.frame0.mp4")
+    assert call.prompt == "pot"
+    target = target_of(scripted_api, "droid_100:2")
+    assert target is not None and (target["status"], target["target"]) == ("found", "pot")
+
+
+def test_the_target_is_the_selection_passs_else_the_instructions(scripted_api: TestClient):
+    episodes = app_context(scripted_api).episodes
+    no_instruction, with_one = episodes.get("droid_100:2"), episodes.get("droid_100:0")
+    assert no_instruction is not None and with_one is not None
+
+    assert episode_target(no_instruction) is None
+    assert episode_target(with_one) == "pot"
+    assert episode_target(no_instruction.model_copy(update={"task_target": "bowl"})) == "bowl"
+    assert episode_target(with_one.model_copy(update={"task_target": "bowl"})) == "bowl"
 
 
 def test_an_instruction_the_labeller_writes_prompts_the_target_box_again(

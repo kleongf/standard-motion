@@ -1,8 +1,8 @@
 """The target box: where the object should end up, on frame 0 of the hand-drawn box's view.
 
-The `target_box` step asks SAM for the instruction's target with a text prompt on that one frame,
-with no track. The curator can draw it instead, and a drawn one wins: `chosen_target_box` is what
-Prepare, the Workstation and scoring read.
+The `target_box` step asks SAM for the target (the selection pass's, else the instruction's) with
+a text prompt on that one frame, with no track. The curator can draw it instead, and a drawn one
+wins: `chosen_target_box` is what Prepare, the Workstation and scoring read.
 """
 
 import asyncio
@@ -29,11 +29,11 @@ SAM_METADATA = {"include_confidence": "true"}
 
 
 def episode_target(episode: Episode) -> str | None:
-    """The words to prompt SAM with: the selection pass's target where it named one, else the
-    instruction's."""
-    if episode.instruction is None:
-        return None
-    return episode.task_target or target_words(episode.instruction)
+    """The words to prompt SAM with: the selection pass's target where it named one, with or
+    without an instruction, else the instruction's; None with neither."""
+    if episode.task_target:
+        return episode.task_target
+    return target_words(episode.instruction) if episode.instruction else None
 
 
 def chosen_target_box(targets: TargetBoxStore, box: Box) -> TargetBox | None:
@@ -101,7 +101,7 @@ async def find_target_box(
     meta: MetaClient, targets: TargetBoxStore, episodes: EpisodeStore, episode: Episode, box: Box
 ) -> str | None:
     target = episode_target(episode)
-    if episode.instruction is None:
+    if target is None and episode.instruction is None:
         targets.save(_target_box(box, "no_instruction", None, None))
         return "no instruction: no target prompt"
     if target is None:
