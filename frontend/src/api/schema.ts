@@ -1959,6 +1959,8 @@ export interface components {
         Health: {
             /** Meta Api Key Configured */
             meta_api_key_configured: boolean;
+            /** Meta Available */
+            meta_available: boolean;
             /**
              * Status
              * @constant
