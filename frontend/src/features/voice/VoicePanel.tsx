@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 import { useHealth } from "../core/useHealth";
 import type { Playhead } from "../episodes/usePlayhead";
-import type { StartCapture } from "./capture";
+import { useMicrophoneOn, type KeptMicrophone } from "./useMicrophone";
 import { usePushToTalk, type TalkPhase } from "./usePushToTalk";
 import { useVoiceTurn, type VoiceTurn } from "./useVoice";
 import { VoiceChips, type HeardChip } from "./VoiceChips";
@@ -20,7 +20,8 @@ interface Props {
   saving: boolean;
   /** Saves the chip's answer as a `review` label; the chip leaves once it resolves. */
   onConfirm: (phrase: string, value: HeardChip["value"]) => Promise<unknown>;
-  start?: StartCapture; // the microphone; tests pass a fake one
+  /** The page's microphone (`useMicrophone`), kept open across Episodes between turns. */
+  microphone: KeptMicrophone;
 }
 
 /** Shown only when the Meta API (or a replay of it) can hear a turn: without it, V does
@@ -70,14 +71,18 @@ function useHeardTurns(episodeId: string) {
 function Voice(props: Props) {
   const { playhead } = props;
   const turns = useHeardTurns(props.episodeId);
-  const talk = usePushToTalk({ t: playhead.t, onTurn: turns.onTurn, start: props.start });
+  const talk = usePushToTalk({
+    t: playhead.t,
+    onTurn: turns.onTurn,
+    microphone: props.microphone,
+  });
   // A Phrase answered another way is no longer unsure: its chip goes with it.
   const shown = turns.chips.filter((c) => props.unsure.includes(c.phrase));
   const error = talk.error ?? turns.error;
 
   return (
     <section aria-label="Voice" className="-mt-2 mb-5 rounded-md border p-3">
-      <TalkButton talk={talk} hearing={turns.hearing} />
+      <TalkButton talk={talk} hearing={turns.hearing} microphone={props.microphone} />
       {turns.heard !== null && (
         <p className="mt-2 text-xs text-muted-foreground" data-testid="voice-heard">
           Heard: “{turns.heard}”
@@ -118,25 +123,39 @@ const TALK_LABEL: Record<TalkPhase, string> = {
 function TalkButton(props: {
   talk: { phase: TalkPhase; press: () => void; release: () => void };
   hearing: boolean;
+  microphone: KeptMicrophone;
 }) {
   const { talk } = props;
+  const micOn = useMicrophoneOn(props.microphone);
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        size="sm"
-        variant={talk.phase === "idle" ? "outline" : "default"}
-        aria-pressed={talk.phase !== "idle"}
-        onPointerDown={talk.press}
-        onPointerUp={talk.release}
-        onPointerLeave={talk.release}
-      >
-        <Mic />
-        <span>{TALK_LABEL[talk.phase]}</span>
-        <kbd className="text-muted-foreground">V</kbd>
-      </Button>
-      <span className="text-xs text-muted-foreground" role="status">
-        {props.hearing ? "Hearing…" : "Narrate while it plays"}
-      </span>
-    </div>
+    <>
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant={talk.phase === "idle" ? "outline" : "default"}
+          aria-pressed={talk.phase !== "idle"}
+          onPointerDown={talk.press}
+          onPointerUp={talk.release}
+          onPointerLeave={talk.release}
+        >
+          <Mic />
+          <span>{TALK_LABEL[talk.phase]}</span>
+          <kbd className="text-muted-foreground">V</kbd>
+        </Button>
+        <span className="text-xs text-muted-foreground" role="status">
+          {props.hearing ? "Hearing…" : "Narrate while it plays"}
+        </span>
+      </div>
+      {micOn && (
+        <p
+          className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"
+          title="It stays open between turns, so each press records at once, and closes after 2 minutes without a turn or when you leave Review"
+          data-testid="mic-on"
+        >
+          <span aria-hidden className="size-1.5 rounded-full bg-red-500" />
+          Mic on · closes after 2 min idle
+        </p>
+      )}
+    </>
   );
 }

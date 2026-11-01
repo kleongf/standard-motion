@@ -9,6 +9,7 @@ import { navigate, useSearchParams } from "../core/url";
 import { useEpisodes, type Episode } from "../episodes/useEpisodes";
 import { Workstation } from "../episodes/Workstation";
 import { useSaveLabel } from "../labels/useLabels";
+import { useMicrophone, type KeptMicrophone } from "../voice/useMicrophone";
 import { VoicePanel } from "../voice/VoicePanel";
 import { UpNext } from "./UpNext";
 import { useReviewQueue, type ReviewItem } from "./useReview";
@@ -21,6 +22,8 @@ export function ReviewPage() {
   const items = queue.data?.items ?? [];
   const current = items.find((i) => i.episode_id === params.get("episode")) ?? items[0];
   const episode = current && episodes.get(current.episode_id);
+  // The page's, not the Workstation's: it stays open from one Episode to the next.
+  const microphone = useMicrophone();
 
   return (
     <Page width="full">
@@ -30,7 +33,12 @@ export function ReviewPage() {
         <>
           {episode && (
             // Keyed so each Episode starts with its own playhead, focus and save state.
-            <ReviewWorkstation key={episode.id} item={current} episode={episode} />
+            <ReviewWorkstation
+              key={episode.id}
+              item={current}
+              episode={episode}
+              microphone={microphone}
+            />
           )}
           <UpNext
             items={items.filter((i) => i !== current)}
@@ -102,7 +110,11 @@ function ReviewHeader(props: { reviewed: number; left: number; current: ReviewIt
 
 /** The Workstation with "Your call" and Voice in its actions slot; each answer, clicked, keyed
  * or spoken and confirmed, is a `review` label. */
-function ReviewWorkstation(props: { item: ReviewItem; episode: Episode }) {
+function ReviewWorkstation(props: {
+  item: ReviewItem;
+  episode: Episode;
+  microphone: KeptMicrophone;
+}) {
   const { item, episode } = props;
   const save = useSaveLabel();
   const label = (phrase: string, value: Answer) => ({
@@ -129,6 +141,7 @@ function ReviewWorkstation(props: { item: ReviewItem; episode: Episode }) {
             playhead={playhead}
             saving={save.isPending}
             onConfirm={(phrase, value) => save.mutateAsync(label(phrase, value))}
+            microphone={props.microphone}
           />
         </>
       )}

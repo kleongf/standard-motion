@@ -1,28 +1,45 @@
 import { act, fireEvent, renderHook } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 
-import type { Capture, StartCapture } from "./capture";
+import type { Microphone, OpenMicrophone, Recording } from "./capture";
+import { IDLE_MS, useMicrophone } from "./useMicrophone";
 import { START_TIMEOUT_MS, STOP_TIMEOUT_MS, TOO_SHORT, usePushToTalk } from "./usePushToTalk";
 
-const SECOND = new Blob([new Uint8Array(44 + 32_000)], { type: "audio/wav" });
-const BLIP = new Blob([new Uint8Array(44 + 1600)], { type: "audio/wav" }); // 50 ms
+const WAV = new Blob([new Uint8Array(44 + 32_000)], { type: "audio/wav" });
+const SECOND: Recording = { wav: WAV, heldS: 1 };
+// Held 50 ms: what is sent would be longer, with the pre-roll, but it isn't a word.
+const BLIP: Recording = { wav: WAV, heldS: 0.05 };
 
-/** A microphone that opens at once and goes live with its first chunk, unless told to wait. */
-function fakeMic(turn: Blob = SECOND, options: { live?: boolean } = {}) {
+/** A microphone that opens at once and whose turns go live with their first chunk, unless told
+ * to wait. */
+function fakeMic(turn: Recording = SECOND, options: { live?: boolean } = {}) {
   const stop = vi.fn(() => Promise.resolve(turn));
+  const close = vi.fn(() => Promise.resolve());
   let goLive: () => void = () => undefined;
-  const start = vi.fn((onLive: () => void) => {
+  const record = vi.fn((onLive: () => void) => {
     goLive = onLive;
     if (options.live ?? true) queueMicrotask(onLive);
-    return Promise.resolve<Capture>({ stop });
+    return { stop };
   });
+  const open = vi.fn<OpenMicrophone>(() => Promise.resolve<Microphone>({ record, close }));
   return {
-    start,
+    open,
+    record,
     stop,
+    close,
     goLive: () => {
       goLive();
     },
   };
+}
+
+/** Push-to-talk with its own kept microphone, as the Review page gives it one. */
+function renderTalk(open: OpenMicrophone, onTurn = vi.fn(), t = 0) {
+  return renderHook(
+    (props: { t: number }) =>
+      usePushToTalk({ t: props.t, onTurn, microphone: useMicrophone(open) }),
+    { initialProps: { t } },
+  );
 }
 
 async function settle() {
@@ -42,10 +59,7 @@ afterEach(() => {
 test("holding V records a turn whose moment is the playhead when V went down", async () => {
   const mic = fakeMic();
   const onTurn = vi.fn();
-  const { result, rerender } = renderHook(
-    (props: { t: number }) => usePushToTalk({ t: props.t, onTurn, start: mic.start }),
-    { initialProps: { t: 2.5 } },
-  );
+  const { result, rerender } = renderTalk(mic.open, onTurn, 2.5);
 
   holdV();
   await settle();
@@ -55,12 +69,12 @@ test("holding V records a turn whose moment is the playhead when V went down", a
   await settle();
 
   expect(result.current.phase).toBe("idle");
-  expect(onTurn).toHaveBeenCalledExactlyOnceWith(SECOND, 2.5);
+  expect(onTurn).toHaveBeenCalledExactlyOnceWith(WAV, 2.5);
 });
 
 test("Listening waits for the microphone's first audio; until then it is opening", async () => {
   const mic = fakeMic(SECOND, { live: false });
-  const { result } = renderHook(() => usePushToTalk({ t: 0, onTurn: vi.fn(), start: mic.start }));
+  const { result } = renderTalk(mic.open);
 
   holdV();
   await settle();
@@ -74,33 +88,33 @@ test("Listening waits for the microphone's first audio; until then it is opening
 
 test("a held key's repeats start no second turn", async () => {
   const mic = fakeMic();
-  renderHook(() => usePushToTalk({ t: 0, onTurn: vi.fn(), start: mic.start }));
+  renderTalk(mic.open);
 
   holdV();
   fireEvent.keyDown(globalThis.window, { key: "v", code: "KeyV", repeat: true });
   holdV();
   await settle();
 
-  expect(mic.start).toHaveBeenCalledTimes(1);
+  expect(mic.record).toHaveBeenCalledTimes(1);
 });
 
 test("V while typing, or with a modifier, is left alone", () => {
   const mic = fakeMic();
-  renderHook(() => usePushToTalk({ t: 0, onTurn: vi.fn(), start: mic.start }));
+  renderTalk(mic.open);
   const input = document.createElement("input");
   document.body.append(input);
 
   fireEvent.keyDown(input, { key: "v", code: "KeyV" });
   fireEvent.keyDown(globalThis.window, { key: "v", code: "KeyV", metaKey: true });
 
-  expect(mic.start).not.toHaveBeenCalled();
+  expect(mic.open).not.toHaveBeenCalled();
   input.remove();
 });
 
 test("pressing and releasing the button records a turn too", async () => {
   const mic = fakeMic();
   const onTurn = vi.fn();
-  const { result } = renderHook(() => usePushToTalk({ t: 1, onTurn, start: mic.start }));
+  const { result } = renderTalk(mic.open, onTurn, 1);
 
   act(() => {
     result.current.press();
@@ -111,13 +125,13 @@ test("pressing and releasing the button records a turn too", async () => {
   });
   await settle();
 
-  expect(onTurn).toHaveBeenCalledExactlyOnceWith(SECOND, 1);
+  expect(onTurn).toHaveBeenCalledExactlyOnceWith(WAV, 1);
 });
 
 test("a turn too short to hold a word says so and sends nothing", async () => {
   const mic = fakeMic(BLIP);
   const onTurn = vi.fn();
-  const { result } = renderHook(() => usePushToTalk({ t: 0, onTurn, start: mic.start }));
+  const { result } = renderTalk(mic.open, onTurn);
 
   holdV();
   await settle();
@@ -130,10 +144,10 @@ test("a turn too short to hold a word says so and sends nothing", async () => {
   expect(TOO_SHORT).toBe("Too short to hear: hold V while you talk");
 });
 
-test("letting go before the microphone is live is too short, and closes it", async () => {
+test("letting go before the microphone is live is too short, and ends the turn", async () => {
   const mic = fakeMic(SECOND, { live: false });
   const onTurn = vi.fn();
-  const { result } = renderHook(() => usePushToTalk({ t: 0, onTurn, start: mic.start }));
+  const { result } = renderTalk(mic.open, onTurn);
 
   holdV();
   releaseV();
@@ -145,8 +159,8 @@ test("letting go before the microphone is live is too short, and closes it", asy
 });
 
 test("a microphone that can't be opened is reported", async () => {
-  const start = vi.fn<StartCapture>(() => Promise.reject(new Error("Permission denied")));
-  const { result } = renderHook(() => usePushToTalk({ t: 0, onTurn: vi.fn(), start }));
+  const open = vi.fn<OpenMicrophone>(() => Promise.reject(new Error("Permission denied")));
+  const { result } = renderTalk(open);
 
   holdV();
   await settle();
@@ -157,9 +171,9 @@ test("a microphone that can't be opened is reported", async () => {
 
 test("a microphone that never opens times out with a message", async () => {
   vi.useFakeTimers();
-  const start = vi.fn<StartCapture>(() => new Promise<Capture>(() => undefined));
+  const open = vi.fn<OpenMicrophone>(() => new Promise<Microphone>(() => undefined));
   const onTurn = vi.fn();
-  const { result } = renderHook(() => usePushToTalk({ t: 0, onTurn, start }));
+  const { result } = renderTalk(open, onTurn);
 
   holdV();
   await act(async () => {
@@ -176,7 +190,7 @@ test("a microphone that never opens times out with a message", async () => {
 test("a microphone that opens but never sends audio times out and is closed", async () => {
   vi.useFakeTimers();
   const mic = fakeMic(SECOND, { live: false });
-  const { result } = renderHook(() => usePushToTalk({ t: 0, onTurn: vi.fn(), start: mic.start }));
+  const { result } = renderTalk(mic.open);
 
   holdV();
   await act(async () => {
@@ -185,17 +199,15 @@ test("a microphone that opens but never sends audio times out and is closed", as
 
   expect(result.current.error).toMatch(/^The microphone didn't start/);
   expect(mic.stop).toHaveBeenCalled();
+  expect(mic.close).toHaveBeenCalled();
 });
 
 test("a microphone that never stops times out with a message", async () => {
   vi.useFakeTimers();
-  const stop = vi.fn(() => new Promise<Blob>(() => undefined));
-  const start = vi.fn((onLive: () => void) => {
-    queueMicrotask(onLive);
-    return Promise.resolve<Capture>({ stop });
-  });
+  const mic = fakeMic();
+  mic.stop.mockImplementation(() => new Promise<Recording>(() => undefined));
   const onTurn = vi.fn();
-  const { result } = renderHook(() => usePushToTalk({ t: 0, onTurn, start }));
+  const { result } = renderTalk(mic.open, onTurn);
 
   holdV();
   await settle();
@@ -206,12 +218,13 @@ test("a microphone that never stops times out with a message", async () => {
 
   expect(result.current.error).toMatch(/^The turn couldn't be recorded/);
   expect(onTurn).not.toHaveBeenCalled();
+  expect(mic.close).toHaveBeenCalled();
 });
 
-test("unmounting mid-turn closes the microphone", async () => {
+test("unmounting mid-turn ends the turn and closes the microphone", async () => {
   const mic = fakeMic();
   const onTurn = vi.fn();
-  const { unmount } = renderHook(() => usePushToTalk({ t: 0, onTurn, start: mic.start }));
+  const { unmount } = renderTalk(mic.open, onTurn);
 
   holdV();
   await settle();
@@ -219,5 +232,69 @@ test("unmounting mid-turn closes the microphone", async () => {
   await settle();
 
   expect(mic.stop).toHaveBeenCalled();
+  expect(mic.close).toHaveBeenCalled();
   expect(onTurn).not.toHaveBeenCalled();
+});
+
+test("a second press records on the microphone already open", async () => {
+  const mic = fakeMic();
+  const onTurn = vi.fn();
+  const { result } = renderTalk(mic.open, onTurn);
+
+  for (const press of [1, 2]) {
+    holdV();
+    await settle();
+    expect(result.current.phase, `press ${String(press)}`).toBe("listening");
+    releaseV();
+    await settle();
+  }
+
+  expect(onTurn).toHaveBeenCalledTimes(2);
+  expect(mic.open).toHaveBeenCalledOnce();
+  expect(mic.close).not.toHaveBeenCalled();
+});
+
+test("two minutes without a turn closes the microphone; the next press opens it again", async () => {
+  vi.useFakeTimers();
+  const mic = fakeMic();
+  renderTalk(mic.open);
+  holdV();
+  await settle();
+  releaseV();
+  await settle();
+
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(IDLE_MS - 1);
+  });
+  expect(mic.close).not.toHaveBeenCalled();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(mic.close).toHaveBeenCalledOnce();
+
+  holdV();
+  await settle();
+  expect(mic.open).toHaveBeenCalledTimes(2);
+});
+
+test("a press within two minutes keeps the microphone open", async () => {
+  vi.useFakeTimers();
+  const mic = fakeMic();
+  renderTalk(mic.open);
+  holdV();
+  await settle();
+  releaseV();
+  await settle();
+
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(IDLE_MS - 1000);
+  });
+  holdV();
+  await settle();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(IDLE_MS); // still held
+  });
+
+  expect(mic.close).not.toHaveBeenCalled();
+  expect(mic.open).toHaveBeenCalledOnce();
 });
