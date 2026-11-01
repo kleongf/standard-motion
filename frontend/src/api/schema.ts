@@ -1215,6 +1215,11 @@ export interface components {
         };
         /** AuditItem */
         AuditItem: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "keep" | "reject" | "needs_review";
             /** Episode Id */
             episode_id: string;
             /** Failed */
@@ -1235,6 +1240,7 @@ export interface components {
             drawn_at: string | null;
             /** Earlier S */
             earlier_s: number | null;
+            good_rejects: components["schemas"]["Proportion"];
             /** Items */
             items: components["schemas"]["AuditItem"][];
             /** Phrases */
