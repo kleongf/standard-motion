@@ -1,14 +1,14 @@
 // Push-to-talk: hold V (Space, 1, 2 and the arrows are the Workstation's and Your call's), or
 // press and hold the mic button. The turn's moment is the playhead when it began: Voice
 // Transcribe gives no word timestamps. No turn ends without a word: it is sent, or the reviewer
-// is told why not.
+// is told why not. The microphone is the page's, kept open between turns; one that fails is
+// closed, to be opened afresh on the next press.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { startCapture, type Capture, type StartCapture } from "./capture";
-import { TARGET_RATE } from "./wav";
+import type { Capture } from "./capture";
+import type { KeptMicrophone } from "./useMicrophone";
 
-const MIN_TURN_S = 0.3; // shorter is a slip of the key, not a word
-const MIN_BYTES = 44 + MIN_TURN_S * TARGET_RATE * 2;
+const MIN_TURN_S = 0.3; // held for less is a slip of the key, not a word
 export const START_TIMEOUT_MS = 5000;
 export const STOP_TIMEOUT_MS = 5000;
 export const TOO_SHORT = "Too short to hear: hold V while you talk";
@@ -39,7 +39,7 @@ function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/** Close a turn's microphone whenever it opens, throwing its audio away. */
+/** End a turn whenever its recording begins, throwing its audio away. */
 function discard(turn: Turn) {
   turn.capture.then((capture) => capture.stop()).catch(() => undefined);
 }
@@ -58,9 +58,9 @@ function within<T>(promise: Promise<T>, ms: number, why: string): Promise<T> {
 export function usePushToTalk(options: {
   t: number;
   onTurn: (wav: Blob, t: number) => void;
-  start?: StartCapture | undefined;
+  microphone: KeptMicrophone;
 }) {
-  const { onTurn, start = startCapture } = options;
+  const { onTurn, microphone } = options;
   const [phase, setPhase] = useState<TalkPhase>("idle");
   const [error, setError] = useState<string | null>(null);
   const t = useRef(options.t);
@@ -72,26 +72,32 @@ export function usePushToTalk(options: {
     t.current = options.t;
   }, [options.t]);
 
-  /** End the held turn, if it is still `ending`, sending nothing. */
-  const abandon = useCallback((ending: Turn, why: string) => {
-    if (turn.current !== ending) return;
-    turn.current = null;
-    clearTimeout(ending.timer);
-    setPhase("idle");
-    setError(why);
-    discard(ending);
-  }, []);
+  /** End the held turn, if it is still `ending`, sending nothing, and close the microphone
+   * that failed it. */
+  const abandon = useCallback(
+    (ending: Turn, why: string) => {
+      if (turn.current !== ending) return;
+      turn.current = null;
+      clearTimeout(ending.timer);
+      setPhase("idle");
+      setError(why);
+      discard(ending);
+      microphone.close();
+    },
+    [microphone],
+  );
 
   const press = useCallback(() => {
     if (turn.current) return;
     setError(null);
     let ending: Turn | undefined = undefined;
-    const capture = start(() => {
+    const onLive = () => {
       if (!ending || turn.current !== ending || ending.live) return;
       ending.live = true;
       clearTimeout(ending.timer);
       setPhase("listening");
-    });
+    };
+    const capture = microphone.get().then((mic) => mic.record(onLive));
     ending = { t: t.current, live: false, capture };
     turn.current = latest.current = ending;
     ending.capture.catch((e: unknown) => {
@@ -105,21 +111,22 @@ export function usePushToTalk(options: {
       abandon(ending, NO_START);
     }, START_TIMEOUT_MS);
     setPhase("opening");
-  }, [start, abandon]);
+  }, [microphone, abandon]);
 
   const finish = useCallback(
     async (ending: Turn) => {
       try {
         const capture = await ending.capture;
-        const wav = await within(capture.stop(), STOP_TIMEOUT_MS, "the microphone didn't stop");
+        const heard = await within(capture.stop(), STOP_TIMEOUT_MS, "the microphone didn't stop");
         if (!mounted.current) return;
-        if (wav.size < MIN_BYTES) setError(TOO_SHORT);
-        else onTurn(wav, ending.t);
+        if (heard.heldS < MIN_TURN_S) setError(TOO_SHORT);
+        else onTurn(heard.wav, ending.t);
       } catch (e) {
+        microphone.close();
         if (mounted.current) setError(`The turn couldn't be recorded: ${message(e)}`);
       }
     },
-    [onTurn],
+    [onTurn, microphone],
   );
 
   const release = useCallback(() => {
@@ -128,14 +135,16 @@ export function usePushToTalk(options: {
     turn.current = null;
     clearTimeout(ending.timer);
     setPhase("idle");
+    microphone.rest();
     if (ending.live) {
       void finish(ending);
       return;
     }
     setError(TOO_SHORT); // let go before the microphone heard anything
     discard(ending);
-  }, [finish]);
+  }, [finish, microphone]);
 
+  // Leaving mid-turn ends it; the microphone stays the page's, for the next Episode's turns.
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -145,9 +154,10 @@ export function usePushToTalk(options: {
       if (ending) {
         clearTimeout(ending.timer);
         discard(ending);
+        microphone.rest();
       }
     };
-  }, []);
+  }, [microphone]);
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {

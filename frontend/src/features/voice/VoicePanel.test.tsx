@@ -3,7 +3,8 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { afterEach, expect, test, vi } from "vitest";
 
 import type { Playhead } from "../episodes/usePlayhead";
-import type { Capture, StartCapture } from "./capture";
+import type { OpenMicrophone } from "./capture";
+import { useMicrophone } from "./useMicrophone";
 import type { VoiceTurn } from "./useVoice";
 import { VoicePanel } from "./VoicePanel";
 
@@ -21,10 +22,32 @@ const playhead: Playhead = {
   onEnded: vi.fn(),
 };
 
-const mic: StartCapture = (onLive) => {
-  queueMicrotask(onLive);
-  return Promise.resolve<Capture>({ stop: () => Promise.resolve(SECOND) });
-};
+const mic: OpenMicrophone = () =>
+  Promise.resolve({
+    record: (onLive) => {
+      queueMicrotask(onLive);
+      return { stop: () => Promise.resolve({ wav: SECOND, heldS: 1 }) };
+    },
+    close: () => Promise.resolve(),
+  });
+
+/** The panel with its own kept microphone, as the Review page gives it one. */
+function Panel(props: {
+  unsure: string[];
+  onConfirm: () => Promise<unknown>;
+  open: OpenMicrophone;
+}) {
+  return (
+    <VoicePanel
+      episodeId="droid_100:1"
+      unsure={props.unsure}
+      playhead={playhead}
+      saving={false}
+      onConfirm={props.onConfirm}
+      microphone={useMicrophone(props.open)}
+    />
+  );
+}
 
 /** The backend: Meta is available or not, and each voice turn answers when the test says. */
 function stubBackend(options: { metaAvailable?: boolean } = {}) {
@@ -56,14 +79,7 @@ function renderPanel(onConfirm: () => Promise<unknown> = () => Promise.resolve()
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <VoicePanel
-        episodeId="droid_100:1"
-        unsure={[NEVER_DROPS, PLACES]}
-        playhead={playhead}
-        saving={false}
-        onConfirm={onConfirm}
-        start={mic}
-      />
+      <Panel unsure={[NEVER_DROPS, PLACES]} onConfirm={onConfirm} open={mic} />
     </QueryClientProvider>,
   );
 }
@@ -171,18 +187,11 @@ test("a turn too short to hear says so in an alert", async () => {
 
 test("without the Meta API there is no Voice panel, and V opens no microphone", async () => {
   stubBackend({ metaAvailable: false });
-  const start = vi.fn(mic);
+  const open = vi.fn(mic);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <VoicePanel
-        episodeId="droid_100:1"
-        unsure={[NEVER_DROPS]}
-        playhead={playhead}
-        saving={false}
-        onConfirm={() => Promise.resolve()}
-        start={start}
-      />
+      <Panel unsure={[NEVER_DROPS]} onConfirm={() => Promise.resolve()} open={open} />
     </QueryClientProvider>,
   );
   await waitFor(() => {
@@ -195,5 +204,16 @@ test("without the Meta API there is no Voice panel, and V opens no microphone", 
   fireEvent.keyDown(globalThis.window, { key: "v", code: "KeyV" });
 
   expect(screen.queryByRole("region", { name: "Voice" })).not.toBeInTheDocument();
-  expect(start).not.toHaveBeenCalled();
+  expect(open).not.toHaveBeenCalled();
+});
+
+test("once a turn has opened the microphone, the panel says it is on", async () => {
+  stubBackend();
+  renderPanel();
+  const voice = await screen.findByRole("region", { name: "Voice" });
+  expect(within(voice).queryByText(/^Mic on/)).not.toBeInTheDocument();
+
+  await speak();
+
+  expect(await within(voice).findByText(/^Mic on/)).toBeInTheDocument();
 });
