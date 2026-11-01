@@ -489,11 +489,33 @@ export interface paths {
         put?: never;
         /**
          * Post Export
-         * @description Export the kept Episodes in the background: a LeRobot v3.0 dataset per source, never the
-         *     Test set, with rejections.jsonl holding the Reason for each Episode not kept. The finished
-         *     job's item names the new folder under the data dir's exports/.
+         * @description Export the kept Episodes in the background: every Episode outside the Test set, by its
+         *     Triage decision, whether Reference-labelled or not. A LeRobot v3.0 dataset per source, with
+         *     rejections.jsonl holding the Reason for each Episode not kept. The finished job's item names
+         *     the new folder under the data dir's exports/.
          */
         post: operations["post_export_api_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Export Scope
+         * @description How many Episodes an export would decide on, and how many of them aren't
+         *     Reference-labelled yet: exporting shows their decisions, so the UI warns first.
+         */
+        get: operations["get_export_scope_api_export_scope_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1840,6 +1862,17 @@ export interface components {
              * @enum {string}
              */
             reason: "not pick-and-place" | "object too small to see";
+        };
+        /**
+         * ExportScope
+         * @description What an export would decide on, before it runs: every Episode outside the Test set, and
+         *     how many of them have no Reference label yet, whose decisions exporting shows.
+         */
+        ExportScope: {
+            /** Episodes */
+            episodes: number;
+            /** Unlabelled */
+            unlabelled: number;
         };
         /** ExportStarted */
         ExportStarted: {
@@ -3877,6 +3910,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportStarted"];
+                };
+            };
+        };
+    };
+    get_export_scope_api_export_scope_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportScope"];
                 };
             };
         };

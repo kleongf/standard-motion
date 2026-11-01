@@ -30,8 +30,9 @@ from winnow.rubric.models import Rubric
 DROID100 = [0, 1, 2, 4]  # 0 grasps cleanly, 1 releases high, 2 regrasps, 4 never closes
 DROID101 = [0, 1, 2, 3]  # each grasps cleanly
 TEST_SET = ["droid_1.0.1:1", "droid_100:0"]  # kept, but never exported
-UNLABELLED = "droid_1.0.1:3"  # its Triage decision stays hidden, so it isn't exported
-KEPT_101 = [0, 2]  # the droid_1.0.1 Episodes exported, in order
+# Kept with no Reference label: exported all the same, by their Triage decisions.
+UNLABELLED = ["droid_1.0.1:3", "droid_100:1"]
+KEPT_101 = [0, 2, 3]  # the droid_1.0.1 Episodes exported, in order
 NEVER_DROPS = FROZEN.phrases[1]
 
 
@@ -49,15 +50,15 @@ def settings(
 
 @pytest.fixture(scope="module")
 def api(settings: Settings) -> Iterator[TestClient]:
-    """Both sources ingested and labelled, scored on how the gripper grasps and releases: of
-    droid_100, 0 and 1 are kept (1 by a reviewer's label: it releases high), 2 and 4 rejected;
-    every droid_1.0.1 Episode is kept."""
+    """Both sources ingested and all but UNLABELLED Reference-labelled, scored on how the gripper
+    grasps and releases: of droid_100, 0 and 1 are kept (1 by a reviewer's label: it releases
+    high), 2 and 4 rejected; every droid_1.0.1 Episode is kept."""
     with TestClient(create_app(settings)) as client:
         for source, indices in (("droid_100", DROID100), ("droid_1.0.1", DROID101)):
             job = client.post("/api/episodes/ingest", json={"source": source, "indices": indices})
             wait_for_job(client, job.json()["job_id"])
             for index in indices:
-                if f"{source}:{index}" != UNLABELLED:
+                if f"{source}:{index}" not in UNLABELLED:
                     reference_label(client, f"{source}:{index}")
         ctx = app_context(client)
         ctx.sets.add("test", TEST_SET)
@@ -92,9 +93,9 @@ def test_droid101_exports_only_kept_episodes_the_reader_loads_unchanged(
     source = Droid101(LocalFiles(droid101_root))
     export = Droid101(LocalFiles(exported / "droid_1.0.1"))
 
-    # 1 is in the Test set and 3 has no Reference label: kept 0 and 2 become 0 and 1.
-    assert sorted(export.index) == [0, 1]
-    for new, old in ((0, 0), (1, 2)):
+    # 1 is in the Test set: kept 0, 2 and 3 become 0, 1 and 2.
+    assert sorted(export.index) == [0, 1, 2]
+    for new, old in enumerate(KEPT_101):
         ours, theirs = export.load(new), source.load(old)
         assert ours.signals.episode_index == new
         assert ours.instruction == theirs.instruction
@@ -106,6 +107,37 @@ def test_droid101_exports_only_kept_episodes_the_reader_loads_unchanged(
             frames = decoded(tmp_path / f"ours-{new}-{camera}.mp4")
             assert len(frames) == source.meta(old).length
             assert frames == decoded(tmp_path / f"theirs-{new}-{camera}.mp4")
+
+
+def episode_rows(data: pa.Table, index: int) -> list[dict[str, object]]:
+    rows = [i == index for i in data.column("episode_index").to_pylist()]
+    return data.filter(pa.array(rows, type=pa.bool_())).to_pylist()
+
+
+def test_kept_episodes_export_by_decision_without_a_reference_label_never_the_test_set(
+    exported: Path, droid100_root: Path, droid101_root: Path
+):
+    # droid_100:1 and droid_1.0.1:3 are unlabelled; droid_100:0 and droid_1.0.1:1, Test set.
+    for root, name, kept in (
+        (droid100_root / "main", "droid_100", [1]),
+        (droid101_root, "droid_1.0.1", KEPT_101),
+    ):
+        data = "data/chunk-000/file-000.parquet"
+        source, ours = (pq.read_table(r / data) for r in (root, exported / name))  # pyright: ignore[reportUnknownMemberType]
+        indices = {int(str(i)) for i in ours.column("episode_index").to_pylist()}
+        assert sorted(indices) == list(range(len(kept)))
+        for new, old in enumerate(kept):
+            theirs = episode_rows(source, old)
+            renumbered = episode_rows(ours, new)
+            assert [r["timestamp"] for r in renumbered] == [r["timestamp"] for r in theirs]
+            assert all(r["episode_index"] == new for r in renumbered)
+
+
+def test_the_scope_counts_the_episodes_exported_without_a_reference_label(api: TestClient):
+    scope = api.get("/api/export/scope")
+
+    # droid_100 1, 2 and 4 and droid_1.0.1 0, 2 and 3: the rest are in the Test set.
+    assert scope.json() == {"episodes": 6, "unlabelled": 2}
 
 
 def episodes_of(export: Path) -> list[dict[str, object]]:
@@ -199,7 +231,10 @@ def test_cli_exports_to_the_folder_given_and_never_over_another_export(
     out = tmp_path / "kept"
 
     assert main(["export", str(out)], settings=settings) == 0
-    written = f"3 kept Episodes, and the Reasons for 2 not kept, to {out}"
+    written = (
+        f"4 kept Episodes, and the Reasons for 2 not kept (2 of the 6 not Reference-labelled "
+        f"yet), to {out}"
+    )
     assert written in capsys.readouterr().out
     assert sorted(p.name for p in out.iterdir()) == ["droid_1.0.1", "droid_100", "rejections.jsonl"]
     assert main(["export", str(out)], settings=settings) == 1

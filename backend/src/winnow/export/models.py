@@ -14,3 +14,11 @@ class Rejection(BaseModel):
 
 class ExportStarted(BaseModel):
     job_id: int
+
+
+class ExportScope(BaseModel):
+    """What an export would decide on, before it runs: every Episode outside the Test set, and
+    how many of them have no Reference label yet, whose decisions exporting shows."""
+
+    episodes: int
+    unlabelled: int
