@@ -7,7 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 
 import type { Episode } from "../episodes/useEpisodes";
 import type { Playhead } from "../episodes/usePlayhead";
-import { draftProblem, emptyDraft, toPhraseLabels, UNJUDGED, type Judgment } from "./labelDraft";
+import {
+  draftProblem,
+  emptyDraft,
+  suggestedInstruction,
+  toPhraseLabels,
+  UNJUDGED,
+  type Judgment,
+} from "./labelDraft";
 import { LabelBox } from "./LabelBox";
 import { PhraseJudgment } from "./PhraseJudgment";
 import { clock, useElapsed } from "./useElapsed";
@@ -24,7 +31,7 @@ export function LabelPanel(props: {
   const elapsed = useElapsed();
   const [judgments, setJudgments] = useState<Judgment[]>(() => emptyDraft(phrases.length));
   const needsInstruction = episode.instruction === null;
-  const [instruction, setInstruction] = useState("");
+  const [instruction, setInstruction] = useState(() => suggestedInstruction(episode));
   const save = useSaveReferenceLabel();
   const problem = draftProblem(phrases, judgments, needsInstruction ? instruction : null);
 
@@ -69,7 +76,12 @@ export function LabelPanel(props: {
       </ul>
       {needsInstruction && (
         <label className="mt-3 block text-xs font-medium">
-          Instruction <span className="font-normal text-muted-foreground">(none recorded)</span>
+          Instruction{" "}
+          <span className="font-normal text-muted-foreground">
+            {suggestedInstruction(episode)
+              ? "(none recorded; suggested from the task the selection pass named, so check it)"
+              : "(none recorded)"}
+          </span>
           <Textarea
             className="mt-1 min-h-12 text-sm"
             placeholder="The task this Episode attempts, e.g. Put the marker in the cup"

@@ -1,6 +1,12 @@
 import { expect, test } from "vitest";
 
-import { draftProblem, emptyDraft, toPhraseLabels, type Judgment } from "./labelDraft";
+import {
+  draftProblem,
+  emptyDraft,
+  suggestedInstruction,
+  toPhraseLabels,
+  type Judgment,
+} from "./labelDraft";
 
 const PHRASES = ["grasps the object on the first try", "never drops it"];
 const pass: Judgment = { passed: true, start: null, end: null };
@@ -43,4 +49,12 @@ test("only a fail carries its interval", () => {
     { phrase: PHRASES[0], passed: true, interval: null },
     { phrase: PHRASES[1], passed: false, interval: { start_s: 0.4, end_s: 1.2 } },
   ]);
+});
+
+test("the selection pass's object and target suggest the instruction; anything less, nothing", () => {
+  expect(suggestedInstruction({ task_object: "red mug", task_target: "shelf" })).toBe(
+    "Put the red mug in or on the shelf",
+  );
+  expect(suggestedInstruction({ task_object: "red mug", task_target: null })).toBe("");
+  expect(suggestedInstruction({ task_object: null, task_target: null })).toBe("");
 });

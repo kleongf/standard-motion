@@ -75,7 +75,8 @@ def ingest_items(
 ) -> list[WorkItem]:
     """Per Episode (each once, in the order given): ingest it, with its (object, target) when
     known, then, once that has succeeded and if Meta is configured, run the Spark-alone baseline
-    and track the wrist view."""
+    and track the wrist view. The baseline step skips an Episode with no instruction; saving its
+    Reference label, which writes one, queues it again."""
     items: list[WorkItem] = []
     for i in dict.fromkeys(indices):
         label = episode_id(source, i)

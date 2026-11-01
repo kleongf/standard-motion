@@ -24,6 +24,17 @@ function judgmentProblem(phrase: string, j: Judgment): string | null {
   return null;
 }
 
+/** The instruction field's starting text: for an Episode the dataset gave no instruction, the task
+ * the selection pass named, where it named both its object and target, for the labeller to check
+ * and edit. Task names only, never an outcome, so labelling stays blind. */
+export function suggestedInstruction(episode: {
+  task_object: string | null;
+  task_target: string | null;
+}): string {
+  const { task_object: object, task_target: target } = episode;
+  return object && target ? `Put the ${object} in or on the ${target}` : "";
+}
+
 /** Why the draft can't be saved yet, or null. `instruction` is null where none is needed. */
 export function draftProblem(
   phrases: readonly string[],

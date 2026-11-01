@@ -5,6 +5,7 @@ from winnow.baseline.prompts import FROZEN
 from winnow.boxes.service import queue_box_work
 from winnow.core.context import AppContext
 from winnow.episodes.models import Episode
+from winnow.jobs.models import WorkItem
 from winnow.reference_labels.models import ReferenceLabel, ReferenceLabelDraw
 
 
@@ -57,5 +58,15 @@ def save_label(ctx: AppContext, episode: Episode, draw: ReferenceLabelDraw) -> R
     if episode.instruction is None:
         # Scoring and the baseline read the Episode, never its Reference label.
         ctx.episodes.write_instruction(episode.id, instruction)
-        queue_box_work(ctx, episode.id, ("target_box",))  # it names the target to look for
+        queue_instruction_work(ctx, episode.id)
     return label
+
+
+def queue_instruction_work(ctx: AppContext, episode_id: str) -> None:
+    """What a newly written instruction feeds: the Spark-alone baseline, which ingest skipped
+    without one, and the target box, which may now have a target to look for. Nothing without
+    Meta to run them."""
+    if ctx.meta is None:
+        return
+    ctx.runner.submit("baseline", [WorkItem("baseline", {"episode_id": episode_id}, episode_id)])
+    queue_box_work(ctx, episode_id, ("target_box",))

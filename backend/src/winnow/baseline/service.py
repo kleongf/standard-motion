@@ -23,6 +23,7 @@ from winnow.meta.models import SparkCall, SparkRequest, Text, Video
 from winnow.meta.pricing import SPARK_CONTRIBUTOR
 
 MAX_OUTPUT_TOKENS = 8000  # effort `high` reasons at length; Day 1 used up to ~3,400
+SKIPPED_NO_INSTRUCTION = "skipped: no instruction; it runs once a Reference label writes one"
 
 
 def _parse[T: BaseModel](
@@ -89,6 +90,9 @@ def baseline_step(meta: MetaClient, store: BaselineStore, episodes: EpisodeStore
         episode = episodes.get(str(args["episode_id"]))
         if episode is None:
             raise LookupError(f"No Episode {args['episode_id']}")
+        if episode.instruction is None:
+            # Judged without its task, Spark alone would be scored on a different question.
+            return SKIPPED_NO_INSTRUCTION
         return await run_baseline(meta, store, episodes, episode)
 
     return step

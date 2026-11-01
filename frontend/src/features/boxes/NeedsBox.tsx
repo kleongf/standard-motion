@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { SectionHeading } from "../core/PageHeader";
 import type { Episode } from "../episodes/useEpisodes";
 import { BoxDialog } from "./BoxDialog";
-import { frame0Url, useBoxes } from "./useBoxes";
+import { NeedsBoxCard } from "./NeedsBoxCard";
+import { useBoxes } from "./useBoxes";
 
 export function NeedsBox(props: { episodes: Episode[] }) {
   const boxes = useBoxes();
@@ -37,26 +38,13 @@ export function NeedsBox(props: { episodes: Episode[] }) {
       />
       <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3">
         {missing.map((episode, index) => (
-          <button
+          <NeedsBoxCard
             key={episode.id}
-            type="button"
-            className="group text-left"
-            aria-label={`Draw a box for Episode ${String(episode.index)}`}
-            onClick={() => {
+            episode={episode}
+            onOpen={() => {
               startAt(index);
             }}
-          >
-            <img
-              src={frame0Url(episode.id, "exterior_image_1_left")}
-              alt=""
-              loading="lazy"
-              className="aspect-video w-full rounded border bg-muted object-cover group-hover:ring-2 group-hover:ring-primary"
-            />
-            <div className="mt-1 text-xs font-medium">Episode {episode.index}</div>
-            <div className="truncate text-xs text-muted-foreground">
-              {episode.instruction ?? "No instruction"}
-            </div>
-          </button>
+          />
         ))}
         {missing.length === 0 && props.episodes.length > 0 && (
           <p className="text-sm text-muted-foreground">Every Episode has its box.</p>

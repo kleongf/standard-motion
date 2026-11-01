@@ -77,6 +77,9 @@ def labelled(api: TestClient, set_name: str) -> TestClient:
     reference_label(api, "droid_100:0")
     reference_label(api, "droid_100:1", NEVER_DROPS)  # a failure Winnow can't see yet
     reference_label(api, "droid_100:2", FIRST_TRY, interval=(0.0, 2.9))  # the whole Episode
+    # Its label writes its instruction, which queues Spark alone on it: let that finish before
+    # its samples are scripted below.
+    wait_for_job(api, api.get("/api/jobs/latest", params={"kind": "baseline"}).json()["id"])
     # droid_100:4 waits for its Reference label, so the report leaves it out.
     spark_alone(api, "droid_100:0", "keep", "keep", "reject")
     # Spark alone says it drops the object, at a median of 0.2 s: 0.3 s before the interval.

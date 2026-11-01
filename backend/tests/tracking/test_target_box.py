@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from tests.helpers import app_context, wait_for_job
 from tests.tracking.boxing import BOX, EXTERIOR_2, save_box
 from tests.tracking.scripted_sam import SAMPLE_BOX, ScriptedSam
-from winnow.tracking.target import chosen_target_box
+from winnow.tracking.target import chosen_target_box, episode_target
 
 # Fixture instructions: Episode 0 "Put the marker in the pot", Episode 1 "Move the black remote
 # control to the left" (a direction, no target), Episode 2 none.
@@ -152,10 +152,35 @@ def test_without_meta_a_target_box_can_still_be_drawn(api: TestClient):
     assert api.get("/api/dataset").json()["target_boxes"] == 1
 
 
-def test_an_instruction_the_labeller_writes_prompts_the_target_box_again(
+def test_the_selection_passs_target_prompts_sam_without_an_instruction(
+    scripted_api: TestClient, sam: ScriptedSam
+):
+    app_context(scripted_api).episodes.set_task("droid_100:2", "marker", "pot")
+
+    save_box(scripted_api, "droid_100:2")
+
+    [call] = sam.made("000002/exterior_image_2_left.frame0.mp4")
+    assert call.prompt == "pot"
+    target = target_of(scripted_api, "droid_100:2")
+    assert target is not None and (target["status"], target["target"]) == ("found", "pot")
+
+
+def test_the_target_is_the_selection_passs_else_the_instructions(scripted_api: TestClient):
+    episodes = app_context(scripted_api).episodes
+    no_instruction, with_one = episodes.get("droid_100:2"), episodes.get("droid_100:0")
+    assert no_instruction is not None and with_one is not None
+
+    assert episode_target(no_instruction) is None
+    assert episode_target(with_one) == "pot"
+    assert episode_target(no_instruction.model_copy(update={"task_target": "bowl"})) == "bowl"
+    assert episode_target(with_one.model_copy(update={"task_target": "bowl"})) == "bowl"
+
+
+def test_an_instruction_the_labeller_writes_queues_the_baseline_and_the_target_box(
     scripted_api: TestClient, sam: ScriptedSam
 ):
     save_box(scripted_api, "droid_100:2")
+    asked = (sam.spark.baseline_calls, sam.spark.failbench_calls)  # Episodes 0 and 1 at ingest
     phrases = scripted_api.get("/api/reference-labels/description").json()["phrases"]
     label = {
         "phrases": [{"phrase": p, "passed": True, "interval": None} for p in phrases],
@@ -171,3 +196,9 @@ def test_an_instruction_the_labeller_writes_prompts_the_target_box_again(
     assert call.prompt == "pot"
     target = target_of(scripted_api, "droid_100:2")
     assert target is not None and (target["status"], target["target"]) == ("found", "pot")
+    # Skipped at ingest without an instruction, the baseline runs now, with the one written.
+    baseline = scripted_api.get("/api/jobs/latest", params={"kind": "baseline"}).json()
+    item = step_item(wait_for_job(scripted_api, baseline["id"]), "baseline")
+    assert (item["label"], item["status"], item["detail"]) == ("droid_100:2", "done", None)
+    assert (sam.spark.baseline_calls, sam.spark.failbench_calls) == (asked[0] + 3, asked[1] + 1)
+    assert all("Put the marker in the pot" in p for p in sam.spark.prompts[-4:])
