@@ -7,7 +7,8 @@ import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 import type { Playhead } from "../episodes/usePlayhead";
-import { usePushToTalk } from "./usePushToTalk";
+import type { StartCapture } from "./capture";
+import { usePushToTalk, type TalkPhase } from "./usePushToTalk";
 import { useVoiceTurn } from "./useVoice";
 import { VoiceChips, type HeardChip } from "./VoiceChips";
 
@@ -17,6 +18,7 @@ export function VoicePanel(props: {
   playhead: Playhead;
   saving: boolean;
   onConfirm: (phrase: string, value: HeardChip["value"]) => void;
+  start?: StartCapture; // the microphone; tests pass a fake one
 }) {
   const { episodeId, playhead } = props;
   const turn = useVoiceTurn();
@@ -44,7 +46,7 @@ export function VoicePanel(props: {
     },
     [mutate, episodeId],
   );
-  const talk = usePushToTalk({ t: playhead.t, onTurn });
+  const talk = usePushToTalk({ t: playhead.t, onTurn, start: props.start });
   const drop = (chip: HeardChip) => {
     setChips((was) => was.filter((c) => c.id !== chip.id));
   };
@@ -60,7 +62,9 @@ export function VoicePanel(props: {
         </p>
       )}
       {(talk.error ?? turn.error) && (
-        <p className="mt-2 text-xs text-destructive">{talk.error ?? turn.error?.message}</p>
+        <p className="mt-2 text-xs text-destructive" role="alert">
+          {talk.error ?? turn.error?.message}
+        </p>
       )}
       <VoiceChips
         chips={shown}
@@ -76,22 +80,30 @@ export function VoicePanel(props: {
   );
 }
 
+const TALK_LABEL: Record<TalkPhase, string> = {
+  idle: "Hold to talk",
+  opening: "Opening the mic…",
+  listening: "Listening…",
+};
+
 /** Held down, it records a turn, as V does. */
-function TalkButton(props: { talk: ReturnType<typeof usePushToTalk>; hearing: boolean }) {
+function TalkButton(props: {
+  talk: { phase: TalkPhase; press: () => void; release: () => void };
+  hearing: boolean;
+}) {
   const { talk } = props;
-  const { listening } = talk;
   return (
     <div className="flex items-center gap-2">
       <Button
         size="sm"
-        variant={listening ? "default" : "outline"}
-        aria-pressed={listening}
+        variant={talk.phase === "idle" ? "outline" : "default"}
+        aria-pressed={talk.phase !== "idle"}
         onPointerDown={talk.press}
         onPointerUp={talk.release}
         onPointerLeave={talk.release}
       >
         <Mic />
-        <span>{listening ? "Listening…" : "Hold to talk"}</span>
+        <span>{TALK_LABEL[talk.phase]}</span>
         <kbd className="text-muted-foreground">V</kbd>
       </Button>
       <span className="text-xs text-muted-foreground" role="status">
