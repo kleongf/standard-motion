@@ -11,16 +11,20 @@ from tests.meta.test_transcribe import write_wav
 from winnow.meta.models import Transcript, Turn
 from winnow.meta.openai_transport import OpenAITransport
 from winnow.meta.pricing import VOICE_TRANSCRIBE
-from winnow.meta.transport import TransientError
+from winnow.meta.transport import TransientError, UnusableReplyError
 
 OPTIONS: dict[str, object] = {"audioEncoding": "WAV", "mode": "PUSH_TO_TALK"}
 
 
 def transport_answering(
-    status: int, body: dict[str, object], seen: list[httpx2.Request]
+    status: int, body: dict[str, object] | bytes, seen: list[httpx2.Request]
 ) -> OpenAITransport:
+    """Meta's `/asr/transcribe` answering `body`: JSON, or raw bytes as they came."""
+
     def handle(request: httpx2.Request) -> httpx2.Response:
         seen.append(request)
+        if isinstance(body, bytes):
+            return httpx2.Response(status, content=body)
         return httpx2.Response(status, json=body)
 
     http = httpx2.AsyncClient(transport=httpx2.MockTransport(handle))
@@ -81,6 +85,24 @@ def test_a_rate_limit_is_transient(tmp_path: Path):
     transport = transport_answering(429, {"error": "slow down"}, [])
 
     with pytest.raises(TransientError):
+        asyncio.run(
+            transport.transcribe(VOICE_TRANSCRIBE, write_wav(tmp_path / "t.wav", 1.0), OPTIONS)
+        )
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        b"<html>Bad gateway</html>",  # not JSON
+        b"[]",  # JSON, but not a TranscribeResponse
+        {"sessionId": "s1", "transcript": "It drops it.", "turns": []},  # no audioDurationMs
+        {"transcript": "Drops it.", "turns": [{"turnId": 1, "transcript": "Drops it."}]},
+    ],
+)
+def test_a_reply_that_cannot_be_read_is_unusable(tmp_path: Path, body: dict[str, object] | bytes):
+    transport = transport_answering(200, body, [])
+
+    with pytest.raises(UnusableReplyError):
         asyncio.run(
             transport.transcribe(VOICE_TRANSCRIBE, write_wav(tmp_path / "t.wav", 1.0), OPTIONS)
         )

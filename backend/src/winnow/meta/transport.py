@@ -22,6 +22,10 @@ class FileGoneError(RuntimeError):
     """The server no longer has a file we uploaded earlier."""
 
 
+class UnusableReplyError(RuntimeError):
+    """The Meta API answered, but not in a shape we can read: not worth retrying."""
+
+
 class Transport(Protocol):
     async def upload(self, path: Path) -> str: ...
 

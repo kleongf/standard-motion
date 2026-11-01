@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from tests.meta.test_transcribe_transport import transport_answering
 from tests.visual.scripted import ScriptedVisual
 from winnow.meta.models import MetaContent, Transcript, Turn
 from winnow.meta.transport import Reply
@@ -18,11 +19,15 @@ class ScriptedVoice(ScriptedVisual):
     # What Spark answers about the transcript: each Phrase it decides, as pass or fail.
     marks: list[dict[str, str]] = field(default_factory=list[dict[str, str]])
     answer: str | None = None  # a raw answer, in place of `marks`
+    # Meta's own TranscribeResponse body, read by the real transport, in place of `said`.
+    reply: dict[str, object] | bytes | None = None
     transcribed: list[Path] = field(default_factory=list[Path])
     asked: list[str] = field(default_factory=list[str])  # the voice prompts Spark was sent
 
     async def transcribe(self, model: str, audio: Path, options: dict[str, object]) -> Transcript:
         self.transcribed.append(audio)
+        if self.reply is not None:
+            return await transport_answering(200, self.reply, []).transcribe(model, audio, options)
         return Transcript(turns=(Turn(text=self.said, start_ms=0, end_ms=2300),))
 
     async def respond(self, model: str, content: MetaContent, options: dict[str, object]) -> Reply:

@@ -2,11 +2,13 @@
 
 import json
 import wave
-from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
 
+from pydantic import BaseModel, Field, ValidationError
+
 from winnow.meta.models import Transcript, Turn
+from winnow.meta.transport import UnusableReplyError
 
 SAMPLE_RATES = (16_000, 24_000)
 MAX_AUDIO_MS = 10 * 60 * 1000  # the batch endpoint's limit
@@ -47,23 +49,38 @@ def parse_transcript(text: str) -> Transcript:
     )
 
 
-def transcript_from_response(body: Mapping[str, object]) -> Transcript:
+class _MetaTurn(BaseModel):
+    transcript: str
+    start_ms: int = Field(alias="startMs")
+    end_ms: int = Field(alias="endMs")
+
+
+class _TranscribeResponse(BaseModel):
+    transcript: str = ""
+    audio_duration_ms: int | None = Field(default=None, alias="audioDurationMs")
+    turns: list[_MetaTurn] | None = None
+
+
+def transcript_from_response(body: bytes) -> Transcript:
     """Meta's TranscribeResponse. Its `turns` is empty in PUSH_TO_TALK, where the whole clip is
-    one turn: its `transcript`, over the audio's duration."""
-    turns = cast(list[dict[str, object]], body.get("turns") or [])
-    if turns:
+    one turn: its `transcript`, over the audio's duration. Raises UnusableReplyError for a body
+    that isn't one."""
+    try:
+        reply = _TranscribeResponse.model_validate_json(body)
+    except ValidationError as error:
+        raise UnusableReplyError(f"Voice Transcribe's reply couldn't be read: {error}") from error
+    if reply.turns:
         return Transcript(
             turns=tuple(
-                Turn(
-                    text=str(t["transcript"]), start_ms=_int(t["startMs"]), end_ms=_int(t["endMs"])
-                )
-                for t in turns
+                Turn(text=t.transcript, start_ms=t.start_ms, end_ms=t.end_ms) for t in reply.turns
             )
         )
-    text = str(body.get("transcript") or "").strip()
+    text = reply.transcript.strip()
     if not text:
         return Transcript(turns=())
-    return Transcript(turns=(Turn(text=text, start_ms=0, end_ms=_int(body["audioDurationMs"])),))
+    if reply.audio_duration_ms is None:
+        raise UnusableReplyError("Voice Transcribe's reply couldn't be read: no audioDurationMs")
+    return Transcript(turns=(Turn(text=text, start_ms=0, end_ms=reply.audio_duration_ms),))
 
 
 def _int(value: object) -> int:

@@ -103,4 +103,4 @@ class OpenAITransport:
             raise TransientError(f"{response.status_code}: {response.text[:200]}")
         if response.status_code >= 400:
             raise RuntimeError(f"Transcribe failed, {response.status_code}: {response.text[:200]}")
-        return transcript_from_response(cast(dict[str, object], response.json()))
+        return transcript_from_response(response.content)
