@@ -53,7 +53,13 @@ function QueueStatus(props: { queue: ReturnType<typeof useReviewQueue> }) {
   const { queue } = props;
   const flow = useFlow();
   if (queue.isPending) return <p className="text-sm text-muted-foreground">Loading the queue…</p>;
-  if (queue.isError) return <p className="text-sm text-destructive">{queue.error.message}</p>;
+  if (queue.isError) {
+    return (
+      <p className="text-sm text-destructive" role="alert">
+        {queue.error.message}
+      </p>
+    );
+  }
   if (flow.labelled === 0) {
     return (
       <NextStep page="reference" action="Go to Reference labels">
@@ -99,8 +105,12 @@ function ReviewHeader(props: { reviewed: number; left: number; current: ReviewIt
 function ReviewWorkstation(props: { item: ReviewItem; episode: Episode }) {
   const { item, episode } = props;
   const save = useSaveLabel();
+  const label = (phrase: string, value: Answer) => ({
+    episodeId: item.episode_id,
+    draw: { phrase, value, source: "review" as const },
+  });
   const answer = (phrase: string, value: Answer) => {
-    save.mutate({ episodeId: item.episode_id, draw: { phrase, value, source: "review" } });
+    save.mutate(label(phrase, value));
   };
   return (
     <Workstation
@@ -108,13 +118,17 @@ function ReviewWorkstation(props: { item: ReviewItem; episode: Episode }) {
       actions={(playhead) => (
         <>
           <YourCall item={item} pending={save.isPending} onAnswer={answer} />
-          {save.isError && <p className="-mt-2 text-xs text-destructive">{save.error.message}</p>}
+          {save.isError && (
+            <p className="-mt-2 text-xs text-destructive" role="alert">
+              {save.error.message}
+            </p>
+          )}
           <VoicePanel
             episodeId={item.episode_id}
             unsure={item.unsure.map((u) => u.phrase)}
             playhead={playhead}
             saving={save.isPending}
-            onConfirm={answer}
+            onConfirm={(phrase, value) => save.mutateAsync(label(phrase, value))}
           />
         </>
       )}

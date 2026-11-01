@@ -6,92 +6,132 @@ import { useCallback, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
+import { useHealth } from "../core/useHealth";
 import type { Playhead } from "../episodes/usePlayhead";
-import { usePushToTalk } from "./usePushToTalk";
-import { useVoiceTurn } from "./useVoice";
+import type { StartCapture } from "./capture";
+import { usePushToTalk, type TalkPhase } from "./usePushToTalk";
+import { useVoiceTurn, type VoiceTurn } from "./useVoice";
 import { VoiceChips, type HeardChip } from "./VoiceChips";
 
-export function VoicePanel(props: {
+interface Props {
   episodeId: string;
   unsure: string[];
   playhead: Playhead;
   saving: boolean;
-  onConfirm: (phrase: string, value: HeardChip["value"]) => void;
-}) {
-  const { episodeId, playhead } = props;
-  const turn = useVoiceTurn();
+  /** Saves the chip's answer as a `review` label; the chip leaves once it resolves. */
+  onConfirm: (phrase: string, value: HeardChip["value"]) => Promise<unknown>;
+  start?: StartCapture; // the microphone; tests pass a fake one
+}
+
+/** Shown only when the Meta API (or a replay of it) can hear a turn: without it, V does
+ * nothing. */
+export function VoicePanel(props: Props) {
+  const health = useHealth();
+  return health.data?.meta_available ? <Voice {...props} /> : null;
+}
+
+/** The turns heard so far, each landing on its own: a turn heard later than the next one began
+ * still adds its chips. */
+function useHeardTurns(episodeId: string) {
+  const { mutateAsync } = useVoiceTurn();
   const [chips, setChips] = useState<HeardChip[]>([]);
   const [heard, setHeard] = useState<string | null>(null);
+  const [hearing, setHearing] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const nextId = useRef(1);
-  const { mutate } = turn;
+
+  const land = useCallback((answer: VoiceTurn) => {
+    setHeard(answer.transcript);
+    const added = answer.chips.map((c) => ({ ...c, t: answer.t, id: nextId.current++ }));
+    // A newer turn on the same Phrase replaces the older chip.
+    setChips((was) => [...was.filter((c) => !added.some((a) => a.phrase === c.phrase)), ...added]);
+  }, []);
 
   const onTurn = useCallback(
     (wav: Blob, t: number) => {
-      mutate(
-        { episodeId, wav, t },
-        {
-          onSuccess: (answer) => {
-            setHeard(answer.transcript);
-            const added = answer.chips.map((c) => ({ ...c, t: answer.t, id: nextId.current++ }));
-            // A newer turn on the same Phrase replaces the older chip.
-            setChips((was) => [
-              ...was.filter((c) => !added.some((a) => a.phrase === c.phrase)),
-              ...added,
-            ]);
-          },
-        },
-      );
+      setError(null);
+      setHearing((n) => n + 1);
+      mutateAsync({ episodeId, wav, t })
+        .then(land, (e: unknown) => {
+          setError(e instanceof Error ? e.message : String(e));
+        })
+        .finally(() => {
+          setHearing((n) => n - 1);
+        });
     },
-    [mutate, episodeId],
+    [mutateAsync, episodeId, land],
   );
-  const talk = usePushToTalk({ t: playhead.t, onTurn });
-  const drop = (chip: HeardChip) => {
+  const drop = useCallback((chip: HeardChip) => {
     setChips((was) => was.filter((c) => c.id !== chip.id));
-  };
+  }, []);
+  return { chips, heard, hearing: hearing > 0, error, onTurn, drop };
+}
+
+function Voice(props: Props) {
+  const { playhead } = props;
+  const turns = useHeardTurns(props.episodeId);
+  const talk = usePushToTalk({ t: playhead.t, onTurn: turns.onTurn, start: props.start });
   // A Phrase answered another way is no longer unsure: its chip goes with it.
-  const shown = chips.filter((c) => props.unsure.includes(c.phrase));
+  const shown = turns.chips.filter((c) => props.unsure.includes(c.phrase));
+  const error = talk.error ?? turns.error;
 
   return (
     <section aria-label="Voice" className="-mt-2 mb-5 rounded-md border p-3">
-      <TalkButton talk={talk} hearing={turn.isPending} />
-      {heard !== null && (
+      <TalkButton talk={talk} hearing={turns.hearing} />
+      {turns.heard !== null && (
         <p className="mt-2 text-xs text-muted-foreground" data-testid="voice-heard">
-          Heard: “{heard}”{!turn.isPending && shown.length === 0 && " · no unsure Phrase in it"}
+          Heard: “{turns.heard}”
+          {!turns.hearing && shown.length === 0 && " · no unsure Phrase in it"}
         </p>
       )}
-      {(talk.error ?? turn.error) && (
-        <p className="mt-2 text-xs text-destructive">{talk.error ?? turn.error?.message}</p>
+      {error && (
+        <p className="mt-2 text-xs text-destructive" role="alert">
+          {error}
+        </p>
       )}
       <VoiceChips
         chips={shown}
         pending={props.saving}
         onConfirm={(chip) => {
-          props.onConfirm(chip.phrase, chip.value);
-          drop(chip);
+          // A failed save keeps the chip, to confirm again; the save's error shows beside it.
+          props.onConfirm(chip.phrase, chip.value).then(
+            () => {
+              turns.drop(chip);
+            },
+            () => undefined,
+          );
         }}
-        onDiscard={drop}
+        onDiscard={turns.drop}
         onSeek={playhead.seek}
       />
     </section>
   );
 }
 
+const TALK_LABEL: Record<TalkPhase, string> = {
+  idle: "Hold to talk",
+  opening: "Opening the mic…",
+  listening: "Listening…",
+};
+
 /** Held down, it records a turn, as V does. */
-function TalkButton(props: { talk: ReturnType<typeof usePushToTalk>; hearing: boolean }) {
+function TalkButton(props: {
+  talk: { phase: TalkPhase; press: () => void; release: () => void };
+  hearing: boolean;
+}) {
   const { talk } = props;
-  const { listening } = talk;
   return (
     <div className="flex items-center gap-2">
       <Button
         size="sm"
-        variant={listening ? "default" : "outline"}
-        aria-pressed={listening}
+        variant={talk.phase === "idle" ? "outline" : "default"}
+        aria-pressed={talk.phase !== "idle"}
         onPointerDown={talk.press}
         onPointerUp={talk.release}
         onPointerLeave={talk.release}
       >
         <Mic />
-        <span>{listening ? "Listening…" : "Hold to talk"}</span>
+        <span>{TALK_LABEL[talk.phase]}</span>
         <kbd className="text-muted-foreground">V</kbd>
       </Button>
       <span className="text-xs text-muted-foreground" role="status">

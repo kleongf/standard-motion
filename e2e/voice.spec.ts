@@ -36,14 +36,18 @@ test("a confirmed chip from a spoken turn takes the Episode out of the queue", a
   await page.goto(`/?page=review&episode=${encodeURIComponent(ID)}`);
   const current = page.getByTestId("review-current");
   await expect(current).toContainText(ID);
+  // The panel shows once health says Meta (here, its replay) can hear a turn.
   const voice = page.getByRole("region", { name: "Voice" });
+  await expect(voice).toBeVisible();
 
   await page.keyboard.down("v");
+  // "Listening" waits for the microphone's first audio: only then does the hold count.
   await expect(voice.getByRole("button", { name: /Listening/ })).toBeVisible();
   await page.waitForTimeout(1500); // talk: a turn under 0.3 s isn't sent
   await page.keyboard.up("v");
 
   await expect(voice.getByTestId("voice-heard")).toContainText("It drops the marker right here");
+  await expect(voice.getByRole("alert")).toHaveCount(0);
   const chip = voice.getByRole("group", { name: NEVER_DROPS });
   await expect(chip).toContainText("Fail");
   await expect(chip).toContainText("“It drops the marker right here”");

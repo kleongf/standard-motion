@@ -7,11 +7,19 @@ export interface Capture {
   stop: () => Promise<Blob>;
 }
 
-export type StartCapture = () => Promise<Capture>;
+/** Opens the microphone; `onLive` is called when its first audio arrives, which is when the
+ * turn is really being heard. */
+export type StartCapture = (onLive: () => void) => Promise<Capture>;
 
 const PROCESSOR = "winnow-capture";
+const FLUSH = "flush";
+// Messages on a port arrive in order, so the reply to "flush" comes after every chunk before it.
 const WORKLET = `
 class Capture extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.port.onmessage = () => this.port.postMessage("${FLUSH}");
+  }
   process(inputs) {
     const channel = inputs[0] && inputs[0][0];
     if (channel) this.port.postMessage(channel.slice());
@@ -20,6 +28,7 @@ class Capture extends AudioWorkletProcessor {
 }
 registerProcessor("${PROCESSOR}", Capture);
 `;
+const FLUSH_TIMEOUT_MS = 1000; // past it, the turn is what arrived
 
 let workletUrl: string | undefined;
 
@@ -38,37 +47,51 @@ function joined(chunks: Float32Array[]): Float32Array {
   return out;
 }
 
-export const startCapture: StartCapture = async () => {
+async function closed(stream: MediaStream, context: AudioContext): Promise<void> {
+  stream.getTracks().forEach((track) => {
+    track.stop();
+  });
+  await context.close();
+}
+
+export const startCapture: StartCapture = async (onLive) => {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
   });
   const context = new AudioContext();
   try {
     await context.audioWorklet.addModule(worklet());
+    // A context made outside a click or key press may start suspended, and renders nothing.
+    await context.resume();
   } catch (error) {
-    stream.getTracks().forEach((track) => {
-      track.stop();
-    });
-    await context.close();
+    await closed(stream, context);
     throw error;
   }
   const source = context.createMediaStreamSource(stream);
   // No outputs: a sink, which the graph still renders.
   const node = new AudioWorkletNode(context, PROCESSOR, { numberOfOutputs: 0 });
   const chunks: Float32Array[] = [];
-  node.port.onmessage = (event: MessageEvent<Float32Array>) => {
+  let flushed: () => void = () => undefined;
+  node.port.onmessage = (event: MessageEvent<Float32Array | typeof FLUSH>) => {
+    if (event.data === FLUSH) {
+      flushed();
+      return;
+    }
     chunks.push(event.data);
+    if (chunks.length === 1) onLive();
   };
   source.connect(node);
   return {
     stop: async () => {
-      source.disconnect();
-      node.port.close();
-      stream.getTracks().forEach((track) => {
-        track.stop();
+      source.disconnect(); // nothing new is captured, but chunks may still be on their way
+      await new Promise<void>((resolve) => {
+        flushed = resolve;
+        setTimeout(resolve, FLUSH_TIMEOUT_MS);
+        node.port.postMessage(FLUSH);
       });
+      node.port.close();
       const rate = context.sampleRate;
-      await context.close();
+      await closed(stream, context);
       return encodeWav(downsample(joined(chunks), rate));
     },
   };
