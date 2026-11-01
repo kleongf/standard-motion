@@ -8,13 +8,15 @@ winnow eval test [--rubric-version N] [--json]
 winnow ask [droid_100:42 ...]  (the latest Rubric's visual Criteria; default every Episode)
 winnow reasons  (Spark's Reason for every Reject and Needs review whose results changed;
                  run it after `winnow ask`, which, unlike the API, doesn't queue them)
-winnow export <dir>  (the kept Episodes as LeRobot datasets, the rest's Reasons beside them)
+winnow export <dir> [--include keep|keep_and_review]  (the kept Episodes, or the Keeps and Needs
+                 review, as LeRobot datasets, the rest's Reasons beside them)
 """
 
 import argparse
 import asyncio
 import sys
 from pathlib import Path
+from typing import get_args
 
 from winnow.core.context import AppContext, build_context
 from winnow.core.settings import Settings, get_settings
@@ -24,6 +26,7 @@ from winnow.episodes.service import ingest_items
 from winnow.evaluation.models import EvaluationRequest
 from winnow.evaluation.service import UnknownRubricVersionError, run_evaluation
 from winnow.evaluation.text import report_text
+from winnow.export.models import Include
 from winnow.export.service import export_items
 from winnow.jobs.models import WorkItem
 from winnow.meta.transport import Transport
@@ -72,6 +75,12 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser("reasons", help="have Spark write each out-of-date Reason")
     export = commands.add_parser("export", help="write the kept Episodes in LeRobot format")
     export.add_argument("out", type=Path, help="a new or empty folder")
+    export.add_argument(
+        "--include",
+        choices=get_args(Include),
+        default="keep",
+        help="keep: the Keeps only; keep_and_review: the Needs review Episodes too",
+    )
     return parser
 
 
@@ -149,7 +158,7 @@ def _items(ctx: AppContext, args: argparse.Namespace) -> list[WorkItem]:
     if args.command == "reasons":
         return reason_items(ctx)
     if args.command == "export":
-        return export_items(args.out.resolve())
+        return export_items(ctx, args.out.resolve(), args.include)
     source = ctx.sources[args.source]
     assert isinstance(source, Droid101)
     sample = sample_indices([*source.index.values()], args.size, args.seed)

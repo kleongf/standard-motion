@@ -30,7 +30,7 @@ Options after the export folder (after `--` when using `--episodes`):
 
 It exits non-zero if any dataset fails. To try another LeRobot release, set `LEROBOT='lerobot[training]==X.Y.Z'`.
 
-**`--episodes` ignores Triage decisions.** The app and `winnow export` only export kept Episodes. With no Spark or tracks, most real Episodes end up Needs review, so nothing would be exported. This mode lets you check the format on real Episodes anyway. It calls the exporter directly through `backend/tools/export_episodes.py`, which exists only for this check and is not part of the app. It builds no app context, so it uses no database and makes no Meta API calls. droid_100 is downloaded into `$DATA_DIR/droid_100`, and droid_1.0.1 is range-read from the Hub. Point `DATA_DIR` at a scratch folder to keep it out of your real data.
+**`--episodes` ignores Triage decisions.** The app and `winnow export` export Episodes by decision: the Keeps, or with Keep + Needs review (`--include keep_and_review`) the Needs review Episodes too. With no Spark or tracks, most real Episodes end up Needs review, so Keep only would export nothing. This mode lets you check the format on real Episodes anyway. It calls the exporter directly through `backend/tools/export_episodes.py`, which exists only for this check and is not part of the app. It builds no app context, so it uses no database and makes no Meta API calls. droid_100 is downloaded into `$DATA_DIR/droid_100`, and droid_1.0.1 is range-read from the Hub. Point `DATA_DIR` at a scratch folder to keep it out of your real data.
 
 ## Cost
 

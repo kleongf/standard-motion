@@ -88,31 +88,63 @@ def _episodes_table(rows: list[dict[str, Any]], source: pa.Schema) -> pa.Table:
     return pa.Table.from_pylist(rows, schema=pa.unify_schemas([source, extra]))
 
 
-def write_lerobot(source: ExportSource, indices: list[int], out: Path) -> None:
-    info = source.info()
-    chunks = int((info or {}).get("chunks_size") or CHUNKS_SIZE)
-    table = source.rows(indices)
-    keys = video_keys(table)
-    rows: list[dict[str, Any]] = table.to_pylist()
-    texts, task_numbers = _task_numbers(rows, source.task_texts())
-    frames: list[pa.Table] = []
-    exported: list[dict[str, Any]] = []
-    first_clips: dict[str, Path] = {}
-    start = 0
-    for new, row in enumerate(rows):
-        frames.append(renumbered(source.frames(row), new, start, task_numbers))
-        clips = {key: _place(source, row, key, new, out, chunks) for key in keys}
+class LerobotWriter:
+    """Writes the dataset an Episode at a time, so an export can report each one: `write` takes
+    the chosen Episodes in order, then `finish` writes the tables that need them all."""
+
+    def __init__(self, source: ExportSource, indices: list[int], out: Path) -> None:
+        self._source, self._out = source, out
+        self._info = source.info()
+        self._chunks = int((self._info or {}).get("chunks_size") or CHUNKS_SIZE)
+        self._table = source.rows(indices)
+        self._keys = video_keys(self._table)
+        self._rows: list[dict[str, Any]] = self._table.to_pylist()
+        self._texts, self._task_numbers = _task_numbers(self._rows, source.task_texts())
+        self._frames: list[pa.Table] = []
+        self._exported: list[dict[str, Any]] = []
+        self._first_clips: dict[str, Path] = {}
+        self._start = 0
+
+    @property
+    def written(self) -> int:
+        return len(self._exported)
+
+    def write(self) -> None:
+        """The next Episode's frames and clips."""
+        new = self.written
+        row = self._rows[new]
+        frames = renumbered(self._source.frames(row), new, self._start, self._task_numbers)
+        clips = {
+            key: _place(self._source, row, key, new, self._out, self._chunks) for key in self._keys
+        }
         for key, (_, clip) in clips.items():
-            first_clips.setdefault(key, clip)
+            self._first_clips.setdefault(key, clip)
         videos = {key: placed for key, (placed, _) in clips.items()}
-        exported.append(_with_video_stats(rebased(row, new, start, videos, frames[-1]), clips))
-        start += frames[-1].num_rows
-    data = pa.concat_tables(frames)
-    _write_parquet(data, out / DATA_PATH.format(chunk_index=0, file_index=0))
-    _write_parquet(_episodes_table(exported, table.schema), out / EPISODES_PATH)
-    _write_parquet(tasks_table(texts), out / "meta" / "tasks.parquet")
-    stats = json.dumps(aggregate_stats(exported), indent=4)
-    (out / "meta" / "stats.json").write_text(stats + "\n")
-    features = {key: video_feature(clip, source.fps) for key, clip in first_clips.items()}
-    meta = info_json(info, data, len(rows), len(texts), source.fps, features)
-    (out / "meta" / "info.json").write_text(json.dumps(meta, indent=2) + "\n")
+        self._frames.append(frames)
+        self._exported.append(
+            _with_video_stats(rebased(row, new, self._start, videos, frames), clips)
+        )
+        self._start += frames.num_rows
+
+    def finish(self) -> None:
+        """The data, meta/episodes, tasks, stats and info, once every Episode is written."""
+        out, rows = self._out, self._exported
+        if len(rows) != len(self._rows):
+            raise ValueError(f"{len(rows)} of {len(self._rows)} Episodes written to {out}")
+        data = pa.concat_tables(self._frames)
+        _write_parquet(data, out / DATA_PATH.format(chunk_index=0, file_index=0))
+        _write_parquet(_episodes_table(rows, self._table.schema), out / EPISODES_PATH)
+        _write_parquet(tasks_table(self._texts), out / "meta" / "tasks.parquet")
+        stats = json.dumps(aggregate_stats(rows), indent=4)
+        (out / "meta" / "stats.json").write_text(stats + "\n")
+        fps = self._source.fps
+        features = {key: video_feature(clip, fps) for key, clip in self._first_clips.items()}
+        meta = info_json(self._info, data, len(rows), len(self._texts), fps, features)
+        (out / "meta" / "info.json").write_text(json.dumps(meta, indent=2) + "\n")
+
+
+def write_lerobot(source: ExportSource, indices: list[int], out: Path) -> None:
+    writer = LerobotWriter(source, indices, out)
+    for _ in indices:
+        writer.write()
+    writer.finish()

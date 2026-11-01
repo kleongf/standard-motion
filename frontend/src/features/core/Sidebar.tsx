@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   Database,
   FolderKanban,
+  FolderOutput,
   ListFilter,
   ListChecks,
   MessageSquareText,
@@ -34,6 +35,7 @@ const icons: Record<Page, ComponentType<{ className?: string }>> = {
   episodes: ListChecks,
   review: ScanSearch,
   audit: ClipboardCheck,
+  export: FolderOutput,
   reference: Tags,
   evaluation: BarChart3,
 };

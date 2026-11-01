@@ -489,10 +489,11 @@ export interface paths {
         put?: never;
         /**
          * Post Export
-         * @description Export the kept Episodes in the background: every Episode outside the Test set, by its
-         *     Triage decision, whether Reference-labelled or not. A LeRobot v3.0 dataset per source, with
-         *     rejections.jsonl holding the Reason for each Episode not kept. The finished job's item names
-         *     the new folder under the data dir's exports/.
+         * @description Export in the background: every Episode outside the Test set, by its Triage decision,
+         *     whether Reference-labelled or not, the Keeps only or with the Needs review Episodes too. A
+         *     LeRobot v3.0 dataset per source, with rejections.jsonl holding the Reason for each Episode
+         *     left out and manifest.json what was exported and why. The job has an item per Episode, then
+         *     one that finishes the export and names its new folder under the data dir's exports/.
          */
         post: operations["post_export_api_export_post"];
         delete?: never;
@@ -501,7 +502,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/export/scope": {
+    "/api/export/past": {
         parameters: {
             query?: never;
             header?: never;
@@ -509,11 +510,32 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Export Scope
-         * @description How many Episodes an export would decide on, and how many of them aren't
-         *     Reference-labelled yet: exporting shows their decisions, so the UI warns first.
+         * Get Past Exports
+         * @description The exports under the data dir's exports/, newest first.
          */
-        get: operations["get_export_scope_api_export_scope_get"];
+        get: operations["get_past_exports_api_export_past_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Export Preview
+         * @description What an export would hold, per source: the Reference-labelled Episodes by Triage
+         *     decision, how many aren't labelled yet (exporting shows their decisions, so the UI warns
+         *     first) and how many are in the Test set, never exported.
+         */
+        get: operations["get_export_preview_api_export_preview_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1870,15 +1892,34 @@ export interface components {
             reason: "not pick-and-place" | "object too small to see";
         };
         /**
-         * ExportScope
-         * @description What an export would decide on, before it runs: every Episode outside the Test set, and
-         *     how many of them have no Reference label yet, whose decisions exporting shows.
+         * ExportPreview
+         * @description What an export would hold, before it runs, per source; `exported` is how many of the
+         *     Reference-labelled it writes with `include`, and `nothing_exported` why it would write none
+         *     (None while Episodes awaiting a label could still be).
          */
-        ExportScope: {
-            /** Episodes */
-            episodes: number;
-            /** Unlabelled */
-            unlabelled: number;
+        ExportPreview: {
+            /** Exported */
+            exported: number;
+            /**
+             * Include
+             * @enum {string}
+             */
+            include: "keep" | "keep_and_review";
+            /** Nothing Exported */
+            nothing_exported: string | null;
+            /** Rubric Version */
+            rubric_version: number;
+            /** Sources */
+            sources: components["schemas"]["SourceCounts"][];
+        };
+        /** ExportRequest */
+        ExportRequest: {
+            /**
+             * Include
+             * @default keep
+             * @enum {string}
+             */
+            include: "keep" | "keep_and_review";
         };
         /** ExportStarted */
         ExportStarted: {
@@ -2260,6 +2301,23 @@ export interface components {
             episode_id: string;
             /** Failed Phrases */
             failed_phrases: string[];
+        };
+        /**
+         * PastExport
+         * @description An export written under the data dir's exports/, from its manifest.json.
+         */
+        PastExport: {
+            /** Created At */
+            created_at: string;
+            /** Episodes */
+            episodes: number;
+            /**
+             * Include
+             * @enum {string}
+             */
+            include: "keep" | "keep_and_review";
+            /** Path */
+            path: string;
         };
         /** PhraseChip */
         PhraseChip: {
@@ -2664,6 +2722,21 @@ export interface components {
             episodes: number;
             /** Name */
             name: string;
+        };
+        /** SourceCounts */
+        SourceCounts: {
+            /** Awaiting Label */
+            awaiting_label: number;
+            /** Keep */
+            keep: number;
+            /** Needs Review */
+            needs_review: number;
+            /** Reject */
+            reject: number;
+            /** Source */
+            source: string;
+            /** Test Set */
+            test_set: number;
         };
         /**
          * StepCost
@@ -3909,7 +3982,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             202: {
@@ -3920,9 +3997,18 @@ export interface operations {
                     "application/json": components["schemas"]["ExportStarted"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
-    get_export_scope_api_export_scope_get: {
+    get_past_exports_api_export_past_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -3937,7 +4023,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExportScope"];
+                    "application/json": components["schemas"]["PastExport"][];
+                };
+            };
+        };
+    };
+    get_export_preview_api_export_preview_get: {
+        parameters: {
+            query?: {
+                include?: "keep" | "keep_and_review";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -1,7 +1,7 @@
 """For the LeRobot format check only (scripts/check-lerobot-export.sh): write the Episodes named
 on the command line as an export, with the exporter the app uses, ignoring Triage decisions.
 
-The app and `winnow export` only ever export kept Episodes. This tool exists so the format can
+The app and `winnow export` only export Episodes by decision. This tool exists so the format can
 be checked on real Episodes before any are kept; it isn't part of the app and never should be.
 It builds no app context: no database, no Meta API.
 
@@ -16,7 +16,7 @@ from pathlib import Path
 from winnow.core.settings import get_settings
 from winnow.episodes.sources import sources_from
 from winnow.export.plan import ExportPlan
-from winnow.export.service import write_export
+from winnow.export.run import write_export
 
 
 def _kept(episode_ids: list[str]) -> dict[str, list[int]]:
