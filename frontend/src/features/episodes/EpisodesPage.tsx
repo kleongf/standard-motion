@@ -3,10 +3,12 @@
 // Phrase, Uncertainty signal and set, and sortable by confidence or quality; a row opens the
 // full-page Workstation. The tab, filters, sort, open Episode and its start time live in the URL;
 // J/K step through the Episodes shown. Export writes out the kept ones.
+import { NextStep } from "../core/NextStep";
 import { Page, PageHeader } from "../core/PageHeader";
 import { navigate, useSearchParams } from "../core/url";
 import { ExportButton } from "../export/ExportButton";
 import { ExportStatus } from "../export/ExportStatus";
+import { AwaitingLabelBanner } from "../referenceLabels/AwaitingLabel";
 import { useRubric } from "../rubric/useRubric";
 import { setsByEpisode, useSets } from "../sets/useSets";
 import { countDecisions, parseTriageTab, TriageTabs, type TriageTab } from "../triage/TriageTabs";
@@ -98,12 +100,13 @@ export function EpisodesPage() {
       <PageHeader title="Episodes" subtitle={summary} actions={<ExportButton />} />
       <ExportStatus />
       {episodes.length === 0 && loaded && (
-        <p className="text-sm text-muted-foreground">
+        <NextStep page="prepare" action="Go to Prepare">
           No Episodes yet: ingest some on the Prepare page.
-        </p>
+        </NextStep>
       )}
       {episodes.length > 0 && (
         <>
+          <AwaitingLabelBanner />
           <div>
             <TriageTabs
               tab={tab}

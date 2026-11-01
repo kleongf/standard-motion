@@ -1,5 +1,7 @@
-// The Describe page's header: the anchor pool every number comes from, how the shown Rubric
-// sorts it, the Rubric version select, and Run, which never blocks.
+// The Describe page's top bar: how the shown Rubric sorts the anchor pool, a chip that jumps to
+// the Rubric card, the Rubric version select, and Run, which never blocks.
+import { FileText } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -10,16 +12,18 @@ import {
 } from "@/components/ui/select";
 
 import { navigate } from "../core/url";
-import { type RubricDraft, useAnchorPool } from "./useDraft";
+import { scrollToRubric } from "./RubricCard";
 import { warningCount } from "./sanity";
-import { type AnchorPreview, useRun } from "./useDraftEdits";
+import { type RubricDraft, useAnchorPool } from "./useDraft";
+import type { AnchorPreview } from "./useDraftEdits";
 import { useVersions } from "./useRubric";
 
 function plural(n: number, word: string): string {
   return `${String(n)} ${word}${n === 1 ? "" : "s"}`;
 }
 
-function AnchorPoolLine() {
+/** The Episodes every number comes from: the Dev set, never the Test set. */
+export function AnchorPoolLine() {
   const pool = useAnchorPool().data;
   if (!pool) return null;
   return (
@@ -50,7 +54,7 @@ function SanityCount(props: { preview?: AnchorPreview | undefined }) {
   if (warnings === 0) return null;
   return (
     <p className="text-xs text-amber-700 dark:text-amber-400" data-testid="sanity-count">
-      {plural(warnings, "Rubric warning")}: see the Criteria marked below
+      · {plural(warnings, "Rubric warning")}
     </p>
   );
 }
@@ -85,28 +89,32 @@ function runLabel(next: number, unconfirmed: number): string {
   return `Run v${String(next)}${assumptions}`;
 }
 
-function RunButton(props: { draft?: RubricDraft | null | undefined }) {
-  const run = useRun();
+interface Run {
+  pending: boolean;
+  onRun: () => void;
+}
+
+function RunButton(props: { draft?: RubricDraft | null | undefined; run: Run }) {
+  const { run } = props;
   const next = (useVersions().data?.[0]?.version ?? 0) + 1;
   const label = runLabel(next, props.draft?.assumptions_unconfirmed ?? 0);
   return (
-    <div className="flex items-center gap-2">
-      {run.data && (
-        <span className="text-xs text-muted-foreground" data-testid="run-result">
-          v{run.data.version} frozen; every Episode is scored against it
-        </span>
-      )}
-      {run.error && <span className="text-xs text-destructive">{run.error.message}</span>}
-      <Button
-        size="sm"
-        disabled={!props.draft || run.isPending}
-        onClick={() => {
-          run.mutate();
-        }}
-      >
-        {run.isPending ? "Running…" : label}
-      </Button>
-    </div>
+    <Button size="sm" disabled={!props.draft || run.pending} onClick={run.onRun}>
+      {run.pending ? "Running…" : label}
+    </Button>
+  );
+}
+
+function RubricChip() {
+  return (
+    <button
+      type="button"
+      onClick={scrollToRubric}
+      className="inline-flex h-8 items-center gap-1.5 rounded-full border bg-card px-3 text-xs font-medium hover:bg-muted"
+    >
+      <FileText className="size-3.5 text-muted-foreground" />
+      Rubric
+    </button>
   );
 }
 
@@ -114,17 +122,23 @@ export function DescribeHeader(props: {
   version: number | null;
   draft?: RubricDraft | null | undefined;
   preview?: AnchorPreview | undefined;
+  run?: Run;
 }) {
+  const drafting = props.version === null;
   return (
-    <header className="sticky top-0 z-10 flex items-end gap-4 border-b bg-background/95 px-8 py-3 backdrop-blur">
-      <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-semibold">Describe</h1>
-        <AnchorPoolLine />
-        <AnchorSort preview={props.preview} />
-        <SanityCount preview={props.preview} />
+    <header className="sticky top-0 z-20 border-b bg-background/85 backdrop-blur">
+      <div className="flex h-14 items-center gap-3 px-8">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-base leading-tight font-semibold">Describe &amp; run</h1>
+          <div className="flex gap-1 truncate">
+            <AnchorSort preview={props.preview} />
+            <SanityCount preview={props.preview} />
+          </div>
+        </div>
+        {drafting && props.draft && <RubricChip />}
+        <VersionSelect version={props.version} />
+        {drafting && props.run && <RunButton draft={props.draft} run={props.run} />}
       </div>
-      <VersionSelect version={props.version} />
-      {props.version === null && <RunButton draft={props.draft} />}
     </header>
   );
 }

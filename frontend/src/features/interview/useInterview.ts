@@ -80,3 +80,24 @@ export function useUndo() {
     onSuccess: after,
   });
 }
+
+export type TextDraw = components["schemas"]["TextDraw"];
+export type TextReply = components["schemas"]["TextReply"];
+
+/** The curator's own words, read by Spark: to the question being asked (`question_key`), or,
+ * with none, a change to the Description. Both the interview and the draft come back. */
+export function useSendText() {
+  const queryClient = useQueryClient();
+  const after = useAfterAnswer();
+  return useMutation({
+    mutationFn: async (draw: TextDraw) => {
+      const { data, error, response } = await api.POST("/api/interview/text", { body: draw });
+      if (!response.ok || !data) throw failure(error, "Spark couldn't read that");
+      return data;
+    },
+    onSuccess: async (reply) => {
+      queryClient.setQueryData(draftKey, reply.draft);
+      await after(reply.interview);
+    },
+  });
+}

@@ -74,6 +74,17 @@ export async function referenceLabel(
   }
 }
 
+/** Open the Describe composer on the Description. With a draft, the composer is a chat with Spark
+ * until "Edit the Description" opens the Description in it. */
+export async function openDescription(page: Page): Promise<void> {
+  const box = page.getByRole("textbox", { name: /^(Description|Message Spark)$/ });
+  await expect(box).toBeVisible();
+  if ((await box.getAttribute("aria-label")) === "Message Spark") {
+    await page.getByRole("button", { name: "Edit the Description" }).first().click();
+  }
+  await expect(page.getByLabel("Description", { exact: true })).toBeVisible();
+}
+
 /** Click Compile on the Describe page, its Description box holding `description`. When the draft
  * already has that Description (another spec may have left it), compiling starts the draft
  * afresh, which asks first: confirm it. */

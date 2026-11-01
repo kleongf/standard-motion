@@ -1,9 +1,8 @@
-// The live Rubric: the compiled Description, the two Rubric-level settings, and each Phrase's
-// section with its status, restatement and Criterion cards, each sorting the anchor pool.
+// The live Rubric: the two Rubric-level settings, and each Phrase's section with its status, restatement and Criterion cards, each sorting the anchor pool.
 import { cn } from "@/lib/utils";
 
 import { type CardEditor, CriterionCard } from "./CriterionCard";
-import { DescriptionText, phraseAnchor } from "./DescriptionText";
+import { phraseAnchor } from "./DescriptionText";
 import { PHRASE_LABELS, PHRASE_TONES } from "./phraseTones";
 import { cm, SettingCard } from "./SettingCard";
 import type { Criterion, DraftPhrase, RubricDraft } from "./useDraft";
@@ -73,23 +72,7 @@ export function RubricPanel(props: {
   const { gripper_closed_level: closed, grasp_rise_m: rise } = draft.settings;
   return (
     <div>
-      <div className="rounded-lg border bg-card p-4">
-        <div className="mb-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-          Description
-        </div>
-        <DescriptionText draft={draft} />
-        {draft.uncovered.length > 0 && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Wavy underlines mark words in no Phrase: nothing checks them.
-          </p>
-        )}
-        {draft.rejected.map((r) => (
-          <p key={r.text} className="mt-2 text-xs text-destructive" data-testid="rejected-phrase">
-            Spark proposed “{r.text}”, refused: {r.reason}
-          </p>
-        ))}
-      </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <SettingCard
           label="Gripper closed above"
           shown={closed.value}

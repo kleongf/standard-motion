@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { clickCompile, freezeDevSet } from "./helpers.ts";
+import { clickCompile, freezeDevSet, openDescription } from "./helpers.ts";
 
 // The frozen Description, whose compile against the Dev set is recorded.
 const FROZEN =
@@ -19,6 +19,7 @@ test("a Description compiles into a Rubric draft: Phrases tinted and linked to C
   await expect(page.getByTestId("anchor-pool")).toHaveText(
     /^Anchor pool: Dev set · 1 Episode · \d+ Test set Episodes? hidden$/,
   );
+  await openDescription(page);
   await page.getByLabel("Description", { exact: true }).fill(FROZEN);
   await clickCompile(page, request, FROZEN);
 
