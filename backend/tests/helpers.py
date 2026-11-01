@@ -1,4 +1,6 @@
+import subprocess
 import time
+from pathlib import Path
 from typing import cast
 
 from fastapi import FastAPI
@@ -86,3 +88,14 @@ def reference_label(api: TestClient, episode_id: str) -> None:
     body = {"phrases": phrases, "elapsed_s": 10.0, "instruction": "Put the block in the bowl"}
     saved = api.post(f"/api/episodes/{episode_id}/reference-labels", json=body)
     assert saved.status_code == 201, saved.text
+
+
+def decoded(clip: Path | str) -> list[str]:
+    """Each decoded frame's checksum, in order."""
+    out = subprocess.run(
+        ["ffmpeg", "-loglevel", "error", "-i", str(clip), "-f", "framemd5", "-"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    return [line.rsplit(",", 1)[1].strip() for line in out.splitlines() if not line.startswith("#")]

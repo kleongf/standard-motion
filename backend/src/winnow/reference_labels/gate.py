@@ -5,7 +5,10 @@ so labels are given blind.
 
 Every route serving a per-Episode output goes through here: one Episode's output takes a
 `RevealedEpisode` (403 until labelled), a list of outputs reads only `revealed_episodes(ctx)`.
-Episode facts (video, robot data, object tracks) aren't outputs and stay visible."""
+Episode facts (video, robot data, object tracks) aren't outputs and stay visible.
+
+The export is the one exception: it writes every Episode outside the Test set by its Triage
+decision (export/plan.py), after the UI says how many aren't labelled yet."""
 
 from typing import Annotated, Any
 

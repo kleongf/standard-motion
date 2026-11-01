@@ -99,14 +99,15 @@ def _write_parquet(root: Path, episodes: int, frames: int, open_gripper: tuple[i
     pq.write_table(tasks, meta / "tasks.parquet")  # pyright: ignore[reportUnknownMemberType]
 
 
-def write_clip(path: Path, frames: int, pattern: str) -> None:
-    """`pattern` is a lavfi test source's name, or a whole lavfi graph."""
+def write_clip(path: Path, frames: int, pattern: str, *options: str) -> None:
+    """`pattern` is a lavfi test source's name, or a whole lavfi graph; `options` are more of
+    x264's."""
     path.parent.mkdir(parents=True, exist_ok=True)
     source = pattern if "=" in pattern else f"{pattern}=size=320x180:rate={FPS:g}"
     subprocess.run(
         [
             *("ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", source),
-            *("-frames:v", str(frames), "-c:v", "libx264", "-pix_fmt", "yuv420p"),
+            *("-frames:v", str(frames), "-c:v", "libx264", "-pix_fmt", "yuv420p", *options),
             *("-bitexact", "-map_metadata", "-1", str(path)),
         ],
         check=True,

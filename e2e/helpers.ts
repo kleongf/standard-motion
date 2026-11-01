@@ -29,6 +29,7 @@ export const EPISODES = {
   voice: [19],
   reason: [20],
   quality: [22, 23],
+  export: [21],
 } as const;
 
 export function episodeId(index: number): string {

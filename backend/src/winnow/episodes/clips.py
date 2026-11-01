@@ -86,10 +86,11 @@ def keyframe_at(source: str, t: float) -> float:
 
 
 def frame_checksum(source: str, t: float) -> str:
-    """The decoded frame at `t`'s checksum: the same picture gives the same one in any file."""
+    """The checksum of the frame decoded at `t` (to the millisecond, so a time rounded a little
+    past the frame's still finds it): the same picture gives the same one in any file."""
     result = subprocess.run(
         [
-            *("ffmpeg", "-loglevel", "error", "-ss", f"{t:.6f}", "-i", source),
+            *("ffmpeg", "-loglevel", "error", "-ss", f"{max(t - 0.001, 0.0):.6f}", "-i", source),
             *("-frames:v", "1", "-f", "framemd5", "-"),
         ],
         capture_output=True, text=True, check=False,
@@ -100,20 +101,21 @@ def frame_checksum(source: str, t: float) -> str:
     return lines[0].rsplit(",", 1)[1].strip()
 
 
-def copy_cut(source: str, start_s: float, duration_s: float, out: Path) -> float:
-    """The stretch from `start_s` copied without re-encoding, so in the source's own codec. A
-    copy can only start on a keyframe, so it starts at the one before `start_s` and ends a
-    second late (frames held back for reordering); returns where `start_s` falls in it."""
+def copy_cut(source: str, start_s: float, frames: int, out: Path) -> bool:
+    """`frames` frames from `start_s` copied without re-encoding, so in the source's own codec,
+    and no frame more: a copy has to start on a keyframe, so this writes nothing and returns
+    False when `start_s` isn't on one. Without B-frames the frames come out in order, so the
+    copy ends on the stretch's last frame; check it, since a codec that reorders them doesn't."""
+    if abs(keyframe_at(source, start_s) - start_s) > 0.001:
+        return False
     out.parent.mkdir(parents=True, exist_ok=True)
     partial = out.with_suffix(".partial.mp4")
-    key = keyframe_at(source, start_s)
-    offset = max(start_s - key, 0.0)
     _ffmpeg(
-        "-ss", f"{key:.6f}", "-i", source, "-t", f"{offset + duration_s + 1.0:.6f}",
+        "-ss", f"{start_s:.6f}", "-i", source, "-frames:v", str(frames),
         "-map", "0:v:0", "-c", "copy", str(partial),
     )  # fmt: skip
     partial.replace(out)
-    return offset
+    return True
 
 
 def cut_cropped(

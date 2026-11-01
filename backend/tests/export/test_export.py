@@ -2,8 +2,8 @@
 Reason beside it. The Test set is never exported."""
 
 import json
-import subprocess
 from collections.abc import Iterator
+from datetime import datetime
 from pathlib import Path
 from typing import cast
 
@@ -13,13 +13,13 @@ import pyarrow.parquet as pq
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.helpers import app_context, reference_label, wait_for_job
+from tests.helpers import app_context, decoded, reference_label, wait_for_job
 from winnow.app import create_app
 from winnow.baseline.prompts import FROZEN
 from winnow.cli import main
 from winnow.core.settings import Settings
 from winnow.episodes.droid100 import CAMERAS
-from winnow.episodes.droid101 import Droid101
+from winnow.episodes.droid101 import CAMERA_KEYS, FPS, Droid101
 from winnow.episodes.droid101_files import LocalFiles
 from winnow.episodes.fixtures import clip_path
 from winnow.episodes.models import EpisodeSignals
@@ -31,7 +31,9 @@ from winnow.rubric.models import Rubric
 DROID100 = [0, 1, 2, 4]  # 0 grasps cleanly, 1 releases high, 2 regrasps, 4 never closes
 DROID101 = [0, 1, 2, 3]  # each grasps cleanly
 TEST_SET = ["droid_1.0.1:1", "droid_100:0"]  # kept, but never exported
-UNLABELLED = "droid_1.0.1:3"  # its Triage decision stays hidden, so it isn't exported
+# Kept with no Reference label: exported all the same, by their Triage decisions.
+UNLABELLED = ["droid_1.0.1:3", "droid_100:1"]
+KEPT_101 = [0, 2, 3]  # the droid_1.0.1 Episodes exported, in order
 NEVER_DROPS = FROZEN.phrases[1]
 
 
@@ -49,15 +51,15 @@ def settings(
 
 @pytest.fixture(scope="module")
 def api(settings: Settings) -> Iterator[TestClient]:
-    """Both sources ingested and labelled, scored on how the gripper grasps and releases: of
-    droid_100, 0 and 1 are kept (1 by a reviewer's label: it releases high), 2 and 4 rejected;
-    every droid_1.0.1 Episode is kept."""
+    """Both sources ingested and all but UNLABELLED Reference-labelled, scored on how the gripper
+    grasps and releases: of droid_100, 0 and 1 are kept (1 by a reviewer's label: it releases
+    high), 2 and 4 rejected; every droid_1.0.1 Episode is kept."""
     with TestClient(create_app(settings)) as client:
         for source, indices in (("droid_100", DROID100), ("droid_1.0.1", DROID101)):
             job = client.post("/api/episodes/ingest", json={"source": source, "indices": indices})
             wait_for_job(client, job.json()["job_id"])
             for index in indices:
-                if f"{source}:{index}" != UNLABELLED:
+                if f"{source}:{index}" not in UNLABELLED:
                     reference_label(client, f"{source}:{index}")
         ctx = app_context(client)
         ctx.sets.add("test", TEST_SET)
@@ -76,17 +78,6 @@ def exported(api: TestClient, tmp_path_factory: pytest.TempPathFactory) -> Path:
     return out
 
 
-def decoded(clip: Path) -> list[str]:
-    """Each decoded frame's checksum."""
-    out = subprocess.run(
-        ["ffmpeg", "-loglevel", "error", "-i", str(clip), "-f", "framemd5", "-"],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
-    return [line.rsplit(",", 1)[1].strip() for line in out.splitlines() if not line.startswith("#")]
-
-
 def assert_same_signals(exported: EpisodeSignals, source: EpisodeSignals) -> None:
     assert exported.fps == source.fps
     assert exported.dataset_outcome == source.dataset_outcome
@@ -103,9 +94,9 @@ def test_droid101_exports_only_kept_episodes_the_reader_loads_unchanged(
     source = Droid101(LocalFiles(droid101_root))
     export = Droid101(LocalFiles(exported / "droid_1.0.1"))
 
-    # 1 is in the Test set and 3 has no Reference label: kept 0 and 2 become 0 and 1.
-    assert sorted(export.index) == [0, 1]
-    for new, old in ((0, 0), (1, 2)):
+    # 1 is in the Test set: kept 0, 2 and 3 become 0, 1 and 2.
+    assert sorted(export.index) == [0, 1, 2]
+    for new, old in enumerate(KEPT_101):
         ours, theirs = export.load(new), source.load(old)
         assert ours.signals.episode_index == new
         assert ours.instruction == theirs.instruction
@@ -117,6 +108,85 @@ def test_droid101_exports_only_kept_episodes_the_reader_loads_unchanged(
             frames = decoded(tmp_path / f"ours-{new}-{camera}.mp4")
             assert len(frames) == source.meta(old).length
             assert frames == decoded(tmp_path / f"theirs-{new}-{camera}.mp4")
+
+
+def episode_rows(data: pa.Table, index: int) -> list[dict[str, object]]:
+    rows = [i == index for i in data.column("episode_index").to_pylist()]
+    return data.filter(pa.array(rows, type=pa.bool_())).to_pylist()
+
+
+def test_kept_episodes_export_by_decision_without_a_reference_label_never_the_test_set(
+    exported: Path, droid100_root: Path, droid101_root: Path
+):
+    # droid_100:1 and droid_1.0.1:3 are unlabelled; droid_100:0 and droid_1.0.1:1, Test set.
+    for root, name, kept in (
+        (droid100_root / "main", "droid_100", [1]),
+        (droid101_root, "droid_1.0.1", KEPT_101),
+    ):
+        data = "data/chunk-000/file-000.parquet"
+        source, ours = (pq.read_table(r / data) for r in (root, exported / name))  # pyright: ignore[reportUnknownMemberType]
+        indices = {int(str(i)) for i in ours.column("episode_index").to_pylist()}
+        assert sorted(indices) == list(range(len(kept)))
+        for new, old in enumerate(kept):
+            theirs = episode_rows(source, old)
+            renumbered = episode_rows(ours, new)
+            assert [r["timestamp"] for r in renumbered] == [r["timestamp"] for r in theirs]
+            assert all(r["episode_index"] == new for r in renumbered)
+
+
+def test_the_scope_counts_the_episodes_exported_without_a_reference_label(api: TestClient):
+    scope = api.get("/api/export/scope")
+
+    # droid_100 1, 2 and 4 and droid_1.0.1 0, 2 and 3: the rest are in the Test set.
+    assert scope.json() == {"episodes": 6, "unlabelled": 2}
+
+
+def episodes_of(export: Path) -> list[dict[str, object]]:
+    path = export / "meta" / "episodes" / "chunk-000" / "file-000.parquet"
+    return pq.read_table(path).to_pylist()  # pyright: ignore[reportUnknownMemberType]
+
+
+def test_every_exported_clip_holds_exactly_its_episodes_frames(
+    exported: Path, droid100_root: Path, droid101_root: Path
+):
+    # droid_1.0.1 Episodes share a video per camera: each clip is its own stretch, no more.
+    source = Droid101(LocalFiles(droid101_root))
+    for row, old in zip(episodes_of(exported / "droid_1.0.1"), KEPT_101, strict=True):
+        new, length = int(str(row["episode_index"])), source.meta(old).length
+        for key in CAMERA_KEYS.values():
+            video = f"videos/observation.images.{key}"
+            assert row[f"{video}/from_timestamp"] == 0.0
+            shared = decoded(droid101_root / video / "chunk-000" / "file-000.mp4")
+            start = round(float(source.meta(old).row[f"{video}/from_timestamp"]) * FPS)
+            clip = exported / "droid_1.0.1" / video / "chunk-000" / f"file-{new:03d}.mp4"
+            assert decoded(clip) == shared[start : start + length]
+    # droid_100's are copies of the Episode's own clip.
+    [row] = episodes_of(exported / "droid_100")
+    for camera in CAMERAS:
+        clip = exported / "droid_100" / "videos" / f"observation.images.{camera}" / "chunk-000"
+        assert decoded(clip / "file-000.mp4") == decoded(clip_path(droid100_root, 1, camera))
+        assert len(decoded(clip / "file-000.mp4")) == row["length"]
+
+
+def test_stats_json_holds_the_stats_of_the_exported_data_on_both_sources(exported: Path):
+    for name in ("droid_100", "droid_1.0.1"):
+        out = exported / name
+        stats = json.loads((out / "meta" / "stats.json").read_text())
+        data = pq.read_table(out / "data" / "chunk-000" / "file-000.parquet")  # pyright: ignore[reportUnknownMemberType]
+        numeric = [c for c in data.column_names if c != "language_instruction"]
+
+        assert set(numeric) <= set(stats), name
+        for column in numeric:
+            values = np.asarray(data.column(column).to_pylist()).reshape(data.num_rows, -1)
+            ours = cast(dict[str, list[float]], stats[column])
+            assert ours["min"] == values.min(axis=0).tolist(), column
+            assert ours["max"] == values.max(axis=0).tolist(), column
+            numbers = values.astype(np.float64)
+            np.testing.assert_allclose(ours["mean"], numbers.mean(axis=0), atol=1e-6)
+            np.testing.assert_allclose(ours["std"], numbers.std(axis=0), atol=1e-6)
+            assert ours["count"] == [data.num_rows]
+            low, middle, high = (np.asarray(ours[q]) for q in ("q01", "q50", "q99"))
+            assert (low <= middle).all() and (middle <= high).all(), column
 
 
 def test_droid100_exports_every_column_of_its_kept_episode_renumbered(
@@ -177,15 +247,49 @@ def test_every_episode_not_kept_is_listed_with_its_reason(exported: Path):
     ]
 
 
+def test_the_manifest_maps_each_exported_episode_to_its_source_and_the_counts_add_up(
+    exported: Path, api: TestClient
+):
+    manifest = json.loads((exported / "manifest.json").read_text())
+
+    kept = [("droid_1.0.1", new, old) for new, old in enumerate(KEPT_101)] + [("droid_100", 0, 1)]
+    assert manifest["kept"] == [
+        {
+            "exported_episode_index": new,
+            "source": source,
+            "source_episode_index": old,
+            "episode_id": f"{source}:{old}",
+            "decision": "keep",
+        }
+        for source, new, old in kept
+    ]
+    assert manifest["skipped"] == {"reject": 2, "needs_review": 0, "test_set": 2}
+    ctx = app_context(api)
+    assert len(manifest["kept"]) + sum(manifest["skipped"].values()) == len(ctx.episodes.list())
+    rejections = (exported / "rejections.jsonl").read_text().splitlines()
+    assert len(rejections) == manifest["skipped"]["reject"] + manifest["skipped"]["needs_review"]
+    for source in ("droid_1.0.1", "droid_100"):
+        info = json.loads((exported / source / "meta" / "info.json").read_text())
+        assert info["total_episodes"] == sum(k["source"] == source for k in manifest["kept"])
+    assert manifest["rubric_version"] == ctx.rubrics.latest().version
+    assert manifest["margin_multiplier"] == 1.0
+    assert manifest["not_reference_labelled"] == 2
+    assert datetime.fromisoformat(manifest["created_at"]).tzinfo is not None
+
+
 def test_cli_exports_to_the_folder_given_and_never_over_another_export(
     api: TestClient, settings: Settings, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ):
     out = tmp_path / "kept"
 
     assert main(["export", str(out)], settings=settings) == 0
-    written = f"3 kept Episodes, and the Reasons for 2 not kept, to {out}"
+    written = (
+        f"4 kept Episodes, and the Reasons for 2 not kept (2 of the 6 not Reference-labelled "
+        f"yet), to {out}"
+    )
     assert written in capsys.readouterr().out
-    assert sorted(p.name for p in out.iterdir()) == ["droid_1.0.1", "droid_100", "rejections.jsonl"]
+    names = sorted(p.name for p in out.iterdir())
+    assert names == ["droid_1.0.1", "droid_100", "manifest.json", "rejections.jsonl"]
     assert main(["export", str(out)], settings=settings) == 1
     assert "already exists" in capsys.readouterr().out
 

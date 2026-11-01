@@ -9,6 +9,8 @@ from typing import Any, cast
 import numpy as np
 import pyarrow as pa
 
+from winnow.export.stats import QUANTILES, episode_stats
+
 TASK_TEXT = "__index_level_0__"  # LeRobot writes tasks with pandas, the text as the index
 # What pandas needs to read the text back as the index, as LeRobot does.
 _PANDAS = {
@@ -67,13 +69,17 @@ def renumbered(frames: pa.Table, new: int, start: int, tasks: Mapping[int, int])
     table = _replaced(table, "index", list(range(start, start + count)))
     if "task_index" in table.column_names:
         old = [int(str(t)) for t in table.column("task_index").to_pylist()]
-        table = _replaced(table, "task_index", [tasks.get(t, t) for t in old])
+        unknown = sorted(set(old) - set(tasks))
+        if unknown:
+            raise ValueError(f"task_index {unknown[0]} has no task among the exported Episodes'")
+        table = _replaced(table, "task_index", [tasks[t] for t in old])
     return table
 
 
 def _shifted(row: dict[str, Any], column: str, delta: int) -> None:
-    """Add `delta` to a stats column's min, max and mean (one-item lists)."""
-    for stat in ("min", "max", "mean"):
+    """Add `delta` to a stats column's min, max, mean and quantiles (one-item lists); its std
+    doesn't change."""
+    for stat in ("min", "max", "mean", *QUANTILES):
         name = f"stats/{column}/{stat}"
         if name in row and row[name] is not None:
             row[name] = (np.asarray(row[name]) + delta).tolist()
@@ -87,14 +93,22 @@ def _set(row: dict[str, Any], values: Mapping[str, object]) -> None:
 
 
 def rebased(
-    source_row: Mapping[str, Any], new: int, start: int, videos: Mapping[str, Placed]
+    source_row: Mapping[str, Any],
+    new: int,
+    start: int,
+    videos: Mapping[str, Placed],
+    frames: pa.Table,
 ) -> dict[str, Any]:
     """An Episode's meta/episodes row, every column kept, moved to Episode `new`, the frames from
-    `start` in the one data file, and its videos where they were placed."""
+    `start` in the one data file, and its videos where they were placed. `frames` are its
+    exported frames: task indices are mapped onto the exported tasks in no particular order, so
+    their stats are taken from these again rather than shifted."""
     row = dict(source_row)
     old_start = int(row.get("dataset_from_index") or 0)
     _shifted(row, "episode_index", new - int(row["episode_index"]))
     _shifted(row, "index", start - old_start)
+    if "task_index" in frames.column_names:
+        _set(row, episode_stats(frames.select(["task_index"])))
     row["episode_index"] = new
     _set(row, {
         "data/chunk_index": 0, "data/file_index": 0,
