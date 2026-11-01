@@ -16,7 +16,9 @@ export function ExportStatus(props: {
   const { job, latest } = props;
   if (!job) return null;
   if (!job.finished || job.failed > 0) return <JobProgress job={job} title={TITLE} />;
-  const summary = job.items.find((item) => item.step === "export_finish")?.detail;
+  // The summary names the folder, shown below it in full to copy.
+  const detail = job.items.find((item) => item.step === "export_finish")?.detail;
+  const summary = latest ? detail?.replace(`, to ${latest.path}`, "") : detail;
   return (
     <div className="grid gap-2 rounded-lg border p-4" data-testid="export-written">
       <div className="text-sm font-medium">Exported</div>

@@ -30,6 +30,15 @@ test("says what an export writes, with the Episodes awaiting a label decided as 
   expect(writesText(preview("keep_and_review"))).toBe(
     "Writes 6 Episodes, plus those of the 2 Episodes awaiting a Reference label that are kept or Needs review.",
   );
+  const one = {
+    ...preview("keep"),
+    sources: [
+      { source: "droid_100", keep: 1, needs_review: 0, reject: 0, awaiting_label: 1, test_set: 0 },
+    ],
+  };
+  expect(writesText({ ...one, exported: 1 })).toBe(
+    "Writes 1 Episode, plus the 1 Episode awaiting a Reference label if it’s kept.",
+  );
 });
 
 test("says the Test set is left out, in the singular for one", () => {

@@ -44,6 +44,9 @@ export function writesText(preview: ExportPreview): string {
   const decisions = preview.include === "keep" ? "kept" : "kept or Needs review";
   const writes = `Writes ${episodes(preview.exported)}`;
   if (awaiting === 0) return `${writes}.`;
+  if (awaiting === 1) {
+    return `${writes}, plus the 1 Episode awaiting a Reference label if it’s ${decisions}.`;
+  }
   return `${writes}, plus those of the ${episodes(awaiting)} awaiting a Reference label that are ${decisions}.`;
 }
 
