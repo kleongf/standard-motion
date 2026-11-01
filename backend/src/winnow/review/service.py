@@ -1,5 +1,6 @@
 """The Review queue, scored like every other read: a review label recomputes the Triage decision,
-so an Episode it decides drops out on the next read."""
+so an Episode it decides drops out on the next read. Test set Episodes never enter it, so no
+review label lands on an Episode held out for reported numbers."""
 
 from winnow.core.context import AppContext
 from winnow.episodes.models import Episode
@@ -10,7 +11,8 @@ from winnow.triage.service import plain_reason, scored
 
 
 def review_queue(ctx: AppContext, episodes: list[Episode]) -> ReviewQueue:
-    version, triages = scored(ctx, episodes)
+    test = set(ctx.sets.get("test").episode_ids)
+    version, triages = scored(ctx, [e for e in episodes if e.id not in test])
     waiting = [t for t in triages if t.decision == "needs_review"]
     # Scoring found each in-force label by the Phrase it's on, so a label on a Phrase the Rubric no
     # longer has (detached by an edit, kept in history) is on no Phrase here and isn't counted.

@@ -90,3 +90,11 @@ def test_a_review_label_on_a_phrase_the_rubric_no_longer_has_is_not_counted(
 
     assert listed["items"] == []  # decided without the Phrase, not by the detached label
     assert listed["reviewed"] == 0
+
+
+def test_a_test_set_episode_never_enters_the_queue(ingested: TestClient):
+    app_context(ingested).sets.add("test", ["droid_100:1"])
+
+    listed = queue(ingested)
+
+    assert listed["items"] == []  # held out, so no review label is ever asked of it

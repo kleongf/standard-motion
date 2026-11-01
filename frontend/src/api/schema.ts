@@ -721,8 +721,8 @@ export interface paths {
         };
         /**
          * Get Review Queue
-         * @description The Needs review Episodes with a Reference label, least confident first; answer one with
-         *     a `review` label.
+         * @description The Needs review Episodes with a Reference label outside the Test set, least confident
+         *     first; answer one with a `review` label.
          */
         get: operations["get_review_queue_api_review_get"];
         put?: never;
