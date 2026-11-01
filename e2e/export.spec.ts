@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { EPISODES, ingest } from "./helpers";
+import { EPISODES, ingest } from "./helpers.ts";
 
 // Export writes every Episode outside the Test set by its Triage decision. This spec's Episode is
 // never Reference-labelled, so Export warns that it would show its decision before going ahead.
