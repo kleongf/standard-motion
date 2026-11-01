@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type APIRequestContext } from "@playwright/test";
 
 import { EPISODES, episodeId, ingest } from "./helpers.ts";
 
@@ -17,6 +17,41 @@ interface Label {
     interval: { start_s: number; end_s: number } | null;
   }[];
 }
+
+interface Job {
+  id: number;
+  finished: boolean;
+  items: { step: string; label: string; detail: string | null }[];
+}
+
+async function finishedJob(request: APIRequestContext, path: string): Promise<Job> {
+  const read = async () => (await (await request.get(path)).json()) as Job | null;
+  await expect.poll(async () => (await read())?.finished).toBe(true);
+  const job = await read();
+  if (!job) throw new Error(`no job at ${path}`);
+  return job;
+}
+
+test("with no instruction, Prepare says so and ingest spends no Spark call on the baseline", async ({
+  page,
+  request,
+}) => {
+  const started = await request.post("/api/episodes/ingest", {
+    data: { source: "droid_100", indices: EPISODES.referenceLabels },
+  });
+  const { job_id: jobId } = (await started.json()) as { job_id: number };
+  const job = await finishedJob(request, `/api/jobs/${String(jobId)}`);
+  const baseline = job.items.find((i) => i.step === "baseline" && i.label === EPISODE);
+  expect(baseline?.detail).toMatch(/^skipped: no instruction/);
+
+  await page.goto("/?page=prepare");
+  const card = page.getByRole("button", {
+    name: `Draw a box for Episode ${String(EPISODES.referenceLabels[0])}`,
+    exact: true,
+  });
+  await expect(card).toContainText("No instruction in the dataset");
+  await expect(card).not.toContainText("Box:"); // droid_100 has no selection pass
+});
 
 test("labelling a Test set Episode blind stores its Phrases, interval and instruction", async ({
   page,
@@ -78,6 +113,9 @@ test("labelling a Test set Episode blind stores its Phrases, interval and instru
   const saved = labels.find((l) => l.episode_id === EPISODE && !l.relabel);
   expect(saved?.instruction).toBe("Put the red block on the plate");
   expect(saved?.elapsed_s).toBeGreaterThan(0);
+  // The written instruction queues the Spark-alone baseline that ingest skipped.
+  const baseline = await finishedJob(request, "/api/jobs/latest?kind=baseline");
+  expect(baseline.items.map((i) => [i.step, i.label])).toEqual([["baseline", EPISODE]]);
   expect(saved?.phrases.map((p) => [p.passed, p.interval])).toEqual([
     [true, null],
     [false, { start_s: 0.6, end_s: 1.2 }],
