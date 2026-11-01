@@ -55,8 +55,10 @@ export function VersionPanel(props: {
   preview?: AnchorPreview | undefined;
 }) {
   const { rubric, origin, created_at: createdAt, version } = props.version;
-  const inUse = useRubric().data?.version === version;
-  const calibration = useCalibration(inUse).data;
+  const inUseVersion = useRubric().data?.version;
+  const inUse = inUseVersion === version;
+  // Calibration is the version in use's: only that version shows it.
+  const calibration = useCalibration(inUseVersion).data;
   const accept = useAcceptSuggestion();
   const suggestionFor = suggestionsFor(version, calibration, accept);
   const accepted = accept.data?.version.version === version ? accept.data : undefined;
