@@ -113,6 +113,16 @@ def test_an_unusable_transcribe_reply_is_a_502(
     assert "Voice Transcribe" in turn.json()["detail"]
 
 
+def test_a_phrase_named_in_another_case_or_quoted_still_maps(
+    voice_api: TestClient, voice: ScriptedVoice, tmp_path: Path
+):
+    voice.marks = [{"phrase": "“Never Drops It”", "value": "fail", "quote": "drops"}]
+
+    turn = speak(voice_api, UNSURE, write_wav(tmp_path / "turn.wav", seconds=1.0))
+
+    assert turn.json()["chips"] == [{"phrase": NEVER_DROPS, "value": "fail", "quote": "drops"}]
+
+
 def test_audio_that_is_not_16_khz_mono_wav_is_a_422(voice_api: TestClient, tmp_path: Path):
     junk = tmp_path / "turn.wav"
     junk.write_bytes(b"not a wav")

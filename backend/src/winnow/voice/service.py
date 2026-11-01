@@ -15,6 +15,8 @@ from winnow.voice.models import VoiceChip, VoiceTurn
 from winnow.voice.prompt import VOICE_SCHEMA, voice_prompt
 
 MAX_OUTPUT_TOKENS = 2000  # a short list, but low effort still reasons before it
+# Straight, curly and angle quotes, in escapes: ruff takes the curly singles for backticks.
+QUOTES = "\"'`\u201c\u201d\u2018\u2019\u00ab\u00bb"
 
 
 class MetaUnavailableError(RuntimeError):
@@ -55,14 +57,20 @@ async def transcribe_turn(ctx: AppContext, episode: Episode, wav: Path, t: float
 
 
 def _chips(answer: str, unsure: list[str]) -> list[VoiceChip]:
-    """Spark's mapping, keeping one chip per unsure Phrase: any other Phrase it names is
-    dropped."""
+    """Spark's mapping, keeping one chip per unsure Phrase, named as listed: a Phrase given in
+    another case or in quotes is the same one, and any other Phrase it names is dropped."""
     try:
         marks = _Answer.model_validate_json(answer).phrases
     except ValidationError as error:
         raise VoiceAnswerError(f"Spark's mapping couldn't be read: {error}") from error
+    listed = {_key(p): p for p in unsure}
     chips: dict[str, VoiceChip] = {}
     for mark in marks:
-        if mark.phrase in unsure and mark.phrase not in chips:
-            chips[mark.phrase] = mark
+        phrase = listed.get(_key(mark.phrase))
+        if phrase is not None and phrase not in chips:
+            chips[phrase] = mark.model_copy(update={"phrase": phrase})
     return list(chips.values())
+
+
+def _key(phrase: str) -> str:
+    return " ".join(phrase.strip().strip(QUOTES).split()).casefold()
