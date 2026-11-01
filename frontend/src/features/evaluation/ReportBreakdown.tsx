@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { SectionHeading } from "../core/PageHeader";
 import { countOf, interval } from "./reportText";
 import type { EvaluationReport, MatchedCoverage, McNemar, PhraseFailures } from "./useEvaluation";
 
@@ -16,11 +17,17 @@ function Matched(props: { matched: MatchedCoverage }) {
   const { matched } = props;
   return (
     <div data-testid="matched-coverage">
-      <h3 className="text-sm font-medium">Keep precision at matched coverage</h3>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        Winnow decides {matched.target} of {matched.episodes} Episodes; Spark alone is held to its
-        most confident Episodes up to that many, never splitting a tie.
-      </p>
+      <SectionHeading
+        level={3}
+        title="Keep precision at matched coverage"
+        meta={`Winnow decides ${String(matched.target)} of ${String(matched.episodes)}`}
+        info={
+          <>
+            Winnow decides {matched.target} of {matched.episodes} Episodes; Spark alone is held to
+            its most confident Episodes up to that many, never splitting a tie.
+          </>
+        }
+      />
       <Table className="mt-2" aria-label="Matched coverage">
         <TableHeader>
           <TableRow>
@@ -53,10 +60,17 @@ function Discordant(props: { mcnemar: McNemar }) {
   const m = props.mcnemar;
   return (
     <div data-testid="mcnemar">
-      <h3 className="text-sm font-medium">McNemar discordant pairs</h3>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        On the {m.compared} Episodes both decided, those only one of them got right. Counts only.
-      </p>
+      <SectionHeading
+        level={3}
+        title="McNemar discordant pairs"
+        meta={`${String(m.compared)} both decided`}
+        info={
+          <>
+            On the {m.compared} Episodes both decided, those only one of them got right. Counts
+            only.
+          </>
+        }
+      />
       <dl className="mt-2 flex gap-8 text-sm">
         <div>
           <dt className="text-xs text-muted-foreground">Only Winnow right</dt>
@@ -74,11 +88,16 @@ function Discordant(props: { mcnemar: McNemar }) {
 function PhraseTable(props: { phrases: PhraseFailures[] }) {
   return (
     <div data-testid="phrase-failures">
-      <h3 className="text-sm font-medium">Failures per Phrase</h3>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        Labelled failures of each Phrase and how many each system rejected. Under 5 failures is too
-        few to score.
-      </p>
+      <SectionHeading
+        level={3}
+        title="Failures per Phrase"
+        info={
+          <>
+            Labelled failures of each Phrase and how many each system rejected. Under 5 failures is
+            too few to score.
+          </>
+        }
+      />
       <Table className="mt-2" aria-label="Failures per Phrase">
         <TableHeader>
           <TableRow>

@@ -40,7 +40,7 @@ export function LabelPanel(props: {
   };
 
   return (
-    <section aria-label="Reference label" className="mb-5 border-b pb-4">
+    <section aria-label="Reference label" className="border-b pb-4">
       <div className="flex items-baseline gap-2">
         <h2 className="text-sm font-semibold">{relabel ? "Relabel" : "Reference label"}</h2>
         <span

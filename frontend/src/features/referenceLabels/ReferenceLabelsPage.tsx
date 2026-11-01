@@ -3,6 +3,8 @@
 // `?queue=`, the open Episode in `?episode=`.
 import { Button } from "@/components/ui/button";
 
+import { Page, PageHeader } from "../core/PageHeader";
+import { Tabs } from "../core/Tabs";
 import { navigate, useSearchParams } from "../core/url";
 import { useEpisodes } from "../episodes/useEpisodes";
 import { useSets } from "../sets/useSets";
@@ -46,36 +48,25 @@ export function ReferenceLabelsPage() {
   const members = queueMembers(queue, sets);
   const byId = new Map(episodes.map((e) => [e.id, e]));
   return (
-    <div className="mx-auto max-w-6xl p-8">
-      <div className="text-xs text-muted-foreground">Project</div>
-      <h1 className="text-xl font-semibold">Reference labels</h1>
-      <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-        Label blind, before any tuning: no Triage decision, Criterion result or baseline answer
-        shows here, and an Episode&apos;s Dataset outcome appears only once it&apos;s labelled.
-      </p>
-      {description && (
-        <blockquote className="mt-4 max-w-3xl border-l-2 pl-3 text-sm">
-          “{description.text}”
-        </blockquote>
-      )}
-      <div className="mt-6 flex items-center gap-1" role="tablist" aria-label="Queue">
-        {QUEUES.map((q) => (
-          <Button
-            key={q}
-            size="sm"
-            role="tab"
-            aria-selected={q === queue}
-            variant={q === queue ? "secondary" : "ghost"}
-            onClick={() => {
-              navigate({ queue: q, episode: null });
-            }}
-          >
-            {QUEUE_LABELS[q]}
-            <span className="text-muted-foreground tabular-nums">
-              {labelQueue(q, sets, labels).length}
-            </span>
-          </Button>
-        ))}
+    <Page width="content">
+      <PageHeader
+        title="Reference labels"
+        subtitle={description && `“${description.text}”`}
+        info="Label blind, before any tuning: no Triage decision, Criterion result or baseline answer shows here, and an Episode's Dataset outcome appears only once it's labelled."
+      />
+      <div className="flex items-center gap-2">
+        <Tabs
+          label="Queue"
+          items={QUEUES.map((q) => ({
+            value: q,
+            label: QUEUE_LABELS[q],
+            count: labelQueue(q, sets, labels).length,
+          }))}
+          value={queue}
+          onChange={(q) => {
+            navigate({ queue: q, episode: null });
+          }}
+        />
         <Button
           size="sm"
           className="ml-auto"
@@ -100,6 +91,6 @@ export function ReferenceLabelsPage() {
         remaining={remaining}
         onOpen={open}
       />
-    </div>
+    </Page>
   );
 }

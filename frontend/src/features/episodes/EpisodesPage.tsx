@@ -3,6 +3,7 @@
 // Phrase, Uncertainty signal and set, and sortable by confidence or quality; a row opens the
 // full-page Workstation. The tab, filters, sort, open Episode and its start time live in the URL;
 // J/K step through the Episodes shown. Export writes out the kept ones.
+import { Page, PageHeader } from "../core/PageHeader";
 import { navigate, useSearchParams } from "../core/url";
 import { ExportButton } from "../export/ExportButton";
 import { ExportStatus } from "../export/ExportStatus";
@@ -93,24 +94,17 @@ export function EpisodesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-xs text-muted-foreground">Project</div>
-          <h1 className="text-xl font-semibold">Episodes</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{summary}</p>
-        </div>
-        <ExportButton />
-      </div>
+    <Page width="content">
+      <PageHeader title="Episodes" subtitle={summary} actions={<ExportButton />} />
       <ExportStatus />
       {episodes.length === 0 && loaded && (
-        <p className="mt-6 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           No Episodes yet: ingest some on the Prepare page.
         </p>
       )}
       {episodes.length > 0 && (
         <>
-          <div className="mt-5">
+          <div>
             <TriageTabs
               tab={tab}
               counts={counts}
@@ -137,6 +131,6 @@ export function EpisodesPage() {
           )}
         </>
       )}
-    </div>
+    </Page>
   );
 }

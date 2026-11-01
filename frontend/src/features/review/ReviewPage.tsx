@@ -1,8 +1,7 @@
 // Review: the Needs review queue, strictly least confident first. The Workstation shows one
 // Episode with "Your call" in its actions slot; an answer that decides the Episode takes it out
 // of the queue and the next least confident one opens. `?episode=` picks another from Up next.
-import { Progress } from "@/components/ui/progress";
-
+import { Page, PageHeader } from "../core/PageHeader";
 import { navigate, useSearchParams } from "../core/url";
 import { useEpisodes, type Episode } from "../episodes/useEpisodes";
 import { Workstation } from "../episodes/Workstation";
@@ -21,7 +20,7 @@ export function ReviewPage() {
   const episode = current && episodes.get(current.episode_id);
 
   return (
-    <div className="p-6">
+    <Page width="full">
       <ReviewHeader reviewed={queue.data?.reviewed ?? 0} left={items.length} current={current} />
       {current ? (
         <>
@@ -40,7 +39,7 @@ export function ReviewPage() {
       ) : (
         <QueueStatus queue={queue} />
       )}
-    </div>
+    </Page>
   );
 }
 
@@ -60,27 +59,18 @@ function ReviewHeader(props: { reviewed: number; left: number; current: ReviewIt
   const { reviewed, current } = props;
   const total = reviewed + props.left;
   return (
-    <div className="mb-4 flex items-center gap-4">
-      <div>
-        <div className="text-xs text-muted-foreground">Project</div>
-        <h1 className="text-xl font-semibold">Review</h1>
-        <p className="text-sm text-muted-foreground tabular-nums">
-          {reviewed} of {total} reviewed · least confident first
-        </p>
-      </div>
-      <Progress value={(reviewed / Math.max(1, total)) * 100} className="ml-6 h-1.5 max-w-sm" />
-      {current && (
-        <span className="ml-auto text-sm" data-testid="review-current">
-          {current.episode_id}{" "}
-          <span className="text-muted-foreground">
-            · confidence{" "}
-            <span className="tabular-nums" data-testid="review-confidence">
-              {current.confidence.toFixed(2)}
-            </span>
+    <PageHeader
+      title="Review"
+      subtitle={`${String(reviewed)} of ${String(total)} reviewed · least confident first`}
+      progress={total > 0 ? reviewed / total : undefined}
+      actions={
+        current && (
+          <span className="text-sm font-medium tabular-nums" data-testid="review-current">
+            {current.episode_id}
           </span>
-        </span>
-      )}
-    </div>
+        )
+      }
+    />
   );
 }
 
@@ -98,9 +88,7 @@ function ReviewWorkstation(props: { item: ReviewItem; episode: Episode }) {
       actions={(playhead) => (
         <>
           <YourCall item={item} pending={save.isPending} onAnswer={answer} />
-          {save.isError && (
-            <p className="-mt-3 mb-4 text-xs text-destructive">{save.error.message}</p>
-          )}
+          {save.isError && <p className="-mt-2 text-xs text-destructive">{save.error.message}</p>}
           <VoicePanel
             episodeId={item.episode_id}
             unsure={item.unsure.map((u) => u.phrase)}

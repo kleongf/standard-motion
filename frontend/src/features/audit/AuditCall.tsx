@@ -23,7 +23,7 @@ export function AuditCall(props: {
   const [picking, setPicking] = useState(false);
 
   return (
-    <section aria-label="Your audit" className="mb-5 rounded-md border bg-muted/30 p-3">
+    <section aria-label="Your audit" className="rounded-md border bg-muted/30 p-3">
       <div className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
         Audit · {KIND_TEXT[item.kind]}
       </div>

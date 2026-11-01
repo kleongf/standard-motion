@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
+import { InfoTip } from "../core/InfoTip";
 import { useSearchParams } from "../core/url";
 import { InterviewTimeline } from "../interview/InterviewTimeline";
 import { ConfirmAfresh } from "./ConfirmAfresh";
@@ -70,13 +71,15 @@ function DescriptionForm() {
       }}
     >
       <ConfirmAfresh open={confirming} onOpenChange={setConfirming} onConfirm={run} />
-      <label htmlFor="description" className="text-sm font-medium">
-        Description
-      </label>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        What an expert Episode looks like, in plain English. Spark compiles it into Criteria; after
-        an edit, only the Phrases you changed.
-      </p>
+      <div className="flex items-center gap-1.5">
+        <label htmlFor="description" className="text-sm font-medium">
+          Description
+        </label>
+        <InfoTip label="the Description">
+          What an expert Episode looks like, in plain English. Spark compiles it into Criteria;
+          after an edit, only the Phrases you changed.
+        </InfoTip>
+      </div>
       <Textarea
         id="description"
         className="mt-2 min-h-32 text-[15px] leading-6"

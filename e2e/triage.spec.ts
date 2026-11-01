@@ -87,6 +87,9 @@ test("a Reject opens from the table, and its lane and Reason seek the playhead",
   await expect(page.getByText("0.9 / 3.0 s")).toBeVisible();
   await expect(page.getByRole("button", { name: "Grasp 1.8 s" })).toBeVisible();
 
+  // The Reason shows one line; More opens the rest when it overflows.
+  const more = page.getByRole("button", { name: "More", exact: true });
+  if (await more.isVisible()) await more.click();
   await page.getByTestId("reason").getByRole("button", { name: "1.3 s" }).click();
   await expect(page.getByText("1.3 / 3.0 s")).toBeVisible();
   expect(errors).toEqual([]);

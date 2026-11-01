@@ -9,18 +9,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { SectionHeading } from "../core/PageHeader";
 import { Rate } from "./Rate";
 import type { AblationRow, TrackHealthRow } from "./useEvaluation";
 
 export function AblationTable(props: { rows: AblationRow[] }) {
   return (
     <div data-testid="source-ablation">
-      <h3 className="text-sm font-medium">Source ablation</h3>
-      <p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">
-        Winnow re-scored from the cache with only some sources&apos; Criteria, as if the Rubric had
-        been compiled without the others; a Phrase only they checked goes unchecked. No Meta call is
-        made, so it costs $0.
-      </p>
+      <SectionHeading
+        level={3}
+        title="Source ablation"
+        info={
+          <>
+            Winnow re-scored from the cache with only some sources&apos; Criteria, as if the Rubric
+            had been compiled without the others; a Phrase only they checked goes unchecked. No Meta
+            call is made, so it costs $0.
+          </>
+        }
+      />
       <Table className="mt-2" aria-label="Source ablation">
         <TableHeader>
           <TableRow>
@@ -62,13 +68,18 @@ export function AblationTable(props: { rows: AblationRow[] }) {
 export function TrackingHealthTable(props: { rows: TrackHealthRow[] }) {
   return (
     <div data-testid="tracking-health">
-      <h3 className="text-sm font-medium">SAM tracking health</h3>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        A track is lost when a box swells past 4× the median, jumps over a box-width in a frame, or
-        is missing on over 20% of frames. Needs review counts Episodes where a hard Criterion
-        reading the lost track is unsure because of it; too small counts lost tracks on Episodes
-        excluded at selection as &ldquo;object too small to see&rdquo;.
-      </p>
+      <SectionHeading
+        level={3}
+        title="SAM tracking health"
+        info={
+          <>
+            A track is lost when a box swells past 4× the median, jumps over a box-width in a frame,
+            or is missing on over 20% of frames. Needs review counts Episodes where a hard Criterion
+            reading the lost track is unsure because of it; too small counts lost tracks on Episodes
+            excluded at selection as &ldquo;object too small to see&rdquo;.
+          </>
+        }
+      />
       <Table className="mt-2" aria-label="SAM tracking health">
         <TableHeader>
           <TableRow>

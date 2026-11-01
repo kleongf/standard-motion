@@ -118,7 +118,6 @@ export function DescribeHeader(props: {
   return (
     <header className="sticky top-0 z-10 flex items-end gap-4 border-b bg-background/95 px-8 py-3 backdrop-blur">
       <div className="min-w-0 flex-1">
-        <div className="text-xs text-muted-foreground">Project</div>
         <h1 className="text-xl font-semibold">Describe</h1>
         <AnchorPoolLine />
         <AnchorSort preview={props.preview} />

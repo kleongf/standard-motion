@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { SectionHeading } from "../core/PageHeader";
 import { countOf, minutesText, usdText } from "./reportText";
 import type { MetaCost, ReviewTime } from "./useEvaluation";
 
@@ -57,12 +58,18 @@ export function CostSummary(props: { cost: MetaCost; time: ReviewTime }) {
   const reviewed = `${countOf(time.needs_review)} Episodes at ${minutesText(time.minutes_per_episode)}`;
   return (
     <div data-testid="cost">
-      <h3 className="text-sm font-medium">Cost per 1,000 Episodes</h3>
-      <p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">
-        Extrapolated from every paid call on this set&apos;s {cost.episodes} Episodes in the Meta
-        cost log, re-runs included (×10 for a Test set of 100); cache hits are free. Rubric compiles
-        so far cost {usdText(cost.compile_usd)}, once per Project.
-      </p>
+      <SectionHeading
+        level={3}
+        title="Cost per 1,000 Episodes"
+        meta={`from ${String(cost.episodes)} Episodes`}
+        info={
+          <>
+            Extrapolated from every paid call on this set&apos;s {cost.episodes} Episodes in the
+            Meta cost log, re-runs included (×10 for a Test set of 100); cache hits are free. Rubric
+            compiles so far cost {usdText(cost.compile_usd)}, once per Project.
+          </>
+        }
+      />
       <dl className="mt-3 grid grid-cols-2 gap-6 md:grid-cols-4">
         <Stat
           testId="cost-winnow"

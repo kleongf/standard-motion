@@ -1,6 +1,7 @@
 // Right reason and risk–coverage for Winnow and Spark alone: the headline k/n at the measured
 // slack, then right reason over 0–3 s of slack, and risk against coverage from each system's
 // confidence, so Winnow abstaining more can be weighed fairly.
+import { SectionHeading } from "../core/PageHeader";
 import { CurveChart, type Series } from "./CurveChart";
 import { riskSeries, slackSeries } from "./curves";
 import { countOf, interval, slackText } from "./reportText";
@@ -33,11 +34,17 @@ function RightReasonFigure(props: { report: EvaluationReport }) {
       : null;
   return (
     <div data-testid="right-reason">
-      <h3 className="text-sm font-medium">Right reason on correct Rejects</h3>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        A Reject is right when its Reason names a Phrase the Reference label fails, at a time inside
-        that Phrase&apos;s labelled interval widened by the slack. {slackText(slack)}
-      </p>
+      <SectionHeading
+        level={3}
+        title="Right reason on correct Rejects"
+        info={
+          <>
+            A Reject is right when its Reason names a Phrase the Reference label fails, at a time
+            inside that Phrase&apos;s labelled interval widened by the slack.
+          </>
+        }
+      />
+      <p className="mt-0.5 text-xs text-muted-foreground">{slackText(slack)}</p>
       {slack.seconds !== null && (
         <p className="mt-1.5 flex flex-wrap gap-x-4 text-sm" data-testid="right-reason-at-slack">
           {rows.map((row) => (
@@ -72,12 +79,17 @@ function RiskCoverageFigure(props: { report: EvaluationReport }) {
     matched.episodes > 0 ? { x: matched.target / matched.episodes, label: "Winnow decides" } : null;
   return (
     <div data-testid="risk-coverage">
-      <h3 className="text-sm font-medium">Risk–coverage</h3>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        Each system&apos;s labelled Episodes, most confident first: the share it gets wrong among
-        those it covers. Abstentions are ranked too, by the side they lean to. Spark alone&apos;s
-        confidence is its samples&apos; agreement, (keeps + 1) / (answers + 2).
-      </p>
+      <SectionHeading
+        level={3}
+        title="Risk–coverage"
+        info={
+          <>
+            Each system&apos;s labelled Episodes, most confident first: the share it gets wrong
+            among those it covers. Abstentions are ranked too, by the side they lean to. Spark
+            alone&apos;s confidence is its samples&apos; agreement, (keeps + 1) / (answers + 2).
+          </>
+        }
+      />
       <div className="mt-2">
         <CurveChart
           title="Risk against coverage"

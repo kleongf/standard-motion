@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import { Page, PageHeader } from "../core/PageHeader";
+import { Tabs } from "../core/Tabs";
 import { JobProgress } from "../jobs/JobProgress";
 import { useIngestProgress } from "../jobs/useIngestProgress";
 import { CandidateReview } from "./CandidateReview";
@@ -29,38 +31,33 @@ export function SelectionPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl p-8">
-      <div className="text-xs text-muted-foreground">Dataset</div>
-      <h1 className="text-xl font-semibold">droid_1.0.1 selection</h1>
-      <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-        A fixed-seed sample, mostly flagged failures, chosen by task type only: confirm each
-        pick-and-place Episode, or exclude it as not pick-and-place or with an object too small to
-        see. Whether the Episode succeeded is hidden here on purpose.
-      </p>
+    <Page width="content">
+      <PageHeader
+        title="droid_1.0.1 selection"
+        info="A fixed-seed sample, mostly flagged failures, chosen by task type only: confirm each pick-and-place Episode, or exclude it as not pick-and-place or with an object too small to see. Whether the Episode succeeded is hidden here on purpose."
+      />
       {all.length === 0 && !candidates.isPending && (
-        <p className="mt-6 rounded-lg border p-4 text-sm">
+        <p className="rounded-lg border p-4 text-sm">
           No sample yet. Draw one with{" "}
           <code className="font-mono">winnow select droid_1.0.1 --size 300 --seed 0</code>.
         </p>
       )}
       {all.length > 0 && (
         <>
-          <div className="mt-6 flex items-center gap-1">
-            {TABS.map((t) => (
-              <Button
-                key={t}
-                size="sm"
-                variant={t === tab ? "secondary" : "ghost"}
-                aria-pressed={t === tab}
-                onClick={() => {
-                  setTab(t);
-                  setFocusId(null);
-                }}
-              >
-                {t[0]?.toUpperCase()}
-                {t.slice(1)} ({all.filter((c) => c.status === t).length})
-              </Button>
-            ))}
+          <div className="flex items-center gap-2">
+            <Tabs
+              label="Status"
+              items={TABS.map((t) => ({
+                value: t,
+                label: `${t[0]?.toUpperCase() ?? ""}${t.slice(1)}`,
+                count: all.filter((c) => c.status === t).length,
+              }))}
+              value={tab}
+              onChange={(t) => {
+                setTab(t);
+                setFocusId(null);
+              }}
+            />
             <Button
               size="sm"
               className="ml-auto"
@@ -87,7 +84,7 @@ export function SelectionPage() {
           </div>
         </>
       )}
-    </div>
+    </Page>
   );
 }
 
@@ -107,7 +104,7 @@ function CandidateList(props: {
             }}
             className={cn(
               "w-full rounded border p-1.5 text-left text-xs",
-              c.episode_id === props.focusId ? "ring-2 ring-sky-400" : "hover:bg-muted",
+              c.episode_id === props.focusId ? "ring-2 ring-primary" : "hover:bg-muted",
             )}
           >
             <img src={sheetUrl(c.episode_id)} alt="" loading="lazy" className="w-full rounded" />

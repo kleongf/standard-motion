@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { useDatasetStatus } from "../dataset/useDatasetStatus";
 import { HealthStatus } from "./HealthStatus";
 import { pageLabels, projectPages, type Page } from "./pages";
+import { ThemeToggle } from "./ThemeToggle";
 
 // One Project this week; more Datasets and Projects are a nice-to-have.
 const PROJECT_NAME = "Expert pick-and-place";
@@ -49,9 +50,9 @@ export function Sidebar(props: { page: Page; onPage: (page: Page) => void }) {
     />
   );
   return (
-    <aside className="flex h-screen w-60 shrink-0 flex-col border-r bg-muted/30">
+    <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r bg-sidebar">
       <div className="flex items-center gap-2 px-4 pt-4 pb-3 text-sm font-semibold">
-        <span className="grid size-6 place-items-center rounded bg-foreground text-[11px] text-background">
+        <span className="grid size-6 place-items-center rounded bg-primary text-[11px] text-primary-foreground">
           W
         </span>
         Winnow
@@ -80,8 +81,11 @@ export function Sidebar(props: { page: Page; onPage: (page: Page) => void }) {
         </div>
         <div className="ml-3 border-l pl-2">{projectPages.map((page) => nav(page))}</div>
       </div>
-      <div className="border-t px-4 py-3 text-[11px] text-muted-foreground">
-        <HealthStatus />
+      <div className="flex items-center gap-2 border-t px-4 py-3 text-[11px] text-muted-foreground">
+        <div className="min-w-0 flex-1">
+          <HealthStatus />
+        </div>
+        <ThemeToggle />
       </div>
     </aside>
   );
@@ -110,10 +114,10 @@ function NavItem(props: {
       onClick={props.onClick}
       className={cn(
         "flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm",
-        props.active ? "bg-background font-medium shadow-sm ring-1 ring-border" : "hover:bg-muted",
+        props.active ? "bg-primary/10 font-medium text-primary" : "hover:bg-muted",
       )}
     >
-      <Icon className="size-3.5 text-muted-foreground" />
+      <Icon className={cn("size-3.5", props.active ? "text-primary" : "text-muted-foreground")} />
       <span>{props.label}</span>
       <span className="ml-auto text-xs text-muted-foreground tabular-nums">{props.count}</span>
     </button>

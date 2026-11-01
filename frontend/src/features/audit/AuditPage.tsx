@@ -3,9 +3,9 @@
 // from the Episodes outside the Test set. The auditor marks each Good or Bad; the header states
 // Keep precision. The first unmarked item opens; `?episode=` picks another from the strip.
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 
 import { sText } from "../calibration/calibrationText";
+import { Page, PageHeader } from "../core/PageHeader";
 import { navigate, useSearchParams } from "../core/url";
 import { useEpisodes, type Episode } from "../episodes/useEpisodes";
 import { Workstation } from "../episodes/Workstation";
@@ -27,7 +27,7 @@ export function AuditPage() {
   const episode = current && episodes.get(current.episode_id);
 
   return (
-    <div className="p-6">
+    <Page width="full">
       <AuditHeader sample={sample} current={current} />
       {sample && current ? (
         <>
@@ -52,7 +52,7 @@ export function AuditPage() {
       ) : (
         <SampleStatus audit={audit} />
       )}
-    </div>
+    </Page>
   );
 }
 
@@ -100,36 +100,30 @@ function AuditHeader(props: { sample: AuditSample | undefined; current: AuditIte
   const items = sample?.items ?? [];
   const marked = items.filter((i) => i.mark !== null).length;
   return (
-    <div className="mb-4 flex items-center gap-4">
-      <div>
-        <div className="text-xs text-muted-foreground">Project</div>
-        <h1 className="text-xl font-semibold">Audit</h1>
-        <p className="text-sm text-muted-foreground tabular-nums">
-          {sample?.seed == null
-            ? "Keep precision, from a seeded sample"
-            : `${String(marked)} of ${String(items.length)} marked · Rubric v${String(sample.rubric_version)} · seed ${String(sample.seed)} · drawn at s = ${sText(sample.s)}`}
-        </p>
-      </div>
-      {sample?.seed != null && (
-        <Progress
-          value={(marked / Math.max(1, items.length)) * 100}
-          className="ml-6 h-1.5 max-w-sm"
-        />
-      )}
-      {sample?.seed != null && (
-        <div className="ml-auto text-right text-sm">
-          <div className="text-xs text-muted-foreground">Keep precision</div>
-          <div className="font-medium tabular-nums" data-testid="audit-precision">
-            {precisionText(sample.precision)}
-          </div>
-          {current && (
-            <div className="text-xs text-muted-foreground" data-testid="audit-current">
-              {current.episode_id}
+    <PageHeader
+      title="Audit"
+      subtitle={
+        sample?.seed == null
+          ? "Keep precision, from a seeded sample"
+          : `${String(marked)} of ${String(items.length)} marked · Rubric v${String(sample.rubric_version)} · seed ${String(sample.seed)} · drawn at s = ${sText(sample.s)}`
+      }
+      progress={sample?.seed == null ? undefined : marked / Math.max(1, items.length)}
+      actions={
+        sample?.seed != null && (
+          <div className="text-right text-sm">
+            <div className="text-xs text-muted-foreground">Keep precision</div>
+            <div className="font-medium tabular-nums" data-testid="audit-precision">
+              {precisionText(sample.precision)}
             </div>
-          )}
-        </div>
-      )}
-    </div>
+            {current && (
+              <div className="text-xs text-muted-foreground" data-testid="audit-current">
+                {current.episode_id}
+              </div>
+            )}
+          </div>
+        )
+      }
+    />
   );
 }
 
@@ -153,9 +147,7 @@ function AuditWorkstation(props: { item: AuditItem; phrases: string[]; episode: 
               mark.mutate({ episodeId: item.episode_id, value: "fail", phrases: [phrase] });
             }}
           />
-          {mark.isError && (
-            <p className="-mt-3 mb-4 text-xs text-destructive">{mark.error.message}</p>
-          )}
+          {mark.isError && <p className="-mt-2 text-xs text-destructive">{mark.error.message}</p>}
         </>
       }
     />

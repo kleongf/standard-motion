@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { InfoTip } from "../core/InfoTip";
 import { Rate } from "./Rate";
 import { balancedAccuracyText, lengthRuleText } from "./reportText";
 import type { EvaluationReport } from "./useEvaluation";
@@ -53,13 +54,16 @@ export function ComparisonTable(props: { report: EvaluationReport }) {
           ))}
         </TableBody>
       </Table>
-      <p className="mt-3 text-xs text-muted-foreground">
-        False keeps count description failures kept, of all description failures; false rejects
-        count Episodes meeting the Description that were rejected; coverage counts Episodes decided
-        without a person; balanced accuracy averages failures rejected and Episodes meeting the
-        Description kept, over the Episodes each system decided. Ranges are 95% Wilson intervals.
-        Undecided is Winnow&apos;s Needs review, or Spark alone with no majority answer.{" "}
+      <p className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
         {lengthRuleText(comparison.length_rule)}
+        <InfoTip label="these columns">
+          False keeps count description failures kept, of all description failures; false rejects
+          count Episodes meeting the Description that were rejected; coverage counts Episodes
+          decided without a person; balanced accuracy averages failures rejected and Episodes
+          meeting the Description kept, over the Episodes each system decided. Ranges are 95% Wilson
+          intervals. Undecided is Winnow&apos;s Needs review, or Spark alone with no majority
+          answer.
+        </InfoTip>
       </p>
     </>
   );

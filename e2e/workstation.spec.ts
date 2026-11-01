@@ -67,8 +67,8 @@ test("a visual Criterion shows each of Spark's samples and the clip it watched",
 
   await page.goto(open(SECOND));
   const result = page.getByTestId("criterion-placed-on-target");
-  await expect(result).toContainText("samples split");
   await result.getByRole("button", { name: /Is the object resting in or on the target/ }).click();
+  await expect(result).toContainText("samples split"); // why it is unsure, once opened
 
   const evidence = result.getByTestId("visual-evidence");
   const samples = evidence.getByRole("list", { name: "Spark's samples" }).getByRole("listitem");

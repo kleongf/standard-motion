@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 
+import { Page } from "../core/PageHeader";
 import { neighbours } from "./neighbours";
 import type { Episode } from "./useEpisodes";
 import { Workstation } from "./Workstation";
@@ -35,8 +36,8 @@ export function EpisodePage(props: {
   }, [onOpen, next, prev]);
 
   return (
-    <div className="p-6">
-      <div className="mb-3 flex items-center gap-2 text-sm">
+    <Page width="full">
+      <div className="mb-4 flex items-center gap-2 text-sm">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5">
           <button
             type="button"
@@ -75,6 +76,6 @@ export function EpisodePage(props: {
         </Button>
       </div>
       <Workstation episode={episode} initialT={props.initialT} />
-    </div>
+    </Page>
   );
 }

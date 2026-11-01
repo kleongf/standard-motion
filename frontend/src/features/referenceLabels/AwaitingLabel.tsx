@@ -14,7 +14,7 @@ export function AwaitingLabelTag() {
 
 export function AwaitingLabelNote() {
   return (
-    <section aria-label="Triage" className="mb-5">
+    <section aria-label="Triage">
       <AwaitingLabelTag />
       <p className="mt-1 text-sm text-muted-foreground">
         Its Triage decision, Reason and Criterion results stay hidden until it has a Reference

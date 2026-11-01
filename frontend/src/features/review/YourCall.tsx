@@ -59,7 +59,7 @@ export function YourCall(props: {
   return (
     <section
       aria-label="Your call"
-      className="mb-5 rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/40"
+      className="rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/40"
     >
       <div className="text-[11px] font-medium tracking-wide text-amber-800 uppercase dark:text-amber-300">
         Your call · {item.unsure.length} unsure Phrase{item.unsure.length === 1 ? "" : "s"}

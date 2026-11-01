@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { SectionHeading } from "../core/PageHeader";
 import { navigate } from "../core/url";
 import { SetTag } from "../sets/SetTag";
 import { TriageBadge } from "../triage/TriageBadge";
@@ -74,12 +75,17 @@ export function DisagreementList() {
   const { data, error } = useDisagreements();
   return (
     <div data-testid="disagreements">
-      <h2 className="text-sm font-medium">Where Spark alone and Winnow disagree</h2>
-      <p className="mt-0.5 max-w-3xl text-xs text-muted-foreground">
-        Every Episode with a Reference label whose Triage decision, as its Workstation shows it now,
-        differs from Spark alone&apos;s majority answer; both deciding, but differently, first.
-        Click a row to open its Workstation.
-      </p>
+      <SectionHeading
+        level={2}
+        title="Where Spark alone and Winnow disagree"
+        info={
+          <>
+            Every Episode with a Reference label whose Triage decision, as its Workstation shows it
+            now, differs from Spark alone&apos;s majority answer; both deciding, but differently,
+            first. Click a row to open its Workstation.
+          </>
+        }
+      />
       {error && <p className="mt-2 text-sm text-destructive">{error.message}</p>}
       {data?.length === 0 && (
         <p className="mt-2 text-sm text-muted-foreground">

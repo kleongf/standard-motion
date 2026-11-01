@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { SectionHeading } from "../core/PageHeader";
 import { Rate } from "./Rate";
 import { balancedAccuracyText } from "./reportText";
 import type { DatasetOutcome, FailBenchCheck } from "./useEvaluation";
@@ -80,11 +81,17 @@ function FailBench(props: { check: FailBenchCheck }) {
   const c = props.check;
   return (
     <div data-testid="failbench">
-      <h3 className="text-sm font-medium">FailBench check</h3>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        Spark&apos;s plain &ldquo;did it succeed?&rdquo; answer on {c.answered} Episodes, scored
-        against the Dataset outcome. FailBench reports 0.72 balanced accuracy on DROID.
-      </p>
+      <SectionHeading
+        level={3}
+        title="FailBench check"
+        meta={`${String(c.answered)} Episodes`}
+        info={
+          <>
+            Spark&apos;s plain &ldquo;did it succeed?&rdquo; answer on {c.answered} Episodes, scored
+            against the Dataset outcome. FailBench reports 0.72 balanced accuracy on DROID.
+          </>
+        }
+      />
       <dl className="mt-2 flex gap-8 text-sm">
         <div>
           <dt className="text-xs text-muted-foreground">Agrees with the Dataset outcome</dt>
@@ -115,12 +122,12 @@ export function DatasetOutcomeSection(props: {
   return (
     <div className="mt-8 grid gap-8 lg:grid-cols-2">
       <div data-testid="dataset-outcome">
-        <h3 className="text-sm font-medium">Dataset outcome against Reference labels</h3>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          The Dataset outcome says whether the task was done, not whether the Episode meets the
-          Description. On {outcome.compared} labelled Episodes
-          {outcome.no_outcome > 0 && `; ${String(outcome.no_outcome)} ship no outcome`}.
-        </p>
+        <SectionHeading
+          level={3}
+          title="Dataset outcome against Reference labels"
+          meta={`${String(outcome.compared)} labelled${outcome.no_outcome > 0 ? ` · ${String(outcome.no_outcome)} ship no outcome` : ""}`}
+          info="The Dataset outcome says whether the task was done, not whether the Episode meets the Description."
+        />
         <CrossTable outcome={outcome} />
         <Disagreements outcome={outcome} />
       </div>
