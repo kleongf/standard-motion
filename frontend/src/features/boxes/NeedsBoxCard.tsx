@@ -8,7 +8,7 @@ export function NeedsBoxCard(props: { episode: Episode; onOpen: () => void }) {
   return (
     <button
       type="button"
-      className="group text-left"
+      className="group self-start text-left"
       aria-label={`Draw a box for Episode ${String(episode.index)}`}
       onClick={props.onOpen}
     >
