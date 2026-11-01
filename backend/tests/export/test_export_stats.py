@@ -1,10 +1,15 @@
 """meta/stats.json combines the kept Episodes' own stats as LeRobot's aggregate_stats does."""
 
+from pathlib import Path
+
 import numpy as np
 import pyarrow as pa
 import pytest
 
+from tests.helpers import rgb
+from winnow.episodes.fixtures import write_clip
 from winnow.export.stats import aggregate_stats, episode_stats
+from winnow.export.video_stats import sampled, video_stats
 
 
 def test_an_episodes_stats_cover_its_numeric_and_boolean_columns_per_dimension():
@@ -66,3 +71,21 @@ def test_a_feature_missing_its_mean_std_or_count_anywhere_is_left_out():
     second = _row("x", max=[1.0])
 
     assert aggregate_stats([first, second]) == {}
+
+
+def test_a_cameras_stats_sample_its_episodes_frames_evenly_from_where_it_starts(tmp_path: Path):
+    # Frame n is a flat grey of brightness n, so each frame sampled shows in the mean.
+    clip = tmp_path / "clip.mp4"
+    write_clip(clip, 150, "color=size=320x180:rate=15,geq=lum='N':cb=128:cr=128", "-qp", "0")
+    frames = rgb(clip) / 255
+
+    stats = video_stats(clip, 10 / 15, 120, "observation.images.wrist")
+
+    picked = sampled(120)
+    assert len(picked) == 100 and picked[0] == 0 and picked[-1] == 119
+    assert stats["stats/observation.images.wrist/count"] == [100]
+    want = frames[[10 + i for i in picked]].mean(axis=(0, 1, 2))
+    mean = np.asarray(stats["stats/observation.images.wrist/mean"])
+    assert mean.shape == (3, 1, 1)
+    np.testing.assert_allclose(mean.ravel(), want, atol=1e-6)
+    assert len(sampled(1000)) == 177  # LeRobot's own count at 1000 frames
