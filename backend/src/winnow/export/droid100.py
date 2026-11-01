@@ -15,6 +15,7 @@ import pyarrow.parquet as pq
 from huggingface_hub.errors import EntryNotFoundError
 
 from winnow.episodes.droid100 import CAMERAS, FPS, Droid100
+from winnow.export.stats import episode_stats
 from winnow.export.tables import task_texts
 
 KEY = "observation.images."
@@ -40,31 +41,35 @@ class Droid100Export:
     def task_texts(self) -> dict[int, str]:
         return task_texts(pq.read_table(self._fetch("meta/tasks.parquet", "main")))  # pyright: ignore[reportUnknownMemberType]
 
+    def _rows_of(self, index: int) -> np.ndarray:
+        return np.flatnonzero(np.asarray(self._data.column("episode_index").to_pylist()) == index)
+
     def _episode(self, index: int) -> pa.Table:
-        rows = np.asarray(self._data.column("episode_index").to_pylist()) == index
-        return self._data.filter(pa.array(rows.tolist(), type=pa.bool_()))
+        return self._data.take(pa.array(self._rows_of(index), type=pa.int64()))
 
     def rows(self, indices: list[int]) -> pa.Table:
+        """Each Episode's row as LeRobot writes it, its stats computed from its frames: video
+        stats aren't, since the clips aren't read."""
         tasks = self.task_texts()
         rows: list[dict[str, Any]] = []
         for index in indices:
             frames = self._episode(index)
             task = int(str(frames.column("task_index")[0].as_py()))
-            length = frames.num_rows
+            start, length = int(self._rows_of(index)[0]), frames.num_rows
             row: dict[str, Any] = {
                 "episode_index": index,
                 "tasks": [tasks.get(task, "")],
                 "length": length,
                 "data/chunk_index": 0,
                 "data/file_index": 0,
-                "dataset_from_index": 0,
-                "dataset_to_index": length,
+                "dataset_from_index": start,
+                "dataset_to_index": start + length,
             }
             for camera in CAMERAS:
                 prefix = f"videos/{KEY}{camera}"
                 row |= {f"{prefix}/chunk_index": 0, f"{prefix}/file_index": 0}
                 row |= {f"{prefix}/from_timestamp": 0.0, f"{prefix}/to_timestamp": length / FPS}
-            rows.append(row)
+            rows.append(row | episode_stats(frames))
         return pa.Table.from_pylist(rows)
 
     def frames(self, row: Mapping[str, Any]) -> pa.Table:

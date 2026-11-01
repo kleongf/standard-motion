@@ -167,6 +167,27 @@ def test_every_exported_clip_holds_exactly_its_episodes_frames(
         assert len(decoded(clip / "file-000.mp4")) == row["length"]
 
 
+def test_stats_json_holds_the_stats_of_the_exported_data_on_both_sources(exported: Path):
+    for name in ("droid_100", "droid_1.0.1"):
+        out = exported / name
+        stats = json.loads((out / "meta" / "stats.json").read_text())
+        data = pq.read_table(out / "data" / "chunk-000" / "file-000.parquet")  # pyright: ignore[reportUnknownMemberType]
+        numeric = [c for c in data.column_names if c != "language_instruction"]
+
+        assert set(numeric) <= set(stats), name
+        for column in numeric:
+            values = np.asarray(data.column(column).to_pylist()).reshape(data.num_rows, -1)
+            ours = cast(dict[str, list[float]], stats[column])
+            assert ours["min"] == values.min(axis=0).tolist(), column
+            assert ours["max"] == values.max(axis=0).tolist(), column
+            numbers = values.astype(np.float64)
+            np.testing.assert_allclose(ours["mean"], numbers.mean(axis=0), atol=1e-6)
+            np.testing.assert_allclose(ours["std"], numbers.std(axis=0), atol=1e-6)
+            assert ours["count"] == [data.num_rows]
+            low, middle, high = (np.asarray(ours[q]) for q in ("q01", "q50", "q99"))
+            assert (low <= middle).all() and (middle <= high).all(), column
+
+
 def test_droid100_exports_every_column_of_its_kept_episode_renumbered(
     exported: Path, droid100_root: Path
 ):

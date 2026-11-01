@@ -1,6 +1,6 @@
 """Writes chosen Episodes of a source as one LeRobot v3.0 dataset, renumbered from 0 in the
 order given: every column of the source's data, one data file, and one video file per Episode
-and camera, located by meta/episodes."""
+and camera, located by meta/episodes, with meta/stats.json combining their stats."""
 
 import json
 from collections.abc import Mapping
@@ -11,6 +11,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from winnow.export.info import CHUNKS_SIZE, DATA_PATH, VIDEO_PATH, info_json, video_feature
+from winnow.export.stats import aggregate_stats
 from winnow.export.tables import Placed, rebased, renumbered, tasks_table, video_keys
 
 EPISODES_PATH = "meta/episodes/chunk-000/file-000.parquet"
@@ -82,12 +83,14 @@ def write_lerobot(source: ExportSource, indices: list[int], out: Path) -> None:
         for key in keys:
             videos[key], clip = _place(source, row, key, new, out, chunks)
             first_clips.setdefault(key, clip)
-        exported.append(rebased(row, new, start, videos))
+        exported.append(rebased(row, new, start, videos, frames[-1]))
         start += frames[-1].num_rows
     data = pa.concat_tables(frames)
     _write_parquet(data, out / DATA_PATH.format(chunk_index=0, file_index=0))
     _write_parquet(pa.Table.from_pylist(exported, schema=table.schema), out / EPISODES_PATH)
     _write_parquet(tasks_table(texts), out / "meta" / "tasks.parquet")
+    stats = json.dumps(aggregate_stats(exported), indent=4)
+    (out / "meta" / "stats.json").write_text(stats + "\n")
     features = {key: video_feature(clip, source.fps) for key, clip in first_clips.items()}
     meta = info_json(info, data, len(rows), len(texts), source.fps, features)
     (out / "meta" / "info.json").write_text(json.dumps(meta, indent=2) + "\n")
