@@ -16,11 +16,12 @@ export type AcceptedSuggestion = components["schemas"]["AcceptedSuggestion"];
 
 export const calibrationKey = ["calibration"] as const;
 
-/** The latest Rubric version's margin multiplier s and the thresholds labels suggest for it. */
-export function useCalibration(enabled = true) {
+/** The latest Rubric version's margin multiplier s and the thresholds labels suggest for it,
+ * read for `version`, the version in use (none: not read), so a new one reads afresh. */
+export function useCalibration(version: number | undefined) {
   return useQuery({
-    queryKey: calibrationKey,
-    enabled,
+    queryKey: [...calibrationKey, version],
+    enabled: version !== undefined,
     queryFn: async () => {
       const { data, response } = await api.GET("/api/calibration");
       if (!response.ok || !data) throw new Error(`Calibration failed: ${String(response.status)}`);
@@ -39,7 +40,7 @@ export function useRunCalibration() {
       return data;
     },
     onSuccess: async (calibration) => {
-      queryClient.setQueryData(calibrationKey, calibration);
+      queryClient.setQueryData([...calibrationKey, calibration.rubric_version], calibration);
       // The margins every result is read with changed.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: rubricKey }),

@@ -103,3 +103,39 @@ def test_bisecting_the_closed_level_takes_at_most_three_questions_and_clears_its
     assert (level.value, level.margin, level.assumption) == (0.525, 0.15, None)
     assert answers[-1].resolution == "set"
     assert answers[-1].effect.endswith("Gripper closed level 0.2 → 0.525, margin ± 0.15.")
+
+
+def rise(episode: int, metres: float) -> AnchorResult:
+    return AnchorResult(
+        f"droid_100:{episode}", metres, f"rose {metres * 100:.1f} cm", None, Clip(start=0, end=1)
+    )
+
+
+def test_bisecting_the_grasp_rise_stops_at_three_questions_with_moments_still_left():
+    rises = [0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.06, 0.08]
+    moments: dict[SettingName, list[AnchorResult]] = {
+        "grasp_rise_m": [rise(i, r) for i, r in enumerate(rises)]
+    }
+    draft = RubricDraft(
+        description="", phrases=[], settings=SEEDED_SETTINGS, criteria=[], compiled_at="now"
+    )
+    answers: list[StoredAnswer] = []
+
+    asked: list[float] = []
+    while questions := setting_questions(draft, moments, answers):
+        question = questions[0]
+        assert question.setting == "grasp_rise_m"
+        assert (question.asked, question.max_questions) == (len(asked), 3)
+        asked.append(question.value)
+        lifted = "pass" if question.value >= 0.035 else "fail"  # a lift is 3.5 cm or more
+        stored, changed = answer_setting(draft, answers, moments["grasp_rise_m"], question, lifted)
+        answers.append(stored)
+        draft = changed or draft
+
+    # 2 cm (nearest the assumed 2 cm), then the middle of the rest above it, then of those
+    # between: 4 cm is still inside the bracket, but the third answer settles it.
+    assert asked == [0.02, 0.05, 0.03]
+    rule = draft.settings.grasp_rise_m
+    assert (rule.value, rule.margin, rule.assumption) == (0.04, 0.02, None)
+    assert answers[-1].resolution == "set"
+    assert [a.resolution for a in answers[:-1]] == [None, None]

@@ -53,7 +53,7 @@ Why a Criterion result is unsure rather than pass or fail, e.g. a measurement ne
 _Avoid_: Flag, warning
 
 **Margin multiplier**:
-The one number, s, that widens or narrows every measured and tracked Criterion's margin: effective margin = max(noise floor, interview gap) × s. It is 1 until calibration tunes it on the Dev set's interview and review labels, per Rubric version (a new version starts at 1 again), and is shown as "s = 1.0 · tuned on N labels", never as a guarantee.
+The one number, s, that widens or narrows every measured and tracked Criterion's margin: effective margin = max(noise floor, interview gap) × s. It is 1 until calibration tunes it on the Dev set's interview and review labels, per Rubric version (a new version from Run starts at 1 again; one made by accepting a Threshold suggestion keeps the s the suggestion was made at), and is shown as "s = 1.0 · tuned on N labels", never as a guarantee.
 _Avoid_: Scale, temperature, tolerance
 
 **Threshold suggestion**:
@@ -73,7 +73,7 @@ The Triage decision for an Episode Winnow isn't confident about, routed to a hum
 _Avoid_: Uncertain, flagged, borderline
 
 **Audit sample**:
-A seeded random sample of the Episodes Winnow decided on its own (up to 12 Keeps and 5 Rejects) outside the Test set, drawn once per Rubric version and margin multiplier s. An auditor marks each Good (every Phrase passes) or Bad (naming a failing Phrase); the marks measure Keep precision and never change a Triage decision.
+A seeded random sample of the Episodes Winnow decided on its own (up to 12 Keeps and 5 Rejects) outside the Test set, drawn once per Rubric version and margin multiplier s. An auditor marks each Good (every Phrase passes) or Bad (naming a failing Phrase); the marks measure Keep precision over the sampled Keeps that are still Keeps, and how many good Episodes Winnow rejected among the Rejects still rejected, and never change a Triage decision.
 _Avoid_: Spot check, QA sample
 
 **Reference label**:

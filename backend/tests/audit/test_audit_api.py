@@ -201,3 +201,27 @@ def test_a_sample_is_drawn_at_the_versions_s_and_again_once_calibration_changes_
         (NO_GRASP, "reject", None),
     ]
     assert fresh["precision"]["good"]["count"] == 1
+
+
+def test_a_keep_counts_toward_precision_only_while_it_is_still_a_keep(ingested: TestClient):
+    draw(ingested)
+    mark_good(ingested, KEEP)
+    assert audit(ingested)["precision"]["good"]["of"] == 1
+
+    label(ingested, KEEP, NEVER_DROPS, "fail", source="review")  # a reviewer rejects it
+
+    sample = audit(ingested)
+    assert (sample["items"][0]["kind"], sample["items"][0]["decision"]) == ("keep", "reject")
+    assert sample["precision"]["good"]["of"] == 0  # no longer one of Winnow's Keeps
+
+
+def test_marked_rejects_count_the_good_episodes_rejected(ingested: TestClient):
+    draw(ingested)
+    mark_good(ingested, REJECT)
+    label(ingested, NO_GRASP, NEVER_DROPS, "fail")
+
+    sample = audit(ingested)
+
+    assert [i["decision"] for i in sample["items"]] == ["keep", "reject", "reject"]
+    assert (sample["good_rejects"]["count"], sample["good_rejects"]["of"]) == (1, 2)
+    assert sample["precision"]["good"]["of"] == 0

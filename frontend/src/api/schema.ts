@@ -139,7 +139,7 @@ export interface paths {
         /**
          * Post Accept Suggestion
          * @description Freezes the latest Rubric version with the suggested threshold and margin as the next
-         *     version, which starts at s = 1 until calibrated, and applies them to the draft too unless
+         *     version, which keeps the s it was calibrated with, and applies them to the draft too unless
          *     the draft's Criterion now compares differently; the reply says which.
          */
         post: operations["post_accept_suggestion_api_calibration_suggestions__criterion_id__accept_post"];
@@ -743,8 +743,8 @@ export interface paths {
         };
         /**
          * Get Review Queue
-         * @description The Needs review Episodes with a Reference label, least confident first; answer one with
-         *     a `review` label.
+         * @description The Needs review Episodes with a Reference label outside the Test set, least confident
+         *     first; answer one with a `review` label.
          */
         get: operations["get_review_queue_api_review_get"];
         put?: never;
@@ -1237,6 +1237,11 @@ export interface components {
         };
         /** AuditItem */
         AuditItem: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "keep" | "reject" | "needs_review";
             /** Episode Id */
             episode_id: string;
             /** Failed */
@@ -1257,6 +1262,7 @@ export interface components {
             drawn_at: string | null;
             /** Earlier S */
             earlier_s: number | null;
+            good_rejects: components["schemas"]["Proportion"];
             /** Items */
             items: components["schemas"]["AuditItem"][];
             /** Phrases */

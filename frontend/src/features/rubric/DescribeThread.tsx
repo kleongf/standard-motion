@@ -1,13 +1,15 @@
 // The Describe conversation, rebuilt from the server's state each time, so a reload resumes it:
 // Spark's greeting; the curator's Description, each Phrase tinted and linked to its section; what
 // the compile made of it; the Rubric draft as a card that updates in place; the interview; and
-// what Run froze, once it has run here. What the curator says to Spark in their own words shows
-// just above the current question.
+// what Run froze, once it has run here; and last, the Rubric version in use with its Calibrate
+// control. What the curator says to Spark in their own words shows just above the current
+// question.
 import { PencilLine } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
 import { InterviewThread } from "../interview/InterviewThread";
+import { CalibrationTurn } from "./CalibrationTurn";
 import { AnchorPoolLine } from "./DescribeHeader";
 import { DescriptionText } from "./DescriptionText";
 import { recompileNote } from "./recompileNote";
@@ -144,6 +146,7 @@ export function DescribeThread(props: {
           <RunCard version={props.ran} />
         </AgentRow>
       )}
+      <CalibrationTurn />
     </div>
   );
 }

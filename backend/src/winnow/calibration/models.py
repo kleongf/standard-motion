@@ -51,6 +51,6 @@ class Calibration(BaseModel):
 class AcceptedSuggestion(BaseModel):
     """The Rubric version accepting a suggestion froze, and what became of the draft."""
 
-    version: RubricVersion  # starts at s = 1 until calibrated
+    version: RubricVersion  # keeps the s its suggestion was made at
     draft_updated: bool  # False: no draft, or its Criterion now checks something else
     draft_note: str  # what happened to the draft, to show

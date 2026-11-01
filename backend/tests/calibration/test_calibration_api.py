@@ -1,6 +1,6 @@
 """Calibration through the API: s is tuned per Rubric version on the Dev set's interview and
 review labels only, scoring uses it, and accepting a threshold suggestion freezes a new version,
-which starts at s = 1."""
+which keeps the s the suggestion was made at."""
 
 from collections.abc import Sequence
 from typing import Any
@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from tests.conftest import OPEN_GRIPPER_EPISODE
 from tests.helpers import app_context, reference_label, wait_for_job
+from winnow.calibration import service as calibration_service
 from winnow.criteria.facts import EpisodeFacts
 from winnow.criteria.models import Criterion
 from winnow.evaluation import service as evaluation_service
@@ -141,7 +142,9 @@ def accept(api: TestClient, criterion_id: str = PATH.id) -> Any:
     return api.post(f"/api/calibration/suggestions/{criterion_id}/accept")
 
 
-def test_accepting_a_suggestion_freezes_a_new_version_which_starts_at_s_1(anchored: TestClient):
+def test_accepting_a_suggestion_freezes_a_new_version_which_keeps_the_calibrated_s(
+    anchored: TestClient,
+):
     contradict_the_path(anchored)
     run(anchored)
 
@@ -158,10 +161,21 @@ def test_accepting_a_suggestion_freezes_a_new_version_which_starts_at_s_1(anchor
     ]
     assert reply["draft_updated"] is False
     assert reply["draft_note"] == "There's no Rubric draft to update."
+    # The threshold was suggested at s = 2, so the version it makes is scored at s = 2 too.
+    found = calibration(anchored)
+    assert (found["rubric_version"], found["s"]) == (3, 2.0)
+    assert (found["record"]["rubric_version"], found["record"]["n_labels"]) == (3, 3)
+    # The suggested margin is under the noise floor: the effective margin is 0.05 * 2 again.
+    assert path_margin(anchored, DEV[0]) == 0.1
+
+
+def test_accepting_on_an_uncalibrated_version_makes_one_at_s_1(anchored: TestClient):
+    contradict_the_path(anchored)
+
+    assert accept(anchored).status_code == 201
+
     found = calibration(anchored)
     assert (found["rubric_version"], found["s"], found["record"]) == (3, 1.0, None)
-    # The suggested margin is under the noise floor, so the effective margin is 0.05 again.
-    assert path_margin(anchored, DEV[0]) == 0.05
 
 
 def save_draft(api: TestClient, criteria: list[Criterion]) -> None:
@@ -259,3 +273,21 @@ def test_an_evaluation_scores_the_version_with_its_s(
 
     assert report.status_code == 200, report.text
     assert seen and set(seen) == {2.0}
+
+
+def test_calibrating_and_accepting_queue_spark_reasons(
+    anchored: TestClient, monkeypatch: pytest.MonkeyPatch
+):
+    # Either can change Criterion results, and with them the Reasons Spark wrote.
+    queued: list[int] = []
+
+    def spy(ctx: object) -> None:
+        queued.append(app_context(anchored).rubrics.latest().version)
+
+    monkeypatch.setattr(calibration_service, "queue_reasons", spy)
+    contradict_the_path(anchored)
+
+    run(anchored)
+    assert queued == [2]
+    assert accept(anchored).status_code == 201
+    assert queued == [2, 3]

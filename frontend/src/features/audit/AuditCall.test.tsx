@@ -8,6 +8,7 @@ const PHRASES = ["grasps it on the first try", "never drops it"];
 const item: AuditItem = {
   episode_id: "droid_100:0",
   kind: "keep",
+  decision: "keep",
   reason: "Kept: every hard Phrase passes.",
   mark: null,
   failed: [],
@@ -55,4 +56,18 @@ test("shows the mark already given, naming the failing Phrase", () => {
   renderCall({ ...item, mark: "bad", failed: ["never drops it"] });
 
   expect(screen.getByTestId("audit-mark")).toHaveTextContent("Marked Bad: “never drops it”");
+});
+
+test("an item whose Triage decision changed says its mark isn't counted", () => {
+  renderCall({ ...item, decision: "reject" });
+
+  expect(screen.getByTestId("audit-moved")).toHaveTextContent(
+    "Its Triage decision is now Reject, so its mark isn’t counted.",
+  );
+});
+
+test("an item still decided as drawn says nothing more", () => {
+  renderCall();
+
+  expect(screen.queryByTestId("audit-moved")).toBeNull();
 });

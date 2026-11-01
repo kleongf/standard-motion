@@ -4,6 +4,7 @@
 import { Button } from "@/components/ui/button";
 
 import { goTo } from "../core/pages";
+import { useRubric } from "../rubric/useRubric";
 import { sText } from "./calibrationText";
 import { type Calibration, useCalibration, useRunCalibration } from "./useCalibration";
 
@@ -23,7 +24,7 @@ function loopSummary(c: Calibration): { fresh: number; suggested: number; text: 
 }
 
 export function LoopNote() {
-  const calibration = useCalibration().data;
+  const calibration = useCalibration(useRubric().data?.version).data;
   const summary = calibration && loopSummary(calibration);
   if (!summary) return null;
   return (

@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { precisionText } from "./precisionText";
+import { goodRejectsText, precisionText } from "./precisionText";
 
 test("states the count, then the Wilson interval", () => {
   expect(
@@ -30,4 +30,11 @@ test("says so when nothing is marked", () => {
       lower_bound_confidence: 0.9,
     }),
   ).toBe("No Keeps marked yet");
+});
+
+test("counts the good Episodes rejected only once a Reject is marked", () => {
+  expect(goodRejectsText({ count: 1, of: 3, low: 0.06, high: 0.79 })).toBe(
+    "1 of 3 marked Rejects good",
+  );
+  expect(goodRejectsText({ count: 0, of: 0, low: null, high: null })).toBeNull();
 });

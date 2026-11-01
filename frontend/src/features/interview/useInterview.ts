@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "../../api/client";
 import type { components } from "../../api/schema";
+import { calibrationKey } from "../calibration/useCalibration";
 import { reviewKey } from "../review/useReview";
 import { draftKey } from "../rubric/useDraft";
 import { failure } from "../rubric/useDraftEdits";
@@ -38,7 +39,8 @@ export function useInterview() {
   });
 }
 
-/** An answer changes the draft and may leave a label: everything they decide reads again. */
+/** An answer changes the draft and may leave a label: everything they decide reads again,
+ * calibration's label count included. */
 function useAfterAnswer() {
   const queryClient = useQueryClient();
   return async (interview: Interview) => {
@@ -50,6 +52,7 @@ function useAfterAnswer() {
       }),
       queryClient.invalidateQueries({ queryKey: triageKey }),
       queryClient.invalidateQueries({ queryKey: reviewKey }),
+      queryClient.invalidateQueries({ queryKey: calibrationKey }),
     ]);
   };
 }
