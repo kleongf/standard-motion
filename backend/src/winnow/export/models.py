@@ -1,6 +1,10 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, Field
+
+# What an export writes: the Keeps only (the default), or the Needs review Episodes with them.
+Include = Literal["keep", "keep_and_review"]
+Exported = Literal["keep", "needs_review"]  # the Triage decisions an export can write
 
 
 class Rejection(BaseModel):
@@ -13,13 +17,14 @@ class Rejection(BaseModel):
 
 
 class ManifestEpisode(BaseModel):
-    """A kept Episode in manifest.json: where it went in the export, and where it came from."""
+    """An exported Episode in manifest.json: where it went in the export, where it came from,
+    and its Triage decision."""
 
     exported_episode_index: int  # within its source's exported dataset
     source: str
     source_episode_index: int
     episode_id: str
-    decision: Literal["keep"]
+    decision: Exported
 
 
 class Skipped(BaseModel):
@@ -34,20 +39,54 @@ class Manifest(BaseModel):
     """manifest.json, at an export's root: what it holds and what it was decided with."""
 
     created_at: str  # ISO 8601, UTC
+    include: Include = "keep"  # exports from before the choice wrote Keeps only
     rubric_version: int
     margin_multiplier: float  # s, the latest Rubric version's
     not_reference_labelled: int  # of the Episodes decided, those without a Reference label
-    kept: list[ManifestEpisode]
+    # Read as `kept` from manifests written before Needs review could be exported.
+    exported: list[ManifestEpisode] = Field(validation_alias=AliasChoices("exported", "kept"))
     skipped: Skipped
+
+
+class ExportRequest(BaseModel):
+    include: Include = "keep"
 
 
 class ExportStarted(BaseModel):
     job_id: int
 
 
-class ExportScope(BaseModel):
-    """What an export would decide on, before it runs: every Episode outside the Test set, and
-    how many of them have no Reference label yet, whose decisions exporting shows."""
+class DecisionCounts(BaseModel):
+    """Episodes as an export sees them. Decisions are counted only for the Reference-labelled:
+    the rest's stay hidden until they're labelled, or exported."""
 
+    keep: int
+    needs_review: int
+    reject: int
+    awaiting_label: int  # outside the Test set with no Reference label: exported by decision
+    test_set: int  # never exported
+
+
+class SourceCounts(DecisionCounts):
+    source: str
+
+
+class ExportPreview(BaseModel):
+    """What an export would hold, before it runs, per source; `exported` is how many of the
+    Reference-labelled it writes with `include`, and `nothing_exported` why it would write none
+    (None while Episodes awaiting a label could still be)."""
+
+    include: Include
+    rubric_version: int
+    sources: list[SourceCounts]
+    exported: int
+    nothing_exported: str | None
+
+
+class PastExport(BaseModel):
+    """An export written under the data dir's exports/, from its manifest.json."""
+
+    path: str
+    created_at: str
     episodes: int
-    unlabelled: int
+    include: Include

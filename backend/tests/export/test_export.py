@@ -135,11 +135,21 @@ def test_kept_episodes_export_by_decision_without_a_reference_label_never_the_te
             assert all(r["episode_index"] == new for r in renumbered)
 
 
-def test_the_scope_counts_the_episodes_exported_without_a_reference_label(api: TestClient):
-    scope = api.get("/api/export/scope")
+def test_the_preview_counts_decisions_only_of_the_labelled_and_the_rest_apart(api: TestClient):
+    preview = api.get("/api/export/preview").json()
 
-    # droid_100 1, 2 and 4 and droid_1.0.1 0, 2 and 3: the rest are in the Test set.
-    assert scope.json() == {"episodes": 6, "unlabelled": 2}
+    # droid_100:1 and droid_1.0.1:3 await a label; droid_100:0 and droid_1.0.1:1 are Test set.
+    assert preview["sources"] == [
+        {"source": "droid_1.0.1", "keep": 2, "needs_review": 0, "reject": 0,
+         "awaiting_label": 1, "test_set": 1},
+        {"source": "droid_100", "keep": 0, "needs_review": 0, "reject": 2,
+         "awaiting_label": 1, "test_set": 1},
+    ]  # fmt: skip
+    assert (preview["include"], preview["exported"], preview["nothing_exported"]) == (
+        "keep",
+        2,
+        None,
+    )
 
 
 def episodes_of(export: Path) -> list[dict[str, object]]:
@@ -279,7 +289,8 @@ def test_the_manifest_maps_each_exported_episode_to_its_source_and_the_counts_ad
     manifest = json.loads((exported / "manifest.json").read_text())
 
     kept = [("droid_1.0.1", new, old) for new, old in enumerate(KEPT_101)] + [("droid_100", 0, 1)]
-    assert manifest["kept"] == [
+    assert manifest["include"] == "keep"
+    assert manifest["exported"] == [
         {
             "exported_episode_index": new,
             "source": source,
@@ -291,12 +302,13 @@ def test_the_manifest_maps_each_exported_episode_to_its_source_and_the_counts_ad
     ]
     assert manifest["skipped"] == {"reject": 2, "needs_review": 0, "test_set": 2}
     ctx = app_context(api)
-    assert len(manifest["kept"]) + sum(manifest["skipped"].values()) == len(ctx.episodes.list())
+    total = len(manifest["exported"]) + sum(manifest["skipped"].values())
+    assert total == len(ctx.episodes.list())
     rejections = (exported / "rejections.jsonl").read_text().splitlines()
     assert len(rejections) == manifest["skipped"]["reject"] + manifest["skipped"]["needs_review"]
     for source in ("droid_1.0.1", "droid_100"):
         info = json.loads((exported / source / "meta" / "info.json").read_text())
-        assert info["total_episodes"] == sum(k["source"] == source for k in manifest["kept"])
+        assert info["total_episodes"] == sum(k["source"] == source for k in manifest["exported"])
     assert manifest["rubric_version"] == ctx.rubrics.latest().version
     assert manifest["margin_multiplier"] == 1.0
     assert manifest["not_reference_labelled"] == 2
@@ -320,16 +332,22 @@ def test_cli_exports_to_the_folder_given_and_never_over_another_export(
     assert "already exists" in capsys.readouterr().out
 
 
-def test_the_api_exports_in_the_background_to_a_new_folder_under_the_data_dir(
+def test_the_api_exports_in_the_background_an_item_per_episode_to_a_new_folder(
     api: TestClient, settings: Settings
 ):
-    started = api.post("/api/export")
+    started = api.post("/api/export", json={})
 
     assert started.status_code == 202
     job = wait_for_job(api, started.json()["job_id"])
-    [item] = cast(list[dict[str, object]], job["items"])
-    assert item["status"] == "done", item["detail"]
-    out = Path(str(item["detail"]).rsplit(" to ", 1)[1])
+    items = cast(list[dict[str, object]], job["items"])
+    assert [item["label"] for item in items] == [
+        *(f"droid_1.0.1:{i}" for i in KEPT_101),
+        "droid_100:1",
+        "Tables and manifest",
+    ]
+    assert all(item["status"] == "done" for item in items), items
+    out = Path(str(items[-1]["detail"]).rsplit(" to ", 1)[1])
     assert out.parent == settings.data_dir / "exports"
     assert (out / "droid_1.0.1" / "meta" / "info.json").exists()
+    assert not out.with_name(f"{out.name}.partial").exists()
     assert api.get("/api/jobs/latest", params={"kind": "export"}).json()["id"] == job["id"]

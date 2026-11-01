@@ -16,7 +16,7 @@ from pathlib import Path
 from winnow.core.settings import get_settings
 from winnow.episodes.sources import sources_from
 from winnow.export.plan import ExportPlan
-from winnow.export.service import write_export
+from winnow.export.run import write_export
 
 
 def _kept(episode_ids: list[str]) -> dict[str, list[int]]:

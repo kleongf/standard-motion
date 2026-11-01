@@ -1,78 +1,79 @@
-"""The export: every kept Episode (see plan.py for which), written per source as a LeRobot v3.0
-dataset, with the Reason for each one not kept in rejections.jsonl and, in manifest.json, where
-each kept Episode came from and what decided it. The Test set is never exported, its Reasons
-neither."""
+"""The export as a job: a work item per exported Episode, in order, then one that writes the
+tables, rejections.jsonl (the Reason for each Episode decided and left out) and manifest.json, so
+the job shows each Episode's progress. Which Episodes, see plan.py; how, see run.py. The Test set
+is never exported, its Reasons neither.
+
+An export's plan is fixed when its job is made, and its run kept here, by folder, while the job
+runs: the runner is in-process, and a job left by a process that's gone fails as interrupted."""
 
 import asyncio
-import shutil
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 
 from winnow.core.context import AppContext
-from winnow.episodes.droid100 import Droid100
-from winnow.episodes.droid101 import Droid101
-from winnow.episodes.sources import Source
-from winnow.export.droid100 import Droid100Export
-from winnow.export.droid101 import Droid101Export
-from winnow.export.lerobot import ExportSource, write_lerobot
-from winnow.export.plan import ExportPlan, export_plan
+from winnow.export.models import Include
+from winnow.export.plan import export_plan
+from winnow.export.run import ExportError, ExportRun
 from winnow.jobs.models import Step, WorkItem
 
-REJECTIONS = "rejections.jsonl"
-MANIFEST = "manifest.json"  # what the export holds and what it was decided with
+_RUNS: dict[str, ExportRun] = {}  # out folder -> its run, while its job runs
 
 
-class ExportError(Exception):
-    pass
+def export_kept(ctx: AppContext, out: Path, include: Include = "keep") -> str:
+    """The export, written at once (blocking)."""
+    return ExportRun(ctx.sources, export_plan(ctx, include), out).write_all()
 
 
-def _exporter(source: Source) -> ExportSource:
-    if isinstance(source, Droid100):
-        return Droid100Export(source)
-    if isinstance(source, Droid101):
-        return Droid101Export(source)
-    raise ExportError(f"{source.name} can't be exported")
+def _run(args: Mapping[str, object]) -> ExportRun:
+    run = _RUNS.get(str(args["out"]))
+    if run is None:
+        raise ExportError("this export's plan is gone: export again")
+    return run
 
 
-def write_export(sources: Mapping[str, Source], plan: ExportPlan, out: Path) -> None:
-    """Blocking (parquet, ffmpeg). Written beside `out` and moved there once complete, so `out`
-    never holds half an export."""
-    if out.exists() and (not out.is_dir() or any(out.iterdir())):
-        raise ExportError(f"{out} already exists and isn't empty")
-    partial = out.with_name(f"{out.name}.partial")
-    shutil.rmtree(partial, ignore_errors=True)  # left by an export that was interrupted
-    partial.mkdir(parents=True)
-    for name, indices in plan.kept.items():
-        write_lerobot(_exporter(sources[name]), indices, partial / name)
-    lines = "".join(f"{r.model_dump_json()}\n" for r in plan.rejections)
-    (partial / REJECTIONS).write_text(lines)
-    manifest = plan.manifest(datetime.now(UTC)).model_dump_json(indent=2)
-    (partial / MANIFEST).write_text(manifest + "\n")
-    partial.replace(out)
+async def _discarding_on_failure[T](run: ExportRun, work: Callable[[], T]) -> T:
+    """Do one item's work off the loop; if it fails, the export is over: the items after it are
+    skipped, so its folders go now."""
+    try:
+        return await asyncio.to_thread(work)
+    except Exception:  # cancelled, its thread may still be writing: left as interrupted
+        _RUNS.pop(str(run.out), None)
+        run.discard()
+        raise
 
 
-def export_kept(ctx: AppContext, out: Path) -> str:
-    plan = export_plan(ctx)
-    write_export(ctx.sources, plan, out)
-    return plan.summary(str(out))
+def export_steps() -> dict[str, Step]:
+    async def episode(args: Mapping[str, object]) -> None:
+        run = _run(args)
+        source, index = str(args["source"]), int(str(args["index"]))
+        await _discarding_on_failure(run, lambda: run.write(source, index))
+
+    async def finish(args: Mapping[str, object]) -> str:
+        run = _run(args)
+        summary = await _discarding_on_failure(run, run.finish)
+        _RUNS.pop(str(run.out), None)
+        return summary
+
+    return {"export_episode": episode, "export_finish": finish}
 
 
-def export_step(ctx: AppContext) -> Step:
-    async def step(args: Mapping[str, object]) -> str:
-        out = Path(str(args["out"]))
-        plan = export_plan(ctx)  # reads the database, so on the loop
-        await asyncio.to_thread(write_export, ctx.sources, plan, out)
-        return plan.summary(str(out))
+def export_items(ctx: AppContext, out: Path, include: Include = "keep") -> list[WorkItem]:
+    """Plan the export to `out` (on the loop: it reads the database) and hold its run for the
+    items: one per Episode, each after the one before, then the finish."""
+    run = ExportRun(ctx.sources, export_plan(ctx, include), out)
+    _RUNS[str(out)] = run
+    args = {"out": str(out)}
+    items = [
+        WorkItem("export_episode", args | {"source": source, "index": index}, f"{source}:{index}",
+                 after=i - 1 if i else None)
+        for i, (source, index) in enumerate(run.plan.episodes())
+    ]  # fmt: skip
+    finish = WorkItem("export_finish", args, "Tables and manifest", after=len(items) - 1)
+    return [*items, finish if items else WorkItem("export_finish", args, finish.label)]
 
-    return step
 
-
-def export_items(out: Path) -> list[WorkItem]:
-    return [WorkItem("export", {"out": str(out)}, "Kept Episodes")]
-
-
-def start_export(ctx: AppContext) -> int:
+def start_export(ctx: AppContext, include: Include = "keep") -> int:
     """Export in the background to a new folder under the data dir's exports/, made empty now
     so no other export takes its name."""
     stamp = datetime.now(UTC).strftime("%Y-%m-%dT%H-%M-%S")
@@ -86,4 +87,9 @@ def start_export(ctx: AppContext) -> int:
         except FileExistsError:
             taken += 1
             out = exports / f"{stamp}-{taken}"
-    return ctx.runner.submit("export", export_items(out))
+    try:
+        items = export_items(ctx, out, include)
+    except Exception:
+        out.rmdir()
+        raise
+    return ctx.runner.submit("export", items)
