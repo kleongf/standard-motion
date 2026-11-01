@@ -1,5 +1,6 @@
-// The Describe page's top bar: how the shown Rubric sorts the anchor pool, a chip that jumps to
-// the Rubric card, the Rubric version select, and Run, which never blocks.
+// The Describe page's top bar: how the shown Rubric sorts the anchor pool, the draft's dry run
+// while Spark asks its visual Criteria, a chip that jumps to the Rubric card, the Rubric version
+// select, and Run, which never blocks.
 import { FileText } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -12,10 +13,12 @@ import {
 } from "@/components/ui/select";
 
 import { navigate } from "../core/url";
+import { DryRunProgress } from "./DryRunProgress";
 import { scrollToRubric } from "./RubricCard";
 import { warningCount } from "./sanity";
 import { type RubricDraft, useAnchorPool } from "./useDraft";
 import type { AnchorPreview } from "./useDraftEdits";
+import { useDryRun } from "./useDryRun";
 import { useVersions } from "./useRubric";
 
 function plural(n: number, word: string): string {
@@ -57,6 +60,11 @@ function SanityCount(props: { preview?: AnchorPreview | undefined }) {
       · {plural(warnings, "Rubric warning")}
     </p>
   );
+}
+
+/** Its answers refresh the draft's preview as they come in. */
+function DraftDryRun(props: { draft: RubricDraft | null | undefined }) {
+  return <DryRunProgress job={useDryRun(props.draft)} />;
 }
 
 function VersionSelect(props: { version: number | null }) {
@@ -129,7 +137,11 @@ export function DescribeHeader(props: {
     <header className="sticky top-0 z-20 border-b bg-background/85 backdrop-blur">
       <div className="flex h-14 items-center gap-3 px-8">
         <div className="min-w-0 flex-1">
-          <h1 className="text-base leading-tight font-semibold">Describe &amp; run</h1>
+          {/* The dry run sits beside the title: the line under it is full with the sort. */}
+          <div className="flex items-center gap-3 truncate">
+            <h1 className="text-base leading-tight font-semibold">Describe &amp; run</h1>
+            {drafting && <DraftDryRun draft={props.draft} />}
+          </div>
           <div className="flex gap-1 truncate">
             <AnchorSort preview={props.preview} />
             <SanityCount preview={props.preview} />
