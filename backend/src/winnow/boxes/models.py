@@ -8,14 +8,19 @@ from pydantic import BaseModel
 ExteriorCamera = Literal["exterior_image_1_left", "exterior_image_2_left"]
 
 
-class BoxDraw(BaseModel):
-    """A box in frame-0 pixels of the chosen view."""
+class FrameRect(BaseModel):
+    """A box in frame-0 pixels."""
 
-    camera: ExteriorCamera
     x1: int
     y1: int
     x2: int
     y2: int
+
+
+class BoxDraw(FrameRect):
+    """A box in frame-0 pixels of the chosen view."""
+
+    camera: ExteriorCamera
 
 
 class Box(BoxDraw):

@@ -1,7 +1,9 @@
 // Starts the backend and frontend dev servers and waits until both answer.
 import { spawn, type ChildProcess } from "node:child_process";
 
-export const FRONTEND_URL = "http://127.0.0.1:5173";
+// WINNOW_PORT_OFFSET shifts every port, so several worktrees can run the app side by side.
+export const PORT_OFFSET = Number(process.env.WINNOW_PORT_OFFSET ?? "0");
+export const FRONTEND_URL = `http://127.0.0.1:${String(5173 + PORT_OFFSET)}`;
 
 export interface Servers {
   stop: () => void;
@@ -23,8 +25,8 @@ async function isUp(healthUrl: string): Promise<boolean> {
 }
 
 export async function startServers(options: ServerOptions = {}): Promise<Servers> {
-  const frontendPort = options.frontendPort ?? 5173;
-  const backendPort = options.backendPort ?? 8000;
+  const frontendPort = options.frontendPort ?? 5173 + PORT_OFFSET;
+  const backendPort = options.backendPort ?? 8000 + PORT_OFFSET;
   // Proxied through the frontend, so it only answers once both are up.
   const healthUrl = `http://127.0.0.1:${String(frontendPort)}/api/health`;
   if (await isUp(healthUrl)) return { stop: () => undefined }; // reuse servers someone else started

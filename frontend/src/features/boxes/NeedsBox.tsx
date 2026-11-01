@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
+import { SectionHeading } from "../core/PageHeader";
 import type { Episode } from "../episodes/useEpisodes";
 import { BoxDialog } from "./BoxDialog";
 import { frame0Url, useBoxes } from "./useBoxes";
@@ -18,24 +19,22 @@ export function NeedsBox(props: { episodes: Episode[] }) {
 
   return (
     <section className="mt-8">
-      <div className="flex items-baseline gap-3">
-        <h2 className="text-base font-semibold">Needs a box</h2>
-        <span className="text-sm text-muted-foreground">{missing.length} Episodes</span>
-        <Button
-          size="sm"
-          className="ml-auto"
-          disabled={missing.length === 0}
-          onClick={() => {
-            startAt(0);
-          }}
-        >
-          Draw boxes ({missing.length})
-        </Button>
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        One box per Episode, around the task object on frame 0. It seeds the exterior track that
-        placement Criteria read; without one, they come back unsure and nothing blocks.
-      </p>
+      <SectionHeading
+        title="Needs a box"
+        meta={`${String(missing.length)} Episodes`}
+        info="One box per Episode, around the task object on frame 0. It seeds the exterior track that placement Criteria read; without one, they come back unsure and nothing blocks."
+        actions={
+          <Button
+            size="sm"
+            disabled={missing.length === 0}
+            onClick={() => {
+              startAt(0);
+            }}
+          >
+            Draw boxes ({missing.length})
+          </Button>
+        }
+      />
       <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3">
         {missing.map((episode, index) => (
           <button
@@ -51,7 +50,7 @@ export function NeedsBox(props: { episodes: Episode[] }) {
               src={frame0Url(episode.id, "exterior_image_1_left")}
               alt=""
               loading="lazy"
-              className="aspect-video w-full rounded border bg-muted object-cover group-hover:ring-2 group-hover:ring-sky-400"
+              className="aspect-video w-full rounded border bg-muted object-cover group-hover:ring-2 group-hover:ring-primary"
             />
             <div className="mt-1 text-xs font-medium">Episode {episode.index}</div>
             <div className="truncate text-xs text-muted-foreground">

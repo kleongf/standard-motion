@@ -48,6 +48,10 @@ class BoxStore:
         )
         return box
 
+    def get(self, episode_id: str) -> Box | None:
+        row = self._db.execute("SELECT * FROM boxes WHERE episode_id = ?", (episode_id,)).fetchone()
+        return None if row is None else Box.model_validate(dict(row))
+
     def list(self) -> list[Box]:
         rows = self._db.execute("SELECT * FROM boxes ORDER BY episode_id")
         return [Box.model_validate(dict(row)) for row in rows]

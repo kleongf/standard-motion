@@ -3,7 +3,10 @@
 import { lossReasons } from "./trackBoxes";
 import type { Track } from "./useTracks";
 
-const KIND_LABELS: Record<string, string> = { wrist: "Wrist track" };
+export const KIND_LABELS: Record<string, string> = {
+  wrist: "Wrist track",
+  exterior: "Exterior track",
+};
 
 export function TrackStatus(props: { track: Track }) {
   const { track } = props;

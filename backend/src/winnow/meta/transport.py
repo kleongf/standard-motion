@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from winnow.meta.models import MetaContent
+from winnow.meta.models import MetaContent, Transcript
 
 
 @dataclass(frozen=True)
@@ -22,6 +22,10 @@ class FileGoneError(RuntimeError):
     """The server no longer has a file we uploaded earlier."""
 
 
+class UnusableReplyError(RuntimeError):
+    """The Meta API answered, but not in a shape we can read: not worth retrying."""
+
+
 class Transport(Protocol):
     async def upload(self, path: Path) -> str: ...
 
@@ -30,3 +34,7 @@ class Transport(Protocol):
     async def respond(
         self, model: str, content: MetaContent, options: dict[str, object]
     ) -> Reply: ...
+
+    async def transcribe(
+        self, model: str, audio: Path, options: dict[str, object]
+    ) -> Transcript: ...

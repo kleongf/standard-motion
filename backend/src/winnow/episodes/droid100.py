@@ -55,16 +55,16 @@ class Droid100:
     cameras: tuple[str, ...] = CAMERAS
 
     def __init__(self, fetch: Fetch) -> None:
-        self._fetch = fetch
+        self.fetch = fetch  # the repo's files, which the exporter re-reads in full
 
     @cached_property
     def _table(self) -> pa.Table:
-        path = self._fetch("data/chunk-000/file-000.parquet", "main")
+        path = self.fetch("data/chunk-000/file-000.parquet", "main")
         return pq.read_table(path)  # pyright: ignore[reportUnknownMemberType]
 
     @cached_property
     def _tasks(self) -> dict[int, str]:
-        table = pq.read_table(self._fetch("meta/tasks.parquet", "main"))  # pyright: ignore[reportUnknownMemberType]
+        table = pq.read_table(self.fetch("meta/tasks.parquet", "main"))  # pyright: ignore[reportUnknownMemberType]
         indices = table.column("task_index").to_pylist()
         texts = table.column("__index_level_0__").to_pylist()
         return {int(str(i)): str(t) for i, t in zip(indices, texts, strict=True)}
@@ -89,7 +89,7 @@ class Droid100:
 
     def write_clip(self, index: int, camera: str, out: Path) -> None:
         """Transcode the source's own (AV1) clip to H.264."""
-        source = self._fetch(
+        source = self.fetch(
             f"videos/chunk-000/observation.images.{camera}/episode_{index:06d}.mp4", "v2.0"
         )
         to_h264(source, out)

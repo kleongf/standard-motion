@@ -31,15 +31,11 @@ export function IngestForm(props: { disabled: boolean }) {
       <label htmlFor="ingest-indices" className="text-sm font-medium">
         Ingest from droid_100
       </label>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        Episode indices, separated by spaces or commas; ranges like 40-45 work. Episodes already in
-        the Dataset are skipped.
-      </p>
       <Textarea
         id="ingest-indices"
         className="mt-2 font-mono"
         rows={2}
-        placeholder="3 16 42 48 49"
+        placeholder="e.g. 3 16 40-45"
         value={text}
         onChange={(event) => {
           setText(event.target.value);

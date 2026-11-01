@@ -5,6 +5,7 @@ description = "Filter robot demonstration Episodes against a plain-English Rubri
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.162.0",
+    "httpx2>=2.16.0",
     "huggingface-hub>=2.3.0",
     "meta-sam-parser>=0.1.0",
     "numpy>=2.5.4",
@@ -13,6 +14,7 @@ dependencies = [
     "pyarrow>=26.0.0",
     "pydantic>=2.14.1",
     "pydantic-settings>=2.16.1",
+    "python-multipart>=0.0.32",
     "uvicorn[standard]>=0.54.0",
 ]
 
@@ -26,10 +28,10 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "httpx2>=2.16.0",
     "pyarrow-stubs>=20.0.0.20260819",
     "pyright>=1.1.414",
     "pytest>=9.1.1",
+    "pytest-xdist>=3.8.0",
     "ruff>=0.17.3",
 ]
 
@@ -54,6 +56,7 @@ select = [
     "ANN",      # annotations everywhere
 ]
 ignore = ["PLR2004"]  # magic numbers are fine in thresholds and tests
+allowed-confusables = ["–"]  # en dash, for intervals like 0.05–0.70
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
@@ -75,4 +78,4 @@ venv = ".venv"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q --strict-markers"
+addopts = "-q --strict-markers -n auto --dist loadfile --durations=15"

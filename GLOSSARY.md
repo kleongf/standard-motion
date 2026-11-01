@@ -36,6 +36,10 @@ _Avoid_: Filter, spec, checklist; never use for the hackathon's scoring
 One check within a Rubric, either hard (failing it rejects the Episode) or soft (it adds to a quality score), and either measured (from robot data), tracked (from object/gripper tracks), or visual (judged from video).
 _Avoid_: Rule, check, filter
 
+**Quality**:
+How an Episode compares with the rest of its run on the soft Criteria: the mean of their robust z's (median and MAD over the Episodes scored), higher being better. It ranks Episodes and never decides one.
+_Avoid_: Score, grade
+
 **Criterion result**:
 The outcome of one Criterion on one Episode (pass, fail, or unsure), with its Evidence.
 _Avoid_: Verdict, score
@@ -48,6 +52,14 @@ _Avoid_: Explanation, justification
 Why a Criterion result is unsure rather than pass or fail, e.g. a measurement near its threshold, Spark's samples disagreeing, or a lost track.
 _Avoid_: Flag, warning
 
+**Margin multiplier**:
+The one number, s, that widens or narrows every measured and tracked Criterion's margin: effective margin = max(noise floor, interview gap) × s. It is 1 until calibration tunes it on the Dev set's interview and review labels, per Rubric version (a new version from Run starts at 1 again; one made by accepting a Threshold suggestion keeps the s the suggestion was made at), and is shown as "s = 1.0 · tuned on N labels", never as a guarantee.
+_Avoid_: Scale, temperature, tolerance
+
+**Threshold suggestion**:
+A threshold Winnow proposes for a Criterion when two or more labels contradict its crisp result: midway between the closest labelled pass and fail values, their gap as its margin. Only accepting it, as a new Rubric version, moves the threshold; labels never do on their own.
+_Avoid_: Auto-tune, correction
+
 **Triage decision**:
 The per-Episode outcome after all Criterion results are combined: Keep, Reject, or Needs review.
 _Avoid_: Verdict, label, classification
@@ -59,6 +71,10 @@ _Avoid_: Explanation, rationale, justification
 **Needs review**:
 The Triage decision for an Episode Winnow isn't confident about, routed to a human instead of being kept or rejected automatically.
 _Avoid_: Uncertain, flagged, borderline
+
+**Audit sample**:
+A seeded random sample of the Episodes Winnow decided on its own (up to 12 Keeps and 5 Rejects) outside the Test set, drawn once per Rubric version and margin multiplier s. An auditor marks each Good (every Phrase passes) or Bad (naming a failing Phrase); the marks measure Keep precision over the sampled Keeps that are still Keeps, and how many good Episodes Winnow rejected among the Rejects still rejected, and never change a Triage decision.
+_Avoid_: Spot check, QA sample
 
 **Reference label**:
 A human's judgment of one Episode against the description, made without seeing what Winnow or a baseline said, used to score them.

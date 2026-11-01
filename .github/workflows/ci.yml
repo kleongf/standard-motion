@@ -5,10 +5,42 @@ on:
     branches: [main]
   pull_request:
 
+# The three parts of `pnpm verify`, as parallel jobs.
 jobs:
-  verify:
+  backend:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: ./.github/actions/setup-ffmpeg
+      - run: uv sync --project backend --frozen
+      - run: bash scripts/verify.sh backend
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: astral-sh/setup-uv@v6 # the API types check generates the backend's OpenAPI schema
+        with:
+          enable-cache: true
+      - run: pnpm install --frozen-lockfile
+        env:
+          LEFTHOOK: "0"
+      - run: uv sync --project backend --frozen
+      - run: pnpm verify:frontend
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -19,15 +51,26 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - uses: ./.github/actions/setup-ffmpeg
       - run: pnpm install --frozen-lockfile
         env:
           LEFTHOOK: "0"
       - run: uv sync --project backend --frozen
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm verify
+      - id: playwright
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - id: browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium-shell
+      # Headless runs use Chromium's headless shell, so that's all e2e needs.
+      - if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps --only-shell chromium
+      - if: steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+      - run: pnpm verify:e2e
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: failure()
         with:
           name: e2e-artifacts
           path: artifacts/

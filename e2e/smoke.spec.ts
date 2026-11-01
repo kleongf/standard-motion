@@ -29,3 +29,18 @@ test("the Selection page explains how to draw a sample when there is none", asyn
   await expect(page.getByRole("heading", { name: "droid_1.0.1 selection" })).toBeVisible();
   await expect(page.getByText("winnow select droid_1.0.1 --size 300 --seed 0")).toBeVisible();
 });
+
+test("the theme toggle switches to dark and keeps it across a reload", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/");
+  await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
+
+  await page
+    .getByRole("radiogroup", { name: "Theme" })
+    .getByRole("radio", { name: "Dark" })
+    .click();
+
+  await expect(page.locator("html")).toHaveClass(/\bdark\b/);
+  await page.reload();
+  await expect(page.locator("html")).toHaveClass(/\bdark\b/);
+});

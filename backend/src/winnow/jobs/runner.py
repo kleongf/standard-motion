@@ -2,7 +2,7 @@
 items; the steps don't change."""
 
 import asyncio
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 
 from winnow.jobs.models import Step, WorkItem
 from winnow.jobs.store import JobStore
@@ -15,13 +15,21 @@ class JobRunner:
         self._slots = asyncio.Semaphore(concurrency)
         self._tasks: set[asyncio.Task[None]] = set()
 
-    def submit(self, kind: str, items: list[WorkItem]) -> int:
-        """Record the job and start it in the background; returns its id."""
+    def submit(
+        self, kind: str, items: list[WorkItem], then: Callable[[], object] | None = None
+    ) -> int:
+        """Record the job and start it in the background, calling `then` once it finishes;
+        returns its id."""
         job_id = self._store.create(kind, items)
-        task = asyncio.create_task(self.run(job_id))
+        task = asyncio.create_task(self._run_then(job_id, then))
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
         return job_id
+
+    async def _run_then(self, job_id: int, then: Callable[[], object] | None) -> None:
+        await self.run(job_id)
+        if then is not None:
+            then()
 
     async def run(self, job_id: int) -> None:
         """Run every queued item of a job; one failing item never stops the others, but an item

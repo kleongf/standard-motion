@@ -1,8 +1,10 @@
 // Robot-data plots on the Workstation's shared time axis. One series each, so no legend: the
 // header names it and reads out its value at the hovered time (else at the playhead).
 // Hovering one plot draws the crosshair on all of them; clicking seeks.
-import { useState, type MouseEvent } from "react";
+import { useState } from "react";
 
+import { padded } from "./timeSeries";
+import { TimePlot } from "./TimePlot";
 import type { Playhead } from "./usePlayhead";
 import type { Signals } from "./useEpisodes";
 
@@ -15,16 +17,8 @@ const PLOTS: { key: Key; label: string; unit: string; digits: number; fixed?: [n
     { key: "speed", label: "Speed", unit: "m/s", digits: 3 },
   ];
 
-const SERIES = "#2a78d6"; // categorical slot 1 (dataviz reference palette)
-const WIDTH = 1000;
-const HEIGHT = 56;
-
 function domain(values: number[], fixed?: [number, number]): [number, number] {
-  if (fixed) return fixed;
-  const lo = Math.min(...values);
-  const hi = Math.max(...values);
-  const pad = (hi - lo) * 0.1 || 0.01;
-  return [lo - pad, hi + pad];
+  return fixed ?? padded(Math.min(...values), Math.max(...values), 0.01);
 }
 
 export function valueAt(signals: Signals, key: Key, t: number): number | undefined {
@@ -33,24 +27,22 @@ export function valueAt(signals: Signals, key: Key, t: number): number | undefin
   return signals[key][Math.max(0, Math.min(signals[key].length - 1, index))];
 }
 
-export function SignalPlots(props: { signals: Signals; playhead: Playhead; duration: number }) {
+export function SignalPlots(props: {
+  signals: Signals;
+  playhead: Playhead;
+  duration: number;
+  /** A dashed reference line per plot, e.g. the Rubric's gripper-closed level. */
+  levels?: Partial<Record<Key, number>>;
+}) {
   const [hoverT, setHoverT] = useState<number | null>(null);
-  const timeAt = (event: MouseEvent<SVGSVGElement>) => {
-    const box = event.currentTarget.getBoundingClientRect();
-    return ((event.clientX - box.left) / box.width) * props.duration;
-  };
-  const x = (t: number) => (t / props.duration) * WIDTH;
   const readT = hoverT ?? props.playhead.t;
   return (
     <div className="mt-3 grid gap-2.5">
       {PLOTS.map((plot) => {
         const values = props.signals[plot.key];
-        const [lo, hi] = domain(values, plot.fixed);
-        const y = (v: number) => HEIGHT - 2 - ((v - lo) / (hi - lo)) * (HEIGHT - 4);
-        const points = values
-          .map((v, i) => `${String(x(props.signals.t[i] ?? 0))},${String(y(v))}`)
-          .join(" ");
         const value = valueAt(props.signals, plot.key, readT);
+        const level = props.levels?.[plot.key];
+        const run = values.map((v, i) => ({ t: props.signals.t[i] ?? 0, value: v }));
         return (
           <div key={plot.key}>
             <div className="mb-0.5 flex items-baseline gap-1.5 text-[11px]">
@@ -65,50 +57,25 @@ export function SignalPlots(props: { signals: Signals; playhead: Playhead; durat
                 {plot.unit} · {readT.toFixed(1)} s
               </span>
             </div>
-            <svg
-              role="img"
-              aria-label={`${plot.label} over the Episode`}
-              viewBox={`0 0 ${String(WIDTH)} ${String(HEIGHT)}`}
-              preserveAspectRatio="none"
-              className="block h-14 w-full cursor-crosshair rounded-sm bg-muted/50"
-              onPointerMove={(event) => {
-                setHoverT(timeAt(event));
-              }}
-              onPointerLeave={() => {
-                setHoverT(null);
-              }}
-              onClick={(event) => {
-                props.playhead.seek(timeAt(event));
-              }}
-            >
-              <polyline
-                points={points}
-                fill="none"
-                stroke={SERIES}
-                strokeWidth={2}
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-              {hoverT !== null && (
-                <line
-                  x1={x(hoverT)}
-                  x2={x(hoverT)}
-                  y1={0}
-                  y2={HEIGHT}
-                  className="stroke-muted-foreground"
-                  strokeDasharray="3 3"
-                  vectorEffect="non-scaling-stroke"
-                />
-              )}
-              <line
-                x1={x(props.playhead.t)}
-                x2={x(props.playhead.t)}
-                y1={0}
-                y2={HEIGHT}
-                className="stroke-foreground"
-                vectorEffect="non-scaling-stroke"
-              />
-            </svg>
+            <TimePlot
+              label={`${plot.label} over the Episode`}
+              duration={props.duration}
+              runs={[run]}
+              domain={domain(values, plot.fixed)}
+              level={
+                level === undefined
+                  ? undefined
+                  : {
+                      value: level,
+                      title: `${plot.label} level ${String(level)}`,
+                      testId: `level-${plot.key}`,
+                    }
+              }
+              playheadT={props.playhead.t}
+              hoverT={hoverT}
+              onHover={setHoverT}
+              onPick={props.playhead.seek}
+            />
           </div>
         );
       })}

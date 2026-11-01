@@ -2,7 +2,10 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-TrackKind = Literal["wrist"]  # "exterior" arrives with the hand-drawn-box track
+from winnow.boxes.models import ExteriorCamera
+
+# "wrist": seeded from robot data; "exterior": seeded from the hand-drawn box, in its view
+TrackKind = Literal["wrist", "exterior"]
 
 
 class TrackBox(BaseModel):
@@ -37,3 +40,33 @@ class Track(BaseModel):
     seed_frame: int | None
     boxes: list[TrackBox]
     health: TrackHealth | None  # None without a track
+
+
+class FrameBox(BaseModel):
+    """A box on frame 0, in that frame's pixels (half-open bounds)."""
+
+    left: float
+    top: float
+    right: float
+    bottom: float
+
+
+# "found": SAM found the target, or the curator drew it; "not_found": SAM found nothing;
+# "no_instruction" / "no_target": nothing to prompt SAM with. All but "found" are recorded, not
+# failed, and leave placement unsure until a target box is drawn.
+TargetStatus = Literal["found", "not_found", "no_instruction", "no_target"]
+
+
+class TargetBox(BaseModel):
+    """Where the object should end up, on frame 0 of the hand-drawn box's view: SAM's answer to
+    a text prompt for the instruction's target, or the curator's box, which wins."""
+
+    episode_id: str
+    camera: ExteriorCamera
+    origin: Literal["sam", "hand"]
+    status: TargetStatus
+    target: str | None  # the words SAM was prompted with
+    box: FrameBox | None  # None unless found
+    frame_width: int
+    frame_height: int
+    made_at: str

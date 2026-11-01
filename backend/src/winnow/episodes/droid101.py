@@ -80,15 +80,15 @@ class Droid101:
     cameras: tuple[str, ...] = CAMERAS
 
     def __init__(self, files: Files) -> None:
-        self._files = files
+        self.files = files  # the repo's files, which the exporter re-reads in full
         self._data: tuple[str, pa.Table] | None = None  # the last data file read
 
     @cached_property
     def index(self) -> dict[int, EpisodeMeta]:
         """Every Episode's meta row (read by column, a few seconds per file from the Hub)."""
         found: dict[int, EpisodeMeta] = {}
-        for path in self._files.list(META_FOLDER):
-            with self._files.open(path) as f:
+        for path in self.files.list(META_FOLDER):
+            with self.files.open(path) as f:
                 table = pq.read_table(f, columns=META_COLUMNS)  # pyright: ignore[reportUnknownMemberType]
             for row in table.to_pylist():
                 tasks: list[str] = row["tasks"] or []
@@ -149,11 +149,11 @@ class Droid101:
             chunk=row[f"{prefix}/chunk_index"],
             file=row[f"{prefix}/file_index"],
         )
-        return self._files.video_input(path), float(row[f"{prefix}/from_timestamp"])
+        return self.files.video_input(path), float(row[f"{prefix}/from_timestamp"])
 
     def _data_table(self, path: str) -> pa.Table:
         if self._data is None or self._data[0] != path:
-            with self._files.open(path) as f:
+            with self.files.open(path) as f:
                 table = pq.read_table(f, columns=DATA_COLUMNS)  # pyright: ignore[reportUnknownMemberType]
             self._data = (path, table)
         return self._data[1]

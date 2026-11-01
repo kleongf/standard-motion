@@ -1,16 +1,16 @@
 // Prepare: Dataset-level work that no Description depends on: ingest, hand-drawn boxes, wrist
-// tracks, the Spark-alone baseline and (as they're built) exterior tracks and target boxes.
+// tracks, the Spark-alone baseline, and the exterior tracks and target boxes a box queues.
 import { Progress } from "@/components/ui/progress";
 
+import { Page, PageHeader } from "../core/PageHeader";
 import { NeedsBox } from "../boxes/NeedsBox";
 import { IngestForm } from "../episodes/IngestForm";
 import { useEpisodes } from "../episodes/useEpisodes";
 import { JobProgress } from "../jobs/JobProgress";
 import { useIngestProgress } from "../jobs/useIngestProgress";
 import { SetStatus } from "../sets/SetStatus";
+import { TargetBoxes } from "../tracking/TargetBoxes";
 import { useDatasetStatus, type DatasetStatus } from "./useDatasetStatus";
-
-const LATER_STAGES = ["Exterior tracks", "Target boxes"];
 
 export function PreparePage() {
   const status = useDatasetStatus();
@@ -19,13 +19,15 @@ export function PreparePage() {
 
   const running = job.data ? !job.data.finished : false;
   return (
-    <div className="mx-auto max-w-5xl p-8">
-      <div className="text-xs text-muted-foreground">Dataset</div>
-      <h1 className="text-xl font-semibold">{status.data?.name ?? "Dataset"} · Prepare</h1>
-      <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-        Everything here belongs to the Dataset, not a Project: clips, tracks and hand-drawn boxes.
-        Nothing here depends on a Description.
-      </p>
+    <Page width="content">
+      <PageHeader
+        title={`${status.data?.name ?? "Dataset"} · Prepare`}
+        subtitle={
+          status.data &&
+          `${String(status.data.episodes)} Episodes · Meta API spend so far $${status.data.cost_usd.toFixed(2)}`
+        }
+        info="Everything here belongs to the Dataset, not a Project: clips, tracks and hand-drawn boxes. Nothing here depends on a Description."
+      />
       {status.data && <StatusGrid status={status.data} />}
       <SetStatus />
       <div className="mt-8 grid grid-cols-2 gap-4">
@@ -33,16 +35,17 @@ export function PreparePage() {
         {job.data && <JobProgress job={job.data} />}
       </div>
       <NeedsBox episodes={episodeList.data ?? []} />
-    </div>
+      <TargetBoxes episodes={episodeList.data ?? []} />
+    </Page>
   );
 }
 
 function StatusGrid(props: { status: DatasetStatus }) {
-  const { episodes, boxes, baseline, cost_usd: cost } = props.status;
+  const { episodes, boxes, baseline } = props.status;
   const { wrist_tracks: wristTracks, wrist_no_closure: noClosure } = props.status;
   return (
     <>
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <Stat label="Episodes ingested" testId="episodes-ingested">
           {episodes}
         </Stat>
@@ -75,13 +78,36 @@ function StatusGrid(props: { status: DatasetStatus }) {
             {wristTracks}
           </Stat>
         )}
-        {LATER_STAGES.map((label) => (
-          <Stat key={label} label={label} muted>
-            —
-          </Stat>
-        ))}
+        <BoxStats status={props.status} />
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">Meta API spend so far ${cost.toFixed(2)}</p>
+    </>
+  );
+}
+
+// What a hand-drawn box queues: the exterior track, and the target box SAM finds or the
+// curator draws.
+function BoxStats(props: { status: DatasetStatus }) {
+  const { boxes, exterior_tracks: exteriorTracks, target_boxes: targets } = props.status;
+  const missing = props.status.targets_missing;
+  return (
+    <>
+      {exteriorTracks === null ? (
+        <Stat label="Exterior tracks" muted note="needs MODEL_API_KEY">
+          —
+        </Stat>
+      ) : (
+        <Stat label="Exterior tracks" of={boxes} testId="exterior-tracks">
+          {exteriorTracks}
+        </Stat>
+      )}
+      <Stat
+        label="Target boxes"
+        of={boxes}
+        note={missing ? `${String(missing)} to draw by hand` : undefined}
+        testId="target-boxes"
+      >
+        {targets}
+      </Stat>
     </>
   );
 }

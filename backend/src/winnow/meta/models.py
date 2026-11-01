@@ -29,7 +29,14 @@ class Image:
     path: Path
 
 
-Part = Text | Video | Image
+@dataclass(frozen=True)
+class Audio:
+    """A WAV clip, keyed by content; Voice Transcribe takes the file itself, not a content part."""
+
+    path: Path
+
+
+Part = Text | Video | Image | Audio
 
 
 def _sam_metadata() -> dict[str, str]:
@@ -60,6 +67,31 @@ class SparkRequest:
 
 
 @dataclass(frozen=True)
+class TranscribeRequest:
+    """One push-to-talk turn: mono 16-bit PCM WAV at 16 kHz."""
+
+    audio: Path
+    purpose: str  # for the cost log, not part of the cache key
+    mode: Literal["PUSH_TO_TALK", "ENDPOINTING"] = "PUSH_TO_TALK"
+
+
+@dataclass(frozen=True)
+class Turn:
+    text: str
+    start_ms: int  # from the start of the clip
+    end_ms: int
+
+
+@dataclass(frozen=True)
+class Transcript:
+    turns: tuple[Turn, ...]
+
+    @property
+    def text(self) -> str:
+        return " ".join(t.text.strip() for t in self.turns if t.text.strip())
+
+
+@dataclass(frozen=True)
 class SamCall:
     text: str
     frames_processed: int
@@ -73,6 +105,15 @@ class SparkCall:
     text: str
     input_tokens: int
     output_tokens: int
+    usd: float  # what this call cost: 0 when served from the cache
+    latency_s: float
+    cached: bool
+
+
+@dataclass(frozen=True)
+class TranscribeCall:
+    transcript: Transcript
+    audio_ms: int
     usd: float  # what this call cost: 0 when served from the cache
     latency_s: float
     cached: bool

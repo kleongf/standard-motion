@@ -15,15 +15,41 @@ function itemName(item: JobItem): string {
   return step ? `${item.label} · ${step}` : item.label;
 }
 
-export function JobProgress(props: { job: Job }) {
-  const { job } = props;
+/** What a job is called while it runs and once it has finished. */
+export interface JobTitle {
+  running: string;
+  finished: string;
+}
+
+const INGEST: JobTitle = { running: "Ingesting", finished: "Last ingest" };
+
+/** One quiet line, for a bar above other work: how far, what runs, how many failed; no detail.
+ * The progress bar leads, so a narrow top bar clips only the counts. */
+function CompactProgress(props: { job: Job; title: JobTitle }) {
+  const { job, title } = props;
+  const settled = job.done + job.failed;
+  return (
+    <div
+      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums"
+      data-testid="job-progress"
+    >
+      <Progress value={(settled / job.total) * 100} className="h-1 w-10 shrink-0" />
+      {job.finished ? title.finished : title.running} · {settled} of {job.total}
+      {job.failed > 0 && ` · ${String(job.failed)} failed`}
+    </div>
+  );
+}
+
+export function JobProgress(props: { job: Job; title?: JobTitle; compact?: boolean }) {
+  const { job, title = INGEST } = props;
+  if (props.compact) return <CompactProgress job={job} title={title} />;
   const settled = job.done + job.failed;
   const failed = job.items.filter((item) => item.status === "failed");
   const running = job.items.filter((item) => item.status === "running");
   return (
     <div className="rounded-lg border p-4" data-testid="job-progress">
       <div className="flex items-baseline gap-2 text-sm">
-        <span className="font-medium">{job.finished ? "Last ingest" : "Ingesting"}</span>
+        <span className="font-medium">{job.finished ? title.finished : title.running}</span>
         <span className="text-muted-foreground tabular-nums">
           {settled} of {job.total}
           {job.failed > 0 && ` · ${String(job.failed)} failed`}

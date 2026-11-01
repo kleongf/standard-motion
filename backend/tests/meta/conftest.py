@@ -9,9 +9,9 @@ from winnow.core.db import open_db
 from winnow.meta.client import MetaClient
 from winnow.meta.costs import CostLog
 from winnow.meta.limits import Limit
-from winnow.meta.pricing import SAM, SPARK_CONTRIBUTOR
+from winnow.meta.pricing import SAM, SPARK_CONTRIBUTOR, VOICE_TRANSCRIBE
 
-UNLIMITED = {SAM: Limit(in_flight=100), SPARK_CONTRIBUTOR: Limit(in_flight=100)}
+UNLIMITED = {model: Limit(in_flight=100) for model in (SAM, SPARK_CONTRIBUTOR, VOICE_TRANSCRIBE)}
 
 
 @pytest.fixture

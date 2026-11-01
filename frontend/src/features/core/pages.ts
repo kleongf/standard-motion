@@ -1,16 +1,23 @@
 // The workspace's pages. The current one lives in `?page=` so reloads and links land there.
 import { navigate, useSearchParams } from "./url";
 
-export const datasetPages = ["prepare", "select"] as const;
-export const projectPages = ["describe", "episodes", "review", "evaluation"] as const;
-export type Page = (typeof datasetPages)[number] | (typeof projectPages)[number];
+// Grouped by the work, in the order it's done: set up the Episodes and their blind labels, curate
+// with a Rubric and export the Episodes it keeps, then measure Winnow against the baselines (only needed to prove it works).
+export const setupPages = ["prepare", "reference"] as const;
+export const curatePages = ["describe", "episodes", "review", "audit", "export"] as const;
+export const measurePages = ["select", "evaluation"] as const;
+export type Page =
+  (typeof setupPages)[number] | (typeof curatePages)[number] | (typeof measurePages)[number];
 
 export const pageLabels: Record<Page, string> = {
   prepare: "Prepare",
   select: "Selection",
-  describe: "Describe",
+  describe: "Describe & run",
   episodes: "Episodes",
   review: "Review",
+  audit: "Audit",
+  export: "Export",
+  reference: "Reference labels",
   evaluation: "Evaluation",
 };
 
@@ -23,11 +30,17 @@ export function readPage(params: URLSearchParams): Page {
   return isPage(value) ? value : "prepare";
 }
 
+/** Go to a page, leaving any open Episode; `extra` sets that page's own params. */
+export function goTo(page: Page, extra: Record<string, string | null> = {}): void {
+  navigate({ page, episode: null, t: null, queue: null, ...extra });
+}
+
 export function usePage(): [Page, (page: Page) => void] {
   const params = useSearchParams();
-  // Changing page leaves any open Episode.
-  const go = (page: Page) => {
-    navigate({ page, episode: null, t: null });
-  };
-  return [readPage(params), go];
+  return [
+    readPage(params),
+    (page) => {
+      goTo(page);
+    },
+  ];
 }

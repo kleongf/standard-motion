@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from tests.meta.fakes import NoTranscribe
 from winnow.meta.models import MetaContent
 from winnow.meta.pricing import SAM
 from winnow.meta.transport import Reply
@@ -13,7 +14,7 @@ REASON = "Released the object above the target at 17 s."  # unique, to spot leak
 
 
 @dataclass
-class ScriptedSpark:
+class ScriptedSpark(NoTranscribe):
     malformed_calls: set[int] = field(default_factory=set[int])  # 1-based baseline call numbers
     baseline_calls: int = 0
     failbench_calls: int = 0

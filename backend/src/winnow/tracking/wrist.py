@@ -17,7 +17,7 @@ from meta_sam_parser import (
     build_object_prompt,
 )
 
-from winnow.criteria.measured import closures
+from winnow.criteria.grasps import closures
 from winnow.episodes.clips import SAM_FPS, probe
 from winnow.episodes.models import Episode, EpisodeSignals
 from winnow.episodes.store import EpisodeStore, sam_clip_path
@@ -25,7 +25,7 @@ from winnow.jobs.models import Step
 from winnow.meta.client import MetaClient
 from winnow.meta.models import SamRequest
 from winnow.tracking.models import Track, TrackBox
-from winnow.tracking.sam_output import TrackedBox, parse_boxes
+from winnow.tracking.sam_output import one_per_frame, parse_boxes
 from winnow.tracking.store import TrackStore
 
 WRIST_CAMERA = "wrist_image_left"
@@ -62,19 +62,6 @@ def wrist_prompt(seed: int, size: tuple[int, int]) -> str:
     return build_object_prompt(size=size, objects=[PromptObject(id=1, prompts=[prompt])])
 
 
-def _one_per_frame(boxes: list[TrackedBox]) -> list[TrackBox]:
-    """SAM may report more than one box on a frame; keep its most confident."""
-    best: dict[int, TrackedBox] = {}
-    for box in boxes:
-        kept = best.get(box.frame)
-        if kept is None or (box.confidence or 0) > (kept.confidence or 0):
-            best[box.frame] = box
-    return [
-        TrackBox(frame=b.frame, left=b.left, top=b.top, right=b.right, bottom=b.bottom)
-        for b in sorted(best.values(), key=lambda b: b.frame)
-    ]
-
-
 async def track_wrist(
     meta: MetaClient, tracks: TrackStore, episodes: EpisodeStore, episode: Episode
 ) -> str | None:
@@ -91,7 +78,7 @@ async def track_wrist(
             f"track_wrist:{episode.id}",
             SAM_METADATA,
         )
-        boxes = _one_per_frame(parse_boxes((await meta.sam_track(request)).text))
+        boxes = one_per_frame(parse_boxes((await meta.sam_track(request)).text))
     track = Track(
         episode_id=episode.id,
         kind="wrist",

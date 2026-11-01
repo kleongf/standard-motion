@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from tests.conftest import CORRUPT_EPISODE
-from tests.helpers import wait_for_job
+from tests.helpers import app_context, wait_for_job
 from winnow.core.settings import Settings
 
 
@@ -36,7 +36,9 @@ def test_ingested_episodes_are_listed_with_their_instruction_and_outcome(api: Te
     assert sorted(episodes) == ["droid_100:0", "droid_100:1", "droid_100:2"]
     assert episodes["droid_100:1"]["instruction"] == "Move the black remote control to the left"
     assert episodes["droid_100:2"]["instruction"] is None  # blank in the source
-    assert episodes["droid_100:2"]["dataset_outcome"] is False
+    # The API hides the Dataset outcome until a Reference label; ingest still keeps it.
+    stored = app_context(api).episodes.get("droid_100:2")
+    assert stored is not None and stored.dataset_outcome is False
     assert episodes["droid_100:0"]["frames"] == 45
     assert episodes["droid_100:0"]["duration_s"] == 3.0
 

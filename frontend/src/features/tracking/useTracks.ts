@@ -8,9 +8,11 @@ export type TrackBox = components["schemas"]["TrackBox"];
 
 export const tracksKey = ["tracks"] as const;
 
-export function useTracks(episodeId: string) {
+/** `enabled: false` (blind Reference labelling) never fetches them. */
+export function useTracks(episodeId: string, enabled = true) {
   return useQuery({
     queryKey: [...tracksKey, episodeId],
+    enabled,
     queryFn: async () => {
       const { data, response } = await api.GET("/api/episodes/{episode_id}/tracks", {
         params: { path: { episode_id: episodeId } },

@@ -10,6 +10,7 @@ import numpy as np
 from winnow.episodes.clips import first_frame, to_sam_fps
 from winnow.episodes.models import Episode, EpisodeSignals, Signals, SourceEpisode
 from winnow.episodes.sources import Source
+from winnow.episodes.speed import smoothed_speed
 from winnow.episodes.store import (
     EpisodeStore,
     clip_path,
@@ -89,21 +90,13 @@ def ingest_items(
     return items
 
 
-SPEED_SMOOTHING_FRAMES = 5  # a third of a second at 15 Hz
-
-
 def workstation_signals(signals: EpisodeSignals) -> Signals:
     t = signals.timestamps - signals.timestamps[0]
-    step = np.linalg.norm(np.diff(signals.position, axis=0), axis=1) * signals.fps
-    speed = np.concatenate([step[:1], step]) if len(step) else np.zeros(len(t))
-    kernel = np.ones(SPEED_SMOOTHING_FRAMES) / SPEED_SMOOTHING_FRAMES
-    padded = np.pad(speed, SPEED_SMOOTHING_FRAMES // 2, mode="edge")
-    smoothed = np.convolve(padded, kernel, mode="valid")
     return Signals(
         t=_rounded(t),
         gripper=_rounded(signals.gripper),
         z=_rounded(signals.position[:, 2]),
-        speed=_rounded(smoothed),
+        speed=_rounded(smoothed_speed(signals)),
     )
 
 

@@ -5,9 +5,12 @@ from dataclasses import dataclass
 SPARK_CONTRIBUTOR = "muse-spark-1.3-contributor"
 SPARK_STANDARD = "muse-spark-1.3"
 SAM = "sam-3.1"
+VOICE_TRANSCRIBE = "muse-voice-transcribe-1.0"
 
 SAM_USD_PER_FRAME = 0.20 / 1000
 SAM_MIN_FRAMES = 50
+
+VOICE_USD_PER_HOUR = 0.18  # streaming and batch alike
 
 
 @dataclass(frozen=True)
@@ -35,3 +38,7 @@ def spark_cost(model: str, input_tokens: int, output_tokens: int, cached_tokens:
         + cached_tokens * price.cached_input_per_m
         + output_tokens * price.output_per_m
     ) / 1_000_000
+
+
+def transcribe_cost(audio_ms: int) -> float:
+    return audio_ms / 3_600_000 * VOICE_USD_PER_HOUR

@@ -2,6 +2,7 @@
 
 from winnow.episodes.store import EpisodeStore
 from winnow.sets.models import SET_LABELS, EpisodeSet, SetName
+from winnow.sets.protocol import freeze_warnings
 from winnow.sets.store import SetStore
 
 
@@ -19,6 +20,14 @@ class SetConflictError(SetError):
 
 class NotInSetError(SetError):
     pass
+
+
+class FreezeWarningsError(SetError):
+    """Freezing would break the protocol; freezing again with force goes ahead anyway."""
+
+    def __init__(self, warnings: list[str]) -> None:
+        super().__init__("; ".join(warnings))
+        self.warnings = warnings
 
 
 def _refuse_if_frozen(current: EpisodeSet) -> None:
@@ -54,12 +63,16 @@ def remove_episode(sets: SetStore, name: SetName, episode_id: str) -> EpisodeSet
     return sets.get(name)
 
 
-def freeze(sets: SetStore, name: SetName) -> EpisodeSet:
-    """Freezing a frozen set changes nothing and keeps its original timestamp."""
+def freeze(sets: SetStore, name: SetName, force: bool = False) -> EpisodeSet:
+    """Freezing a frozen set changes nothing and keeps its original timestamp. A set that breaks
+    the protocol is refused with the warnings unless forced; an empty set is refused regardless."""
     current = sets.get(name)
     if current.frozen_at is not None:
         return current
     if current.size == 0:
         raise SetError(f"The {SET_LABELS[name]} is empty: add Episodes before freezing it")
+    warnings = freeze_warnings(current)
+    if warnings and not force:
+        raise FreezeWarningsError(warnings)
     sets.freeze(name)
     return sets.get(name)

@@ -19,3 +19,14 @@ class EpisodeSet(BaseModel):
 
 class SetMembers(BaseModel):
     episode_ids: list[str] = Field(min_length=1)
+
+
+class FreezeRequest(BaseModel):
+    force: bool = False  # freeze although it breaks the protocol
+
+
+class FreezeWarnings(BaseModel):
+    """The 409 body when a freeze would break the protocol and wasn't forced."""
+
+    detail: str
+    warnings: list[str]

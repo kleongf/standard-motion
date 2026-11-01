@@ -4,6 +4,68 @@
  */
 
 export interface paths {
+    "/api/anchor-pool": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Anchor Pool
+         * @description The Episodes the Rubric is written against: the Dev set, never the Test set.
+         */
+        get: operations["get_anchor_pool_api_anchor_pool_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Audit
+         * @description The latest Rubric version's Audit sample, each item's mark, and Keep precision. Mark an
+         *     item with `audit` labels: pass on every Phrase is Good, a fail on any is Bad.
+         */
+        get: operations["get_audit_api_audit_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/sample": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Audit Sample
+         * @description Draws the Audit sample from the Episodes with a Reference label outside the Test set:
+         *     once per Rubric version and margin multiplier s, so drawing again returns the stored one.
+         */
+        post: operations["post_audit_sample_api_audit_sample_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/boxes": {
         parameters: {
             query?: never;
@@ -15,6 +77,72 @@ export interface paths {
         get: operations["list_boxes_api_boxes_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/calibration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Calibration
+         * @description The latest Rubric version's margin multiplier s (1 until calibrated) and the thresholds
+         *     the anchor pool's interview and review labels suggest for it now.
+         */
+        get: operations["get_calibration_api_calibration_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/calibration/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Calibration Run
+         * @description Scans s ∈ {2, 1.5, 1, 0.75, 0.5}, widest first, on the anchor pool's labelled
+         *     (Episode, Phrase) pairs, keeps the last whose errors' one-sided Clopper–Pearson upper bound
+         *     is at most 0.2 at 90%, checks whether dropping 2 labels moves it, and scores the latest
+         *     Rubric version with it from now on.
+         */
+        post: operations["post_calibration_run_api_calibration_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/calibration/suggestions/{criterion_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Accept Suggestion
+         * @description Freezes the latest Rubric version with the suggested threshold and margin as the next
+         *     version, which keeps the s it was calibrated with, and applies them to the draft too unless
+         *     the draft's Criterion now compares differently; the reply says which.
+         */
+        post: operations["post_accept_suggestion_api_calibration_suggestions__criterion_id__accept_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -45,7 +173,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Episodes */
+        /**
+         * List Episodes
+         * @description The Dataset outcome stays hidden until an Episode's first-pass Reference label, so it
+         *     can't anchor the labeller.
+         */
         get: operations["list_episodes_api_episodes_get"];
         put?: never;
         post?: never;
@@ -123,6 +255,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/episodes/{episode_id}/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Labels
+         * @description Every label the Episode was given, oldest first; the newest per Phrase is in force.
+         */
+        get: operations["list_labels_api_episodes__episode_id__labels_get"];
+        put?: never;
+        /**
+         * Post Label
+         * @description Overrides one Phrase's result for this Episode; its Triage decision recomputes.
+         */
+        post: operations["post_label_api_episodes__episode_id__labels_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/episodes/{episode_id}/reference-labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Reference Label */
+        post: operations["post_reference_label_api_episodes__episode_id__reference_labels_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/episodes/{episode_id}/signals": {
         parameters: {
             query?: never;
@@ -133,6 +306,27 @@ export interface paths {
         /** Get Signals */
         get: operations["get_signals_api_episodes__episode_id__signals_get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/episodes/{episode_id}/target-box": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Target Box
+         * @description Draw the target box by hand, on frame 0 of the view the object was boxed in. It replaces
+         *     SAM's for as long as the object box stays on that view.
+         */
+        put: operations["put_target_box_api_episodes__episode_id__target_box_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -160,6 +354,196 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/episodes/{episode_id}/triage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Triage
+         * @description One labelled Episode's Criterion results, Phrase results, Triage decision and Reason.
+         */
+        get: operations["get_triage_api_episodes__episode_id__triage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/episodes/{episode_id}/visual-clips/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Visual Clip
+         * @description The clip a visual Criterion asked Spark about.
+         */
+        get: operations["get_visual_clip_api_episodes__episode_id__visual_clips__name__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/episodes/{episode_id}/voice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Voice
+         * @description One push-to-talk turn on the Review page, `t` the playhead at its onset: transcribed, then
+         *     mapped by one Spark call onto the Episode's unsure hard Phrases as pass or fail. Saves
+         *     nothing: each chip the reviewer confirms is posted as a `review` label.
+         */
+        post: operations["post_voice_api_episodes__episode_id__voice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/evaluation/disagreements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Disagreements
+         * @description Reference-labelled Episodes where Winnow's Triage decision, as the Workstation shows it
+         *     now, differs from Spark alone's majority answer. Scored on every read, with no Meta call.
+         */
+        get: operations["list_disagreements_api_evaluation_disagreements_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/evaluation/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Evaluation Run
+         * @description Scores Winnow and the baselines against a set's Reference labels. A Test set run is
+         *     appended to the Test run log; `winnow eval` returns the same report.
+         */
+        post: operations["post_evaluation_run_api_evaluation_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/evaluation/test-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Test Runs
+         * @description Every Test set run, newest first.
+         */
+        get: operations["list_test_runs_api_evaluation_test_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Export
+         * @description Export in the background: every Episode outside the Test set, by its Triage decision,
+         *     whether Reference-labelled or not, the Keeps only or with the Needs review Episodes too. A
+         *     LeRobot v3.0 dataset per source, with rejections.jsonl holding the Reason for each Episode
+         *     left out and manifest.json what was exported and why. The job has an item per Episode, then
+         *     one that finishes the export and names its new folder under the data dir's exports/.
+         */
+        post: operations["post_export_api_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/past": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Past Exports
+         * @description The exports under the data dir's exports/, newest first.
+         */
+        get: operations["get_past_exports_api_export_past_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/export/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Export Preview
+         * @description What an export would hold, per source: the Reference-labelled Episodes by Triage
+         *     decision, how many aren't labelled yet (exporting shows their decisions, so the UI warns
+         *     first) and how many are in the Test set, never exported.
+         */
+        get: operations["get_export_preview_api_export_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -171,6 +555,90 @@ export interface paths {
         get: operations["get_health_api_health_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Interview
+         * @description The interview on the Rubric draft: the answered cards and the question code asks next.
+         */
+        get: operations["get_interview_api_interview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interview/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Answer
+         * @description Answer the question being asked. A threshold answer is also an interview label on the
+         *     anchor Episode's Phrase; the answer that settles a threshold changes the Criterion.
+         */
+        post: operations["post_answer_api_interview_answers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interview/answers/{answer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Answer
+         * @description Undo an answer, and the later ones on the same question: the draft gets back what they
+         *     changed, and their labels are withdrawn.
+         */
+        delete: operations["delete_answer_api_interview_answers__answer_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interview/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Text
+         * @description The curator's own words, read by Spark: to the question being asked, they pick one of its
+         *     answers, or recompile only the Phrase it asks about with them; with no question, they edit
+         *     the Description, which recompiles as an edit does. Template answers never ask a model.
+         */
+        post: operations["post_text_api_interview_text_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -203,6 +671,233 @@ export interface paths {
         };
         /** Get Job */
         get: operations["get_job_api_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reasons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Reasons
+         * @description Have Spark write the Reason of every Reject and Needs review whose results changed since
+         *     its last one, in the background; each replaces its template Reason once written.
+         */
+        post: operations["post_reasons_api_reasons_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reference-labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Reference Labels */
+        get: operations["list_reference_labels_api_reference_labels_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reference-labels/description": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Frozen Description */
+        get: operations["get_frozen_description_api_reference_labels_description_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Review Queue
+         * @description The Needs review Episodes with a Reference label outside the Test set, least confident
+         *     first; answer one with a `review` label.
+         */
+        get: operations["get_review_queue_api_review_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rubric": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rubric
+         * @description The latest Rubric version: the one every Episode is scored against.
+         */
+        get: operations["get_rubric_api_rubric_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rubric/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Draft
+         * @description The Rubric draft on the Describe page; null until a Description is compiled.
+         */
+        get: operations["get_draft_api_rubric_draft_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Draft
+         * @description Direct edits on Criterion cards and the Rubric settings, saved; no model call. A grasp
+         *     setting's edit, or a visual Criterion switched on, asks Spark what it hasn't answered on
+         *     the anchor pool, in the background (the `visual-dry-run` job).
+         */
+        patch: operations["patch_draft_api_rubric_draft_patch"];
+        trace?: never;
+    };
+    "/api/rubric/draft/compile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Compile
+         * @description Compile a Description into the Rubric draft: one Spark call, plus one repair turn when its
+         *     answer fails code's checks. An edit of the draft's Description compiles only the changed
+         *     Phrases, keeping the rest with their Criteria; `fresh` compiles all of it. Then Spark is
+         *     asked the draft's visual Criteria it hasn't answered on the anchor pool, in the background
+         *     (the `visual-dry-run` job).
+         */
+        post: operations["post_compile_api_rubric_draft_compile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rubric/draft/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Preview
+         * @description The draft, with `edit` applied but not saved, scored on the anchor pool: a threshold drag
+         *     re-sorts it with no model call.
+         */
+        post: operations["post_preview_api_rubric_draft_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rubric/draft/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Run
+         * @description Freeze the draft into the next immutable Rubric version, which scores every Episode.
+         */
+        post: operations["post_run_api_rubric_draft_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rubric/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Versions
+         * @description Every Rubric version, newest first.
+         */
+        get: operations["list_versions_api_rubric_versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rubric/versions/{version}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Version Preview
+         * @description A frozen Rubric version scored on the anchor pool.
+         */
+        get: operations["get_version_preview_api_rubric_versions__version__preview_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -342,8 +1037,74 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Post Freeze */
+        /**
+         * Post Freeze
+         * @description 409 with the protocol warnings unless `force`; other refusals are plain errors.
+         */
         post: operations["post_freeze_api_sets__name__freeze_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/target-boxes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Target Boxes
+         * @description Each boxed Episode's target box so far: the hand-drawn one if any, else SAM's.
+         */
+        get: operations["list_target_boxes_api_target_boxes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/triage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Triage
+         * @description The Triage decision and Reason of every Episode with a Reference label, for the Episodes
+         *     table; the rest await theirs.
+         */
+        get: operations["list_triage_api_triage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/visual/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Ask
+         * @description Ask Spark the latest Rubric version's visual Criteria about each Episode, in the
+         *     background: crop one clip per Criterion and Episode, then 3 samples about it. Asking again
+         *     pays only for cache misses.
+         */
+        post: operations["post_ask_api_visual_ask_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -354,6 +1115,173 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AblationRow
+         * @description Winnow re-scored from what is already stored with only some sources' Criteria: a masked
+         *     source's Criteria are left out, as if the Rubric had been compiled without that model, so a
+         *     Phrase only they checked goes unchecked. No Meta call is made.
+         */
+        AblationRow: {
+            coverage: components["schemas"]["Proportion"];
+            /** Criteria */
+            criteria: number;
+            false_keeps: components["schemas"]["Proportion"];
+            /** Label */
+            label: string;
+            /**
+             * Mask
+             * @enum {string}
+             */
+            mask: "robot_data" | "robot_data_sam" | "robot_data_visual" | "all";
+            /** Of */
+            of: number;
+            right_reason: components["schemas"]["Proportion"] | null;
+        };
+        /**
+         * AcceptedSuggestion
+         * @description The Rubric version accepting a suggestion froze, and what became of the draft.
+         */
+        AcceptedSuggestion: {
+            /** Draft Note */
+            draft_note: string;
+            /** Draft Updated */
+            draft_updated: boolean;
+            version: components["schemas"]["RubricVersion"];
+        };
+        /** AnchorEpisode */
+        AnchorEpisode: {
+            /** Confidence */
+            confidence: number;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "keep" | "reject" | "needs_review";
+            /** Episode Id */
+            episode_id: string;
+        };
+        /** AnchorPool */
+        AnchorPool: {
+            /** Awaiting Reference Label */
+            awaiting_reference_label: number;
+            /** Episode Ids */
+            episode_ids: string[];
+            /** Hidden Test Episodes */
+            hidden_test_episodes: number;
+            /**
+             * Set Name
+             * @enum {string}
+             */
+            set_name: "dev" | "test";
+        };
+        /**
+         * AnchorPreview
+         * @description A Rubric scored on the anchor pool's Episodes that have a Reference label (the rest stay
+         *     blind), computed on every read: dragging a threshold re-sorts it with no model call.
+         */
+        AnchorPreview: {
+            /** Criteria */
+            criteria: components["schemas"]["CriterionPreview"][];
+            /** Episodes */
+            episodes: components["schemas"]["AnchorEpisode"][];
+            /** Keep */
+            keep: number;
+            /** Needs Review */
+            needs_review: number;
+            /** Reject */
+            reject: number;
+            /** Rubric Version */
+            rubric_version: number | null;
+        };
+        /**
+         * AnchorValue
+         * @description One anchor Episode's result on one Criterion.
+         */
+        AnchorValue: {
+            /** Episode Id */
+            episode_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pass" | "fail" | "unsure";
+            /** Value */
+            value: number | null;
+        };
+        /** AnswerDraw */
+        AnswerDraw: {
+            /**
+             * Answer
+             * @enum {string}
+             */
+            answer: "accept" | "context" | "pass" | "fail" | "hard" | "soft" | "skip";
+            /** Episode Id */
+            episode_id?: string | null;
+            /** Key */
+            key: string;
+        };
+        /** AskRequest */
+        AskRequest: {
+            /** Episode Ids */
+            episode_ids?: string[] | null;
+        };
+        /** AskStarted */
+        AskStarted: {
+            /** Job Id */
+            job_id: number | null;
+        };
+        /** AuditDraw */
+        AuditDraw: {
+            /** Seed */
+            seed?: number | null;
+        };
+        /** AuditItem */
+        AuditItem: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "keep" | "reject" | "needs_review";
+            /** Episode Id */
+            episode_id: string;
+            /** Failed */
+            failed: string[];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "keep" | "reject";
+            /** Mark */
+            mark: ("good" | "bad") | null;
+            /** Reason */
+            reason: string;
+        };
+        /** AuditSample */
+        AuditSample: {
+            /** Drawn At */
+            drawn_at: string | null;
+            /** Earlier S */
+            earlier_s: number | null;
+            good_rejects: components["schemas"]["Proportion"];
+            /** Items */
+            items: components["schemas"]["AuditItem"][];
+            /** Phrases */
+            phrases: string[];
+            precision: components["schemas"]["KeepPrecision"];
+            /** Rubric Version */
+            rubric_version: number;
+            /** S */
+            s: number;
+            /** Seed */
+            seed: number | null;
+        };
+        /** Body_post_voice_api_episodes__episode_id__voice_post */
+        Body_post_voice_api_episodes__episode_id__voice_post: {
+            /** Audio */
+            audio: string;
+            /** T */
+            t: number;
+        };
         /** Box */
         Box: {
             /**
@@ -397,6 +1325,47 @@ export interface components {
             /** Y2 */
             y2: number;
         };
+        /**
+         * Calibration
+         * @description The latest Rubric version's s and the thresholds labels suggest for it now.
+         */
+        Calibration: {
+            /** Confidence */
+            confidence: number;
+            /** Grid */
+            grid: number[];
+            /** Labelled */
+            labelled: number;
+            /** Max Error Rate */
+            max_error_rate: number;
+            record: components["schemas"]["CalibrationRecord"] | null;
+            /** Rubric Version */
+            rubric_version: number;
+            /** S */
+            s: number;
+            /** Suggestions */
+            suggestions: components["schemas"]["ThresholdSuggestion"][];
+        };
+        /**
+         * CalibrationRecord
+         * @description One run of the scan on a Rubric version; the latest is the s it is scored with.
+         */
+        CalibrationRecord: {
+            /** Bound Met */
+            bound_met: boolean;
+            /** Created At */
+            created_at: string;
+            /** Errors */
+            errors: number;
+            /** N Labels */
+            n_labels: number;
+            /** Rubric Version */
+            rubric_version: number;
+            /** S */
+            s: number;
+            /** Unstable */
+            unstable: boolean;
+        };
         /** Candidate */
         Candidate: {
             /** Episode Id */
@@ -427,6 +1396,29 @@ export interface components {
             /** Task */
             task: string | null;
         };
+        /** Clip */
+        Clip: {
+            /** End */
+            end: number;
+            /** Start */
+            start: number;
+        };
+        /** Comparison */
+        Comparison: {
+            length_rule: components["schemas"]["LengthRule"] | null;
+            /** Rows */
+            rows: components["schemas"]["SystemRow"][];
+        };
+        /** CompileRequest */
+        CompileRequest: {
+            /** Description */
+            description: string;
+            /**
+             * Fresh
+             * @default false
+             */
+            fresh: boolean;
+        };
         /** Confirm */
         Confirm: {
             /**
@@ -434,6 +1426,198 @@ export interface components {
              * @enum {string}
              */
             decision: "confirm";
+        };
+        /** Criterion */
+        Criterion: {
+            /**
+             * Assumptions
+             * @default []
+             */
+            assumptions: string[];
+            /**
+             * Comparator
+             * @enum {string}
+             */
+            comparator: "<" | "<=" | ">=" | ">" | "==";
+            /** Crop */
+            crop?: ("view" | "placement") | null;
+            /**
+             * Hard
+             * @default true
+             */
+            hard: boolean;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            readonly kind: "measured" | "tracked" | "visual";
+            /**
+             * Margin
+             * @default 0
+             */
+            margin: number;
+            /**
+             * Params
+             * @default {}
+             */
+            params: {
+                [key: string]: number;
+            };
+            /**
+             * Paraphrases
+             * @default []
+             */
+            paraphrases: string[];
+            /** Phrase */
+            phrase: string;
+            /**
+             * Primitive
+             * @enum {string}
+             */
+            primitive: "grasp_attempts" | "longest_still_s" | "release_height_m" | "active_duration_s" | "path_efficiency" | "in_hand_lost_s" | "fall_after_release" | "final_overlap" | "object_displacement" | "ask_video";
+            /** Question */
+            question?: string | null;
+            /** Threshold */
+            threshold: number;
+            /** Unit */
+            unit: string;
+            /**
+             * Views
+             * @default []
+             */
+            views: string[];
+            /**
+             * @default {
+             *       "kind": "whole"
+             *     }
+             */
+            window: components["schemas"]["Window"];
+        };
+        /**
+         * CriterionEdit
+         * @description A direct edit on one Criterion card: no model call. Unset fields stay as they are.
+         */
+        CriterionEdit: {
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Hard */
+            hard?: boolean | null;
+            /** Threshold */
+            threshold?: number | null;
+        };
+        /**
+         * CriterionPreview
+         * @description How one Criterion sorts the anchor pool: its histogram's values and the counts, and for a
+         *     hard Criterion in the Rubric the sanity monitor's reading of them (`rubric/sanity.py`).
+         */
+        CriterionPreview: {
+            /** Criterion Id */
+            criterion_id: string;
+            /** English */
+            english: string;
+            fail_rate?: components["schemas"]["Proportion"] | null;
+            /** Failing */
+            failing: number;
+            /** Margin */
+            margin: number;
+            /**
+             * Only Rejects
+             * @default []
+             */
+            only_rejects: string[];
+            /** Passing */
+            passing: number;
+            /** Threshold */
+            threshold: number;
+            /** Unit */
+            unit: string;
+            /** Unsure */
+            unsure: number;
+            /** Values */
+            values: components["schemas"]["AnchorValue"][];
+            /** Warning */
+            warning?: ("too_rare" | "too_common") | null;
+        };
+        /** CriterionResult */
+        CriterionResult: {
+            /** At S */
+            at_s: number | null;
+            /** Camera */
+            camera: string | null;
+            /**
+             * Comparator
+             * @enum {string}
+             */
+            comparator: "<" | "<=" | ">=" | ">" | "==";
+            /** Criterion Id */
+            criterion_id: string;
+            /** English */
+            english: string;
+            /** Evidence */
+            evidence: components["schemas"]["TextSpan"][];
+            /** Hard */
+            hard: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "measured" | "tracked" | "visual";
+            /** Margin */
+            margin: number;
+            /** Measurement */
+            measurement: string;
+            /** Moments */
+            moments: components["schemas"]["Moment"][];
+            /** P Pass */
+            p_pass: number;
+            /** Phrase */
+            phrase: string;
+            /**
+             * Primitive
+             * @enum {string}
+             */
+            primitive: "grasp_attempts" | "longest_still_s" | "release_height_m" | "active_duration_s" | "path_efficiency" | "in_hand_lost_s" | "fall_after_release" | "final_overlap" | "object_displacement" | "ask_video";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pass" | "fail" | "unsure";
+            /** Threshold */
+            threshold: number;
+            track_plot: components["schemas"]["TrackPlot"] | null;
+            /** Uncertainty */
+            uncertainty: ("near threshold" | "near threshold (count)" | "samples split" | "Spark said unsure" | "unconfirmed fail" | "window empty" | "source missing" | "step failed" | "track lost") | null;
+            /** Unit */
+            unit: string;
+            /** Value */
+            value: number | null;
+            visual?: components["schemas"]["VisualAnswers"] | null;
+            window: components["schemas"]["TimeWindow"] | null;
+            /** Window Name */
+            window_name: string;
+        };
+        /**
+         * DatasetOutcome
+         * @description The Dataset outcome ("was the task done") against the Reference label ("does it meet the
+         *     Description"), over the labelled Episodes whose source ships one.
+         */
+        DatasetOutcome: {
+            /** Compared */
+            compared: number;
+            /** Disagreements */
+            disagreements: components["schemas"]["OutcomeDisagreement"][];
+            /** Failure Fails */
+            failure_fails: number;
+            /** Failure Meets */
+            failure_meets: number;
+            /** No Outcome */
+            no_outcome: number;
+            /** Success Fails */
+            success_fails: number;
+            /** Success Meets */
+            success_meets: number;
         };
         /**
          * DatasetStatus
@@ -448,14 +1632,132 @@ export interface components {
             cost_usd: number;
             /** Episodes */
             episodes: number;
+            /** Exterior Tracks */
+            exterior_tracks: number | null;
             /** Name */
             name: string;
             /** Sources */
             sources: components["schemas"]["SourceCount"][];
+            /** Target Boxes */
+            target_boxes: number;
+            /** Targets Missing */
+            targets_missing: number;
             /** Wrist No Closure */
             wrist_no_closure: number;
             /** Wrist Tracks */
             wrist_tracks: number | null;
+        };
+        /**
+         * DisagreeQuestion
+         * @description Does the Phrase pass on this anchor Episode, where its Criteria disagree (one fails while
+         *     another passes) or a fail is unconfirmed? Asked once per Phrase.
+         */
+        DisagreeQuestion: {
+            /** Camera */
+            camera: string | null;
+            clip: components["schemas"]["Clip"];
+            /** Episode Id */
+            episode_id: string;
+            /** Key */
+            key: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "disagree";
+            /** Measurement */
+            measurement: string;
+            /** Options */
+            options: components["schemas"]["Option"][];
+            /** Phrase */
+            phrase: string;
+            /** Prompt */
+            prompt: string;
+            /** Results */
+            results: components["schemas"]["DisagreeResult"][];
+        };
+        /**
+         * DisagreeResult
+         * @description One Criterion's result on the Episode asked about.
+         */
+        DisagreeResult: {
+            /** Criterion Id */
+            criterion_id: string;
+            /** English */
+            english: string;
+            /** Measurement */
+            measurement: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pass" | "fail" | "unsure";
+            /** Unconfirmed */
+            unconfirmed: boolean;
+        };
+        /**
+         * Disagreement
+         * @description A Reference-labelled Episode where Winnow's Triage decision (as the Workstation shows it
+         *     now) and Spark alone's majority answer differ.
+         */
+        Disagreement: {
+            /** Episode Id */
+            episode_id: string;
+            /** Failed Phrases */
+            failed_phrases: string[];
+            /** Set Name */
+            set_name: ("dev" | "test") | null;
+            /** Spark Alone */
+            spark_alone: ("keep" | "reject") | null;
+            /** Spark Alone Reason */
+            spark_alone_reason: string | null;
+            /**
+             * Winnow
+             * @enum {string}
+             */
+            winnow: "keep" | "reject" | "needs_review";
+            /** Winnow Reason */
+            winnow_reason: string;
+        };
+        /**
+         * DraftEdit
+         * @description Direct edits to the draft: Criterion cards by id, and the two Rubric settings. Setting a
+         *     Rubric setting confirms it.
+         */
+        DraftEdit: {
+            /**
+             * Criteria
+             * @default {}
+             */
+            criteria: {
+                [key: string]: components["schemas"]["CriterionEdit"];
+            };
+            /** Grasp Rise M */
+            grasp_rise_m?: number | null;
+            /** Gripper Closed Level */
+            gripper_closed_level?: number | null;
+        };
+        /**
+         * DraftPhrase
+         * @description One Phrase of a draft's Description and what compile made of it. Its Criteria are the
+         *     draft's Criteria whose `phrase` is its text.
+         */
+        DraftPhrase: {
+            /** End */
+            end: number;
+            /** Reason */
+            reason?: string | null;
+            /** Restatement */
+            restatement: string;
+            /** Start */
+            start: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "checked" | "context" | "unsupported";
+            /** Text */
+            text: string;
         };
         /**
          * Episode
@@ -478,6 +1780,11 @@ export interface components {
             index: number;
             /** Instruction */
             instruction: string | null;
+            /**
+             * Reference Labelled
+             * @default false
+             */
+            reference_labelled: boolean;
             /** Source */
             source: string;
             /** Task Object */
@@ -499,6 +1806,78 @@ export interface components {
             /** Size */
             size: number;
         };
+        /** EpisodeTriage */
+        EpisodeTriage: {
+            /** Confidence */
+            confidence: number;
+            /** Criteria */
+            criteria: components["schemas"]["CriterionResult"][];
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "keep" | "reject" | "needs_review";
+            /** Episode Id */
+            episode_id: string;
+            /** P Keep */
+            p_keep: number;
+            /** Phrases */
+            phrases: components["schemas"]["PhraseResult"][];
+            /** Quality */
+            quality?: number | null;
+            /** Reason */
+            reason: components["schemas"]["TextSpan"][];
+            /**
+             * Reason Source
+             * @default template
+             * @enum {string}
+             */
+            reason_source: "template" | "spark";
+            /** Rubric Version */
+            rubric_version: number;
+        };
+        /** EvaluationReport */
+        EvaluationReport: {
+            /** Ablation */
+            ablation: components["schemas"]["AblationRow"][];
+            comparison: components["schemas"]["Comparison"];
+            cost: components["schemas"]["MetaCost"];
+            dataset_outcome: components["schemas"]["DatasetOutcome"];
+            /** Description Failures */
+            description_failures: number;
+            /** Episodes */
+            episodes: number;
+            failbench: components["schemas"]["FailBenchCheck"];
+            /** Labelled */
+            labelled: number;
+            matched_coverage: components["schemas"]["MatchedCoverage"];
+            mcnemar: components["schemas"]["McNemar"];
+            /** Phrase Failures */
+            phrase_failures: components["schemas"]["PhraseFailures"][];
+            review_time: components["schemas"]["ReviewTime"];
+            right_reason: components["schemas"]["RightReason"];
+            /** Risk Coverage */
+            risk_coverage: components["schemas"]["RiskCoverage"][];
+            /** Rubric Version */
+            rubric_version: number;
+            /**
+             * Set Name
+             * @enum {string}
+             */
+            set_name: "dev" | "test";
+            /** Tracking Health */
+            tracking_health: components["schemas"]["TrackHealthRow"][];
+        };
+        /** EvaluationRequest */
+        EvaluationRequest: {
+            /** Rubric Version */
+            rubric_version?: number | null;
+            /**
+             * Set Name
+             * @enum {string}
+             */
+            set_name: "dev" | "test";
+        };
         /** Exclude */
         Exclude: {
             /**
@@ -512,15 +1891,156 @@ export interface components {
              */
             reason: "not pick-and-place" | "object too small to see";
         };
+        /**
+         * ExportPreview
+         * @description What an export would hold, before it runs, per source; `exported` is how many of the
+         *     Reference-labelled it writes with `include`, and `nothing_exported` why it would write none
+         *     (None while Episodes awaiting a label could still be).
+         */
+        ExportPreview: {
+            /** Exported */
+            exported: number;
+            /**
+             * Include
+             * @enum {string}
+             */
+            include: "keep" | "keep_and_review";
+            /** Nothing Exported */
+            nothing_exported: string | null;
+            /** Rubric Version */
+            rubric_version: number;
+            /** Sources */
+            sources: components["schemas"]["SourceCounts"][];
+        };
+        /** ExportRequest */
+        ExportRequest: {
+            /**
+             * Include
+             * @default keep
+             * @enum {string}
+             */
+            include: "keep" | "keep_and_review";
+        };
+        /** ExportStarted */
+        ExportStarted: {
+            /** Job Id */
+            job_id: number;
+        };
+        /**
+         * FailBenchCheck
+         * @description Spark's plain "did it succeed?" answer scored against the Dataset outcome, to tie back to
+         *     FailBench's published 0.72 balanced accuracy on DROID.
+         */
+        FailBenchCheck: {
+            agrees: components["schemas"]["Proportion"];
+            /** Answered */
+            answered: number;
+            /** Balanced Accuracy */
+            balanced_accuracy: number | null;
+            failures_caught: components["schemas"]["Proportion"];
+        };
+        /**
+         * FailInterval
+         * @description Where in the Episode a Phrase fails, in seconds from its start.
+         */
+        FailInterval: {
+            /** End S */
+            end_s: number;
+            /** Start S */
+            start_s: number;
+        };
+        /**
+         * FrameBox
+         * @description A box on frame 0, in that frame's pixels (half-open bounds).
+         */
+        FrameBox: {
+            /** Bottom */
+            bottom: number;
+            /** Left */
+            left: number;
+            /** Right */
+            right: number;
+            /** Top */
+            top: number;
+        };
+        /**
+         * FrameRect
+         * @description A box in frame-0 pixels.
+         */
+        FrameRect: {
+            /** X1 */
+            x1: number;
+            /** X2 */
+            x2: number;
+            /** Y1 */
+            y1: number;
+            /** Y2 */
+            y2: number;
+        };
+        /** FreezeRequest */
+        FreezeRequest: {
+            /**
+             * Force
+             * @default false
+             */
+            force: boolean;
+        };
+        /**
+         * FreezeWarnings
+         * @description The 409 body when a freeze would break the protocol and wasn't forced.
+         */
+        FreezeWarnings: {
+            /** Detail */
+            detail: string;
+            /** Warnings */
+            warnings: string[];
+        };
+        /**
+         * FrozenDescription
+         * @description The Description Reference labels are given against, and its Phrases in order.
+         */
+        FrozenDescription: {
+            /** Phrases */
+            phrases: string[];
+            /** Text */
+            text: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /**
+         * HardSoftQuestion
+         * @description Should failing this Criterion reject an Episode outright, or only lower its quality?
+         */
+        HardSoftQuestion: {
+            /** Criterion Id */
+            criterion_id: string;
+            /** English */
+            english: string;
+            /** Hard */
+            hard: boolean;
+            /** Key */
+            key: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "hard_soft";
+            /** Options */
+            options: components["schemas"]["Option"][];
+            /** Phrase */
+            phrase: string;
+            /** Prompt */
+            prompt: string;
+        };
         /** Health */
         Health: {
             /** Meta Api Key Configured */
             meta_api_key_configured: boolean;
+            /** Meta Available */
+            meta_available: boolean;
             /**
              * Status
              * @constant
@@ -541,6 +2061,61 @@ export interface components {
         IngestStarted: {
             /** Job Id */
             job_id: number;
+        };
+        /** Interview */
+        Interview: {
+            /** Answered */
+            answered: components["schemas"]["InterviewAnswer"][];
+            /** Covered */
+            covered: boolean;
+            /** Disagree Left */
+            disagree_left: number;
+            /** Hard Soft Left */
+            hard_soft_left: number;
+            /** Phrases Left */
+            phrases_left: number;
+            /** Question */
+            question: (components["schemas"]["PhraseQuestion"] | components["schemas"]["ThresholdQuestion"] | components["schemas"]["HardSoftQuestion"] | components["schemas"]["SettingQuestion"] | components["schemas"]["DisagreeQuestion"]) | null;
+            /** Settings Left */
+            settings_left: number;
+            /** Thresholds Left */
+            thresholds_left: number;
+        };
+        /**
+         * InterviewAnswer
+         * @description An answered card: collapsed to the answer and its effect.
+         */
+        InterviewAnswer: {
+            /**
+             * Answer
+             * @enum {string}
+             */
+            answer: "accept" | "context" | "pass" | "fail" | "hard" | "soft" | "skip";
+            /** Answered At */
+            answered_at: string;
+            /** Changed Criterion */
+            changed_criterion: string | null;
+            /** Effect */
+            effect: string;
+            /** Episode Id */
+            episode_id: string | null;
+            /** Id */
+            id: number;
+            /** Key */
+            key: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "phrase" | "words" | "threshold" | "hard_soft" | "setting" | "disagree";
+            /** Label Id */
+            label_id: number | null;
+            /** Measurement */
+            measurement: string | null;
+            /** Resolution */
+            resolution: ("set" | "confirmed" | "unbracketed") | null;
+            /** Subject */
+            subject: string;
         };
         /** Job */
         Job: {
@@ -581,10 +2156,530 @@ export interface components {
             /** Step */
             step: string;
         };
+        /** KeepPrecision */
+        KeepPrecision: {
+            good: components["schemas"]["Proportion"];
+            /** Lower Bound */
+            lower_bound: number | null;
+            /** Lower Bound Confidence */
+            lower_bound_confidence: number;
+        };
+        /**
+         * Label
+         * @description A human's answer for one Phrase of one Episode; it overrides that Phrase's result.
+         */
+        Label: {
+            /** Phrase */
+            phrase: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "interview" | "review" | "audit";
+            /**
+             * Value
+             * @enum {string}
+             */
+            value: "pass" | "fail";
+        };
+        /**
+         * LabelDraw
+         * @description What a reviewer (or the interview) submits for one Phrase of one Episode.
+         */
+        LabelDraw: {
+            /** Phrase */
+            phrase: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "interview" | "review" | "audit";
+            /**
+             * Value
+             * @enum {string}
+             */
+            value: "pass" | "fail";
+        };
+        /**
+         * LengthRule
+         * @description Length alone's one duration threshold, chosen in hindsight on the evaluated set.
+         */
+        LengthRule: {
+            /**
+             * Keep
+             * @enum {string}
+             */
+            keep: "longer" | "shorter";
+            /** Threshold S */
+            threshold_s: number;
+        };
+        /**
+         * MatchedCoverage
+         * @description Keep precision with Spark alone held to Winnow's coverage: its most confident Episodes,
+         *     never splitting a tie, so it covers at most `target`.
+         */
+        MatchedCoverage: {
+            /** Episodes */
+            episodes: number;
+            /** Rows */
+            rows: components["schemas"]["MatchedRow"][];
+            /** Target */
+            target: number;
+        };
+        /** MatchedRow */
+        MatchedRow: {
+            /** Covered */
+            covered: number;
+            keep_precision: components["schemas"]["Proportion"];
+            /** Label */
+            label: string;
+            /**
+             * System
+             * @enum {string}
+             */
+            system: "winnow" | "winnow_review_kept" | "spark_alone" | "length_alone";
+        };
+        /**
+         * McNemar
+         * @description Discordant pairs between Winnow and Spark alone, counts only: on the Episodes both decided,
+         *     how many only one of them got right.
+         */
+        McNemar: {
+            /** Compared */
+            compared: number;
+            /** Spark Alone Only Right */
+            spark_alone_only_right: number;
+            /** Winnow Only Right */
+            winnow_only_right: number;
+        };
+        /**
+         * MetaCost
+         * @description Cost per 1,000 Episodes, extrapolated from what the set's Episodes cost in the cost log:
+         *     x10 for a Test set of 100. Not run at 1,000.
+         */
+        MetaCost: {
+            /** Compile Usd */
+            compile_usd: number;
+            /** Episodes */
+            episodes: number;
+            /** Spark Alone Per 1000 Usd */
+            spark_alone_per_1000_usd: number | null;
+            /** Spark Alone Usd */
+            spark_alone_usd: number;
+            /** Steps */
+            steps: components["schemas"]["StepCost"][];
+            /** Winnow Per 1000 Usd */
+            winnow_per_1000_usd: number | null;
+            /** Winnow Usd */
+            winnow_usd: number;
+        };
+        /**
+         * Moment
+         * @description A point in time that matters to a Criterion result.
+         */
+        Moment: {
+            /** Label */
+            label: string;
+            /** T */
+            t: number;
+        };
+        /** Option */
+        Option: {
+            /**
+             * Answer
+             * @enum {string}
+             */
+            answer: "accept" | "context" | "pass" | "fail" | "hard" | "soft" | "skip";
+            /** Label */
+            label: string;
+        };
+        /** OutcomeDisagreement */
+        OutcomeDisagreement: {
+            /** Dataset Outcome */
+            dataset_outcome: boolean;
+            /** Episode Id */
+            episode_id: string;
+            /** Failed Phrases */
+            failed_phrases: string[];
+        };
+        /**
+         * PastExport
+         * @description An export written under the data dir's exports/, from its manifest.json.
+         */
+        PastExport: {
+            /** Created At */
+            created_at: string;
+            /** Episodes */
+            episodes: number;
+            /**
+             * Include
+             * @enum {string}
+             */
+            include: "keep" | "keep_and_review";
+            /** Path */
+            path: string;
+        };
+        /** PhraseChip */
+        PhraseChip: {
+            /** Phrase */
+            phrase: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "fail" | "unsure";
+        };
+        /** PhraseFailures */
+        PhraseFailures: {
+            /** Failures */
+            failures: number;
+            /** Phrase */
+            phrase: string;
+            /** Spark Alone Rejects */
+            spark_alone_rejects: number;
+            /** Too Few */
+            too_few: boolean;
+            /** Winnow Rejects */
+            winnow_rejects: number;
+        };
+        /** PhraseLabel */
+        PhraseLabel: {
+            interval?: components["schemas"]["FailInterval"] | null;
+            /** Passed */
+            passed: boolean;
+            /** Phrase */
+            phrase: string;
+        };
+        /**
+         * PhraseQuestion
+         * @description An Unsupported Phrase (`phrase`), or meaningful words in no Phrase (`words`).
+         */
+        PhraseQuestion: {
+            /** End */
+            end: number;
+            /** Key */
+            key: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "phrase" | "words";
+            /** Options */
+            options: components["schemas"]["Option"][];
+            /** Prompt */
+            prompt: string;
+            /** Reason */
+            reason: string | null;
+            /** Start */
+            start: number;
+            /** Text */
+            text: string;
+        };
+        /** PhraseResult */
+        PhraseResult: {
+            /** Hard */
+            hard: boolean;
+            label: components["schemas"]["Label"] | null;
+            /** P Pass */
+            p_pass: number | null;
+            /** Phrase */
+            phrase: string;
+            /** Status */
+            status: ("pass" | "fail" | "unsure") | null;
+        };
+        /** PlotPoint */
+        PlotPoint: {
+            /** T */
+            t: number;
+            /** Value */
+            value: number | null;
+        };
+        /**
+         * Proportion
+         * @description `count` of `of`, with its 95% Wilson interval; no interval when `of` is 0.
+         */
+        Proportion: {
+            /** Count */
+            count: number;
+            /** High */
+            high: number | null;
+            /** Low */
+            low: number | null;
+            /** Of */
+            of: number;
+        };
+        /** ReasonsStarted */
+        ReasonsStarted: {
+            /** Job Id */
+            job_id: number | null;
+        };
+        /** ReferenceLabel */
+        ReferenceLabel: {
+            /** Description */
+            description: string;
+            /** Elapsed S */
+            elapsed_s: number;
+            /** Episode Id */
+            episode_id: string;
+            /** Instruction */
+            instruction: string | null;
+            /** Labelled At */
+            labelled_at: string;
+            /** Phrases */
+            phrases: components["schemas"]["PhraseLabel"][];
+            /** Relabel */
+            relabel: boolean;
+        };
+        /**
+         * ReferenceLabelDraw
+         * @description What the labeller submits for one Episode.
+         */
+        ReferenceLabelDraw: {
+            /** Elapsed S */
+            elapsed_s: number;
+            /** Instruction */
+            instruction?: string | null;
+            /** Phrases */
+            phrases: components["schemas"]["PhraseLabel"][];
+            /**
+             * Relabel
+             * @default false
+             */
+            relabel: boolean;
+        };
+        /**
+         * RejectedPhrase
+         * @description A Phrase Spark proposed that code refused, e.g. one that isn't in the Description.
+         */
+        RejectedPhrase: {
+            /** Reason */
+            reason: string;
+            /** Text */
+            text: string;
+        };
+        /** ReviewItem */
+        ReviewItem: {
+            /** Confidence */
+            confidence: number;
+            /** Episode Id */
+            episode_id: string;
+            /** Reason */
+            reason: string;
+            /** Unsure */
+            unsure: components["schemas"]["UnsurePhrase"][];
+        };
+        /** ReviewQueue */
+        ReviewQueue: {
+            /** Items */
+            items: components["schemas"]["ReviewItem"][];
+            /** Reviewed */
+            reviewed: number;
+            /** Rubric Version */
+            rubric_version: number;
+        };
+        /**
+         * ReviewTime
+         * @description A person's minutes, from the label-mode timer: what Winnow saves by deciding Episodes
+         *     automatically, and the human cost per Episode left (one hand-drawn box plus Needs review).
+         */
+        ReviewTime: {
+            /** Decided */
+            decided: number;
+            /** Minutes Per Episode */
+            minutes_per_episode: number | null;
+            /** Minutes Saved */
+            minutes_saved: number | null;
+            needs_review: components["schemas"]["Proportion"];
+            /** Needs Review Minutes Per Episode */
+            needs_review_minutes_per_episode: number | null;
+            /** Timed */
+            timed: number;
+        };
+        /** RightReason */
+        RightReason: {
+            /** Rows */
+            rows: components["schemas"]["RightReasonRow"][];
+            slack: components["schemas"]["Slack"];
+        };
+        /**
+         * RightReasonRow
+         * @description Of a system's correct Rejects, how many name a failing Phrase at a time inside its labelled
+         *     interval, widened by the slack.
+         */
+        RightReasonRow: {
+            at_slack: components["schemas"]["Proportion"] | null;
+            /** Curve */
+            curve: components["schemas"]["SlackPoint"][];
+            /** Label */
+            label: string;
+            /**
+             * System
+             * @enum {string}
+             */
+            system: "winnow" | "winnow_review_kept" | "spark_alone" | "length_alone";
+        };
+        /** RiskCoverage */
+        RiskCoverage: {
+            /** Episodes */
+            episodes: number;
+            /** Label */
+            label: string;
+            /** Points */
+            points: components["schemas"]["RiskPoint"][];
+            /**
+             * System
+             * @enum {string}
+             */
+            system: "winnow" | "winnow_review_kept" | "spark_alone" | "length_alone";
+        };
+        /**
+         * RiskPoint
+         * @description The Episodes a system is at least this sure about, and how many of them it gets wrong.
+         */
+        RiskPoint: {
+            /** Confidence */
+            confidence: number;
+            /** Covered */
+            covered: number;
+            /** Errors */
+            errors: number;
+        };
+        /**
+         * Rubric
+         * @description A Description's Phrases, the Criteria each became, and what a grasp is.
+         */
+        Rubric: {
+            /** Criteria */
+            criteria: components["schemas"]["Criterion"][];
+            /** Description */
+            description: string;
+            /** Phrases */
+            phrases: string[];
+            settings: components["schemas"]["RubricSettings"];
+        };
+        /**
+         * RubricDraft
+         * @description The Rubric being written on the Describe page: compiled from a Description, edited, and
+         *     frozen into a Rubric version by Run.
+         */
+        RubricDraft: {
+            /**
+             * Assumptions Unconfirmed
+             * @description Values guessed and not yet confirmed: a Rubric setting's, or a switched-on
+             *     Criterion's. Run never waits for them.
+             */
+            readonly assumptions_unconfirmed: number;
+            /** Compiled At */
+            compiled_at: string;
+            /** Criteria */
+            criteria: components["schemas"]["Criterion"][];
+            /** Description */
+            description: string;
+            /**
+             * Disabled
+             * @default []
+             */
+            disabled: string[];
+            /**
+             * English
+             * @description Each Criterion as the user reads it, by id.
+             */
+            readonly english: {
+                [key: string]: string;
+            };
+            /** Phrases */
+            phrases: components["schemas"]["DraftPhrase"][];
+            /** Recompiled */
+            recompiled?: components["schemas"]["TextRange"][] | null;
+            /**
+             * Rejected
+             * @default []
+             */
+            rejected: components["schemas"]["RejectedPhrase"][];
+            settings: components["schemas"]["RubricSettings"];
+            /**
+             * Uncovered
+             * @description Meaningful words outside every Phrase, so nothing written is silently ignored.
+             */
+            readonly uncovered: components["schemas"]["TextRange"][];
+        };
+        /**
+         * RubricSettings
+         * @description What a grasp is, shared by `grasp_attempts` and every grasp-relative window.
+         */
+        RubricSettings: {
+            grasp_rise_m: components["schemas"]["Setting"];
+            gripper_closed_level: components["schemas"]["Setting"];
+        };
+        /**
+         * RubricVersion
+         * @description A frozen Rubric: every Criterion result names the version it came from.
+         */
+        RubricVersion: {
+            /** Created At */
+            created_at: string;
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "seed" | "run";
+            rubric: components["schemas"]["Rubric"];
+            /** Version */
+            version: number;
+        };
         /** SetMembers */
         SetMembers: {
             /** Episode Ids */
             episode_ids: string[];
+        };
+        /** Setting */
+        Setting: {
+            /** Assumption */
+            assumption?: string | null;
+            /** Margin */
+            margin: number;
+            /** Value */
+            value: number;
+        };
+        /**
+         * SettingQuestion
+         * @description Is the gripper closed (or did it lift) at this anchor Episode's moment? One step of
+         *     bisecting an assumed grasp setting.
+         */
+        SettingQuestion: {
+            /** Asked */
+            asked: number;
+            /** Assumption */
+            assumption: string;
+            /** Camera */
+            camera: string | null;
+            clip: components["schemas"]["Clip"];
+            /** Episode Id */
+            episode_id: string;
+            /** Key */
+            key: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "setting";
+            /** Max Questions */
+            max_questions: number;
+            /** Measurement */
+            measurement: string;
+            /** Name */
+            name: string;
+            /** Options */
+            options: components["schemas"]["Option"][];
+            /** Prompt */
+            prompt: string;
+            /**
+             * Setting
+             * @enum {string}
+             */
+            setting: "gripper_closed_level" | "grasp_rise_m";
+            /** Value */
+            value: number;
         };
         /**
          * Signals
@@ -600,12 +2695,279 @@ export interface components {
             /** Z */
             z: number[];
         };
+        /**
+         * Slack
+         * @description How far the labeller's own interval edges move between the first pass and the relabel.
+         */
+        Slack: {
+            /** Edges */
+            edges: number;
+            /** Episodes */
+            episodes: number;
+            /** Seconds */
+            seconds: number | null;
+        };
+        /** SlackPoint */
+        SlackPoint: {
+            /** Of */
+            of: number;
+            /** Right */
+            right: number;
+            /** Slack S */
+            slack_s: number;
+        };
         /** SourceCount */
         SourceCount: {
             /** Episodes */
             episodes: number;
             /** Name */
             name: string;
+        };
+        /** SourceCounts */
+        SourceCounts: {
+            /** Awaiting Label */
+            awaiting_label: number;
+            /** Keep */
+            keep: number;
+            /** Needs Review */
+            needs_review: number;
+            /** Reject */
+            reject: number;
+            /** Source */
+            source: string;
+            /** Test Set */
+            test_set: number;
+        };
+        /**
+         * StepCost
+         * @description What one pipeline step spent on the set's Episodes, from the cost log.
+         */
+        StepCost: {
+            /** Calls */
+            calls: number;
+            /** Episodes */
+            episodes: number;
+            /** Label */
+            label: string;
+            /** Step */
+            step: string;
+            /**
+             * System
+             * @enum {string}
+             */
+            system: "winnow" | "spark_alone" | "other";
+            /** Usd */
+            usd: number;
+        };
+        /**
+         * StoredLabel
+         * @description A label as kept: labels hang off the Phrase, so one whose Phrase text changed stays in
+         *     history but no longer applies.
+         */
+        StoredLabel: {
+            /** Episode Id */
+            episode_id: string;
+            /** Id */
+            id?: number | null;
+            /** Labelled At */
+            labelled_at: string;
+            /** Phrase */
+            phrase: string;
+            /** Rubric Version */
+            rubric_version: number | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "interview" | "review" | "audit";
+            /**
+             * Value
+             * @enum {string}
+             */
+            value: "pass" | "fail";
+            /** Withdrawn At */
+            withdrawn_at?: string | null;
+        };
+        /** SystemRow */
+        SystemRow: {
+            /** Balanced Accuracy */
+            balanced_accuracy: number | null;
+            coverage: components["schemas"]["Proportion"];
+            false_keeps: components["schemas"]["Proportion"];
+            false_rejects: components["schemas"]["Proportion"];
+            /** Keeps */
+            keeps: number;
+            /** Label */
+            label: string;
+            /** Rejects */
+            rejects: number;
+            /**
+             * System
+             * @enum {string}
+             */
+            system: "winnow" | "winnow_review_kept" | "spark_alone" | "length_alone";
+            /** Undecided */
+            undecided: number;
+        };
+        /**
+         * TargetBox
+         * @description Where the object should end up, on frame 0 of the hand-drawn box's view: SAM's answer to
+         *     a text prompt for the instruction's target, or the curator's box, which wins.
+         */
+        TargetBox: {
+            box: components["schemas"]["FrameBox"] | null;
+            /**
+             * Camera
+             * @enum {string}
+             */
+            camera: "exterior_image_1_left" | "exterior_image_2_left";
+            /** Episode Id */
+            episode_id: string;
+            /** Frame Height */
+            frame_height: number;
+            /** Frame Width */
+            frame_width: number;
+            /** Made At */
+            made_at: string;
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "sam" | "hand";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "found" | "not_found" | "no_instruction" | "no_target";
+            /** Target */
+            target: string | null;
+        };
+        /**
+         * TestRun
+         * @description One logged Test set run: the reported numbers are the last of these before the freeze.
+         */
+        TestRun: {
+            /** Id */
+            id: number;
+            report: components["schemas"]["EvaluationReport"];
+            /** Rubric Version */
+            rubric_version: number;
+            /** Run At */
+            run_at: string;
+        };
+        /**
+         * TextDraw
+         * @description The curator's own words: an answer to the question being asked, or, with no question, a
+         *     change to make to the Description.
+         */
+        TextDraw: {
+            /** Question Key */
+            question_key: string | null;
+            /** Text */
+            text: string;
+        };
+        /** TextRange */
+        TextRange: {
+            /** End */
+            end: number;
+            /** Start */
+            start: number;
+            /** Text */
+            text: string;
+        };
+        /**
+         * TextReply
+         * @description What the curator's words did, and the one line Spark says back about it.
+         */
+        TextReply: {
+            draft: components["schemas"]["RubricDraft"];
+            interview: components["schemas"]["Interview"];
+            /** Reply */
+            reply: string;
+        };
+        /**
+         * TextSpan
+         * @description A piece of Evidence or Reason text; a span with `t` seeks the playhead there.
+         */
+        TextSpan: {
+            /** T */
+            t?: number | null;
+            /** Text */
+            text: string;
+        };
+        /**
+         * ThresholdQuestion
+         * @description Is this anchor Episode's measured value fine? One step of bisecting an assumed
+         *     threshold.
+         */
+        ThresholdQuestion: {
+            /** Asked */
+            asked: number;
+            /** Camera */
+            camera: string | null;
+            clip: components["schemas"]["Clip"];
+            /** Criterion Id */
+            criterion_id: string;
+            /** English */
+            english: string;
+            /** Episode Id */
+            episode_id: string;
+            /** Key */
+            key: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "threshold";
+            /** Max Questions */
+            max_questions: number;
+            /** Measurement */
+            measurement: string;
+            /** Near */
+            near: number;
+            /** Options */
+            options: components["schemas"]["Option"][];
+            /** Phrase */
+            phrase: string;
+            /** Prompt */
+            prompt: string;
+            /** Value */
+            value: number;
+        };
+        /**
+         * ThresholdSuggestion
+         * @description Where labels put a Criterion's threshold, when two or more contradict its crisp result:
+         *     midway between the closest labelled pass and fail values, their gap as its margin. Only
+         *     accepting it, as a new Rubric version, moves the threshold.
+         */
+        ThresholdSuggestion: {
+            /** Contradicting */
+            contradicting: number;
+            /** Criterion Id */
+            criterion_id: string;
+            /** English */
+            english: string;
+            /** Labelled */
+            labelled: number;
+            /** Phrase */
+            phrase: string;
+            /** Suggested English */
+            suggested_english: string;
+            /** Suggested Margin */
+            suggested_margin: number;
+            /** Suggested Threshold */
+            suggested_threshold: number;
+            /** Threshold */
+            threshold: number;
+            /** Unit */
+            unit: string;
+        };
+        /** TimeWindow */
+        TimeWindow: {
+            /** End */
+            end: number;
+            /** Start */
+            start: number;
         };
         /** Track */
         Track: {
@@ -624,9 +2986,9 @@ export interface components {
             height: number;
             /**
              * Kind
-             * @constant
+             * @enum {string}
              */
-            kind: "wrist";
+            kind: "wrist" | "exterior";
             /** Seed Frame */
             seed_frame: number | null;
             /**
@@ -667,6 +3029,72 @@ export interface components {
             /** Missing Fraction */
             missing_fraction: number;
         };
+        /**
+         * TrackHealthRow
+         * @description One SAM track type over the labelled Episodes.
+         */
+        TrackHealthRow: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "wrist" | "exterior";
+            /** Label */
+            label: string;
+            lost: components["schemas"]["Proportion"];
+            /** Needs Review */
+            needs_review: number;
+            /** Too Small */
+            too_small: number;
+        };
+        /**
+         * TrackPlot
+         * @description The signal a tracked Criterion is decided on, per 5 fps frame of the stretch it reads.
+         */
+        TrackPlot: {
+            /** Label */
+            label: string;
+            /** Level */
+            level: number;
+            /** Points */
+            points: components["schemas"]["PlotPoint"][];
+            /** Unit */
+            unit: string;
+        };
+        /** TriageList */
+        TriageList: {
+            /** Rows */
+            rows: components["schemas"]["TriageRow"][];
+            /** Rubric Version */
+            rubric_version: number;
+        };
+        /** TriageRow */
+        TriageRow: {
+            /** Confidence */
+            confidence: number;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "keep" | "reject" | "needs_review";
+            /** Episode Id */
+            episode_id: string;
+            /** Not Passed */
+            not_passed: components["schemas"]["PhraseChip"][];
+            /** Quality */
+            quality: number | null;
+            /** Reason */
+            reason: string;
+            /** Uncertainty */
+            uncertainty: ("near threshold" | "near threshold (count)" | "samples split" | "Spark said unsure" | "unconfirmed fail" | "window empty" | "source missing" | "step failed" | "track lost")[];
+        };
+        /** UnsurePhrase */
+        UnsurePhrase: {
+            /** Phrase */
+            phrase: string;
+            /** Signals */
+            signals: string[];
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -680,6 +3108,91 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** VisualAnswers */
+        VisualAnswers: {
+            clip: components["schemas"]["VisualClip"] | null;
+            /** Error */
+            error: string | null;
+            /** Samples */
+            samples: components["schemas"]["VisualSample"][];
+        };
+        /**
+         * VisualClip
+         * @description The short clip the crop step cut for one Criterion on one Episode.
+         */
+        VisualClip: {
+            box: components["schemas"]["FrameBox"] | null;
+            /** Camera */
+            camera: string;
+            /** End */
+            end: number;
+            /** Name */
+            name: string;
+            /** Start */
+            start: number;
+        };
+        /**
+         * VisualReply
+         * @description One sample's structured answer: pass means the question's answer is yes.
+         */
+        VisualReply: {
+            /**
+             * Answer
+             * @enum {string}
+             */
+            answer: "pass" | "fail" | "unsure";
+            /** Confidence */
+            confidence: number;
+            /** Observation */
+            observation: string;
+        };
+        /** VisualSample */
+        VisualSample: {
+            /** Error */
+            error: string | null;
+            /** Prompt */
+            prompt: string;
+            reply: components["schemas"]["VisualReply"] | null;
+        };
+        /**
+         * VoiceChip
+         * @description One unsure Phrase the reviewer's words decide, to confirm or discard.
+         */
+        VoiceChip: {
+            /** Phrase */
+            phrase: string;
+            /** Quote */
+            quote: string;
+            /**
+             * Value
+             * @enum {string}
+             */
+            value: "pass" | "fail";
+        };
+        /** VoiceTurn */
+        VoiceTurn: {
+            /** Chips */
+            chips: components["schemas"]["VoiceChip"][];
+            /** T */
+            t: number;
+            /** Transcript */
+            transcript: string;
+        };
+        /**
+         * Window
+         * @description The stretch of the Episode a Criterion looks at. Grasp-relative windows are empty in an
+         *     Episode with no grasp (and `after_release` when the grasp never opens).
+         */
+        Window: {
+            /**
+             * Kind
+             * @default whole
+             * @enum {string}
+             */
+            kind: "whole" | "before_grasp" | "holding" | "after_release" | "last_n_s";
+            /** Seconds */
+            seconds?: number | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -689,6 +3202,86 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_anchor_pool_api_anchor_pool_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnchorPool"];
+                };
+            };
+        };
+    };
+    get_audit_api_audit_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditSample"];
+                };
+            };
+        };
+    };
+    post_audit_sample_api_audit_sample_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AuditDraw"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditSample"];
+                };
+            };
+            /** @description No auto-Keep to audit yet */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_boxes_api_boxes_get: {
         parameters: {
             query?: never;
@@ -705,6 +3298,91 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Box"][];
+                };
+            };
+        };
+    };
+    get_calibration_api_calibration_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Calibration"];
+                };
+            };
+        };
+    };
+    post_calibration_run_api_calibration_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Calibration"];
+                };
+            };
+            /** @description No interview or review label on the anchor pool yet */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    post_accept_suggestion_api_calibration_suggestions__criterion_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                criterion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptedSuggestion"];
+                };
+            };
+            /** @description Labels suggest no threshold for this Criterion */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -881,6 +3559,121 @@ export interface operations {
             };
         };
     };
+    list_labels_api_episodes__episode_id__labels_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episode_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredLabel"][];
+                };
+            };
+            /** @description The Episode has no Reference label yet */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_label_api_episodes__episode_id__labels_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episode_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LabelDraw"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoredLabel"];
+                };
+            };
+            /** @description The Episode has no Reference label yet */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_reference_label_api_episodes__episode_id__reference_labels_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episode_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReferenceLabelDraw"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferenceLabel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_signals_api_episodes__episode_id__signals_get: {
         parameters: {
             query?: never;
@@ -899,6 +3692,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Signals"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_target_box_api_episodes__episode_id__target_box_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episode_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FrameRect"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TargetBox"];
                 };
             };
             /** @description Validation Error */
@@ -943,6 +3771,294 @@ export interface operations {
             };
         };
     };
+    get_triage_api_episodes__episode_id__triage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episode_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpisodeTriage"];
+                };
+            };
+            /** @description The Episode has no Reference label yet */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_visual_clip_api_episodes__episode_id__visual_clips__name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episode_id: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "video/mp4": unknown;
+                };
+            };
+            /** @description No such clip */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_voice_api_episodes__episode_id__voice_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episode_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_post_voice_api_episodes__episode_id__voice_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceTurn"];
+                };
+            };
+            /** @description The Episode has no Reference label yet */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The audio isn't mono 16-bit PCM WAV at 16 or 24 kHz */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Voice Transcribe or Spark failed, or Spark's answer couldn't be read */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The Meta API isn't configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_disagreements_api_evaluation_disagreements_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Disagreement"][];
+                };
+            };
+        };
+    };
+    post_evaluation_run_api_evaluation_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvaluationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluationReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_test_runs_api_evaluation_test_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestRun"][];
+                };
+            };
+        };
+    };
+    post_export_api_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_past_exports_api_export_past_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PastExport"][];
+                };
+            };
+        };
+    };
+    get_export_preview_api_export_preview_get: {
+        parameters: {
+            query?: {
+                include?: "keep" | "keep_and_review";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_health_api_health_get: {
         parameters: {
             query?: never;
@@ -960,6 +4076,179 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Health"];
                 };
+            };
+        };
+    };
+    get_interview_api_interview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Interview"];
+                };
+            };
+            /** @description No Description has been compiled yet, or no such answer */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    post_answer_api_interview_answers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerDraw"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Interview"];
+                };
+            };
+            /** @description No Description has been compiled yet, or no such answer */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not the question being asked */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_answer_api_interview_answers__answer_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                answer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Interview"];
+                };
+            };
+            /** @description No Description has been compiled yet, or no such answer */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_text_api_interview_text_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDraw"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TextReply"];
+                };
+            };
+            /** @description No Description has been compiled yet, or no such answer */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not the question being asked, or the draft changed meanwhile */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Spark failed, or its reading of the words couldn't be used */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The Meta API isn't configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1013,6 +4302,355 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Job"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_reasons_api_reasons_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReasonsStarted"];
+                };
+            };
+            /** @description The Meta API isn't configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_reference_labels_api_reference_labels_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferenceLabel"][];
+                };
+            };
+        };
+    };
+    get_frozen_description_api_reference_labels_description_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FrozenDescription"];
+                };
+            };
+        };
+    };
+    get_review_queue_api_review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewQueue"];
+                };
+            };
+        };
+    };
+    get_rubric_api_rubric_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RubricVersion"];
+                };
+            };
+        };
+    };
+    get_draft_api_rubric_draft_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RubricDraft"] | null;
+                };
+            };
+        };
+    };
+    patch_draft_api_rubric_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RubricDraft"];
+                };
+            };
+            /** @description No Description has been compiled yet */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The draft has no such Criterion */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    post_compile_api_rubric_draft_compile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompileRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RubricDraft"];
+                };
+            };
+            /** @description The Description changed while Spark read the edit */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Spark's answer couldn't be used */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The Meta API isn't configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    post_preview_api_rubric_draft_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnchorPreview"];
+                };
+            };
+            /** @description No Description has been compiled yet */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The draft has no such Criterion */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    post_run_api_rubric_draft_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RubricVersion"];
+                };
+            };
+            /** @description No Description has been compiled yet */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The draft has no such Criterion */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_versions_api_rubric_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RubricVersion"][];
+                };
+            };
+        };
+    };
+    get_version_preview_api_rubric_versions__version__preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnchorPreview"];
+                };
+            };
+            /** @description No such Rubric version */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -1227,7 +4865,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["FreezeRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1238,6 +4880,15 @@ export interface operations {
                     "application/json": components["schemas"]["EpisodeSet"];
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FreezeWarnings"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1246,6 +4897,86 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    list_target_boxes_api_target_boxes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TargetBox"][];
+                };
+            };
+        };
+    };
+    list_triage_api_triage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TriageList"];
+                };
+            };
+        };
+    };
+    post_ask_api_visual_ask_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The Meta API isn't configured */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

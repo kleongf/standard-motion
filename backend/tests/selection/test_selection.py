@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.helpers import wait_for_job
+from tests.meta.fakes import NoTranscribe
 from winnow.app import create_app
 from winnow.cli import main
 from winnow.core.settings import Settings
@@ -17,7 +18,7 @@ from winnow.selection.service import sample_indices
 
 
 @dataclass
-class ScriptedSpark:
+class ScriptedSpark(NoTranscribe):
     images: int = 0
     seen: list[str] = field(default_factory=list[str])
     cut_off_first: int = 0  # the first N calls stop at the token cap with no answer

@@ -2,25 +2,45 @@
 
 winnow ingest droid_100 3 16 42
 winnow select droid_1.0.1 [--size 300] [--seed 0]
-winnow sets add dev droid_100:3 droid_100:16 | remove dev droid_100:3 | freeze dev | show
+winnow sets add dev droid_100:3 droid_100:16 | remove dev droid_100:3 | freeze dev [--yes] | show
 winnow fixtures <dir> [--episodes N]
+winnow eval test [--rubric-version N] [--json]
+winnow ask [droid_100:42 ...]  (the latest Rubric's visual Criteria; default every Episode)
+winnow reasons  (Spark's Reason for every Reject and Needs review whose results changed;
+                 run it after `winnow ask`, which, unlike the API, doesn't queue them)
+winnow export <dir> [--include keep|keep_and_review]  (the kept Episodes, or the Keeps and Needs
+                 review, as LeRobot datasets, the rest's Reasons beside them)
 """
 
 import argparse
 import asyncio
 import sys
 from pathlib import Path
+from typing import get_args
 
 from winnow.core.context import AppContext, build_context
 from winnow.core.settings import Settings, get_settings
 from winnow.episodes.droid101 import Droid101
 from winnow.episodes.fixtures import write_fixture_source
 from winnow.episodes.service import ingest_items
+from winnow.evaluation.models import EvaluationRequest
+from winnow.evaluation.service import UnknownRubricVersionError, run_evaluation
+from winnow.evaluation.text import report_text
+from winnow.export.models import Include
+from winnow.export.service import export_items
 from winnow.jobs.models import WorkItem
 from winnow.meta.transport import Transport
 from winnow.selection.service import sample_indices, selection_items
 from winnow.sets.models import SET_LABELS, SET_NAMES
-from winnow.sets.service import SetError, add_episodes, freeze, remove_episode
+from winnow.sets.service import (
+    FreezeWarningsError,
+    SetError,
+    add_episodes,
+    freeze,
+    remove_episode,
+)
+from winnow.triage.reason_service import reason_items
+from winnow.visual.steps import visual_items
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -39,13 +59,28 @@ def _parser() -> argparse.ArgumentParser:
         change = actions.add_parser(action, help=f"{action} Episodes, e.g. droid_100:42")
         change.add_argument("name", choices=SET_NAMES)
         change.add_argument("episode_ids", nargs="+")
-    actions.add_parser("freeze", help="make a set's membership immutable").add_argument(
-        "name", choices=SET_NAMES
-    )
+    freeze_set = actions.add_parser("freeze", help="make a set's membership immutable")
+    freeze_set.add_argument("name", choices=SET_NAMES)
+    freeze_set.add_argument("--yes", action="store_true", help="freeze despite protocol warnings")
     actions.add_parser("show", help="each set's size, frozen state and Episodes")
     fixtures = commands.add_parser("fixtures", help="write synthetic droid_100-layout Episodes")
     fixtures.add_argument("root", type=Path)
     fixtures.add_argument("--episodes", type=int, default=3)
+    evaluate = commands.add_parser("eval", help="score Winnow and the baselines on a set")
+    evaluate.add_argument("set_name", choices=SET_NAMES)
+    evaluate.add_argument("--rubric-version", type=int, help="default: the latest")
+    evaluate.add_argument("--json", action="store_true", help="the report the route returns")
+    ask = commands.add_parser("ask", help="ask Spark the latest Rubric's visual Criteria")
+    ask.add_argument("episode_ids", nargs="*", help="default: every ingested Episode")
+    commands.add_parser("reasons", help="have Spark write each out-of-date Reason")
+    export = commands.add_parser("export", help="write the kept Episodes in LeRobot format")
+    export.add_argument("out", type=Path, help="a new or empty folder")
+    export.add_argument(
+        "--include",
+        choices=get_args(Include),
+        default="keep",
+        help="keep: the Keeps only; keep_and_review: the Needs review Episodes too",
+    )
     return parser
 
 
@@ -61,6 +96,25 @@ async def _run(ctx: AppContext, kind: str, items: list[WorkItem]) -> int:
     return 1 if job.failed else 0
 
 
+def _confirmed(warnings: list[str]) -> bool:
+    for warning in warnings:
+        sys.stderr.write(f"warning: {warning}\n")
+    sys.stderr.write("Frozen is permanent. Freeze anyway? [y/N] ")
+    sys.stderr.flush()
+    return sys.stdin.readline().strip().lower() in ("y", "yes")
+
+
+def _freeze(ctx: AppContext, args: argparse.Namespace) -> bool:
+    """False when the user declined the protocol warnings."""
+    try:
+        freeze(ctx.sets, args.name, force=args.yes)
+    except FreezeWarningsError as warned:
+        if not _confirmed(warned.warnings):
+            return False
+        freeze(ctx.sets, args.name, force=True)
+    return True
+
+
 def _sets(ctx: AppContext, args: argparse.Namespace) -> int:
     try:
         if args.action == "add":
@@ -68,8 +122,9 @@ def _sets(ctx: AppContext, args: argparse.Namespace) -> int:
         elif args.action == "remove":
             for episode_id in args.episode_ids:
                 remove_episode(ctx.sets, args.name, episode_id)
-        elif args.action == "freeze":
-            freeze(ctx.sets, args.name)
+        elif args.action == "freeze" and not _freeze(ctx, args):
+            sys.stderr.write("not frozen\n")
+            return 1
     except SetError as error:
         sys.stderr.write(f"{error}\n")
         return 1
@@ -82,9 +137,28 @@ def _sets(ctx: AppContext, args: argparse.Namespace) -> int:
     return 0
 
 
+def _eval(ctx: AppContext, args: argparse.Namespace) -> int:
+    """The Evaluation page's report; a Test set run is logged like one from the page."""
+    request = EvaluationRequest(set_name=args.set_name, rubric_version=args.rubric_version)
+    try:
+        report = run_evaluation(ctx, request)
+    except UnknownRubricVersionError as error:
+        sys.stderr.write(f"{error}\n")
+        return 1
+    sys.stdout.write(f"{report.model_dump_json()}\n" if args.json else report_text(report))
+    return 0
+
+
 def _items(ctx: AppContext, args: argparse.Namespace) -> list[WorkItem]:
     if args.command == "ingest":
         return ingest_items(args.source, args.indices, with_meta=ctx.meta is not None)
+    if args.command == "ask":
+        ids = args.episode_ids or [e.id for e in ctx.episodes.list()]
+        return visual_items(ctx.rubrics.latest(), ids)
+    if args.command == "reasons":
+        return reason_items(ctx)
+    if args.command == "export":
+        return export_items(ctx, args.out.resolve(), args.include)
     source = ctx.sources[args.source]
     assert isinstance(source, Droid101)
     sample = sample_indices([*source.index.values()], args.size, args.seed)
@@ -105,8 +179,10 @@ def main(
     try:
         if args.command == "sets":
             return _sets(ctx, args)
-        if args.command == "select" and ctx.meta is None:
-            sys.stderr.write("The selection pass calls Spark: set MODEL_API_KEY in .env\n")
+        if args.command == "eval":
+            return _eval(ctx, args)
+        if args.command in ("select", "ask", "reasons") and ctx.meta is None:
+            sys.stderr.write(f"`winnow {args.command}` calls Spark: set MODEL_API_KEY in .env\n")
             return 2
         return asyncio.run(_run(ctx, args.command, _items(ctx, args)))
     finally:

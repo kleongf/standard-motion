@@ -31,7 +31,10 @@ def test_a_droid101_episode_ingests_into_the_same_shape_with_joints_and_extrinsi
     [episode] = api.get("/api/episodes").json()
     assert episode["id"] == "droid_1.0.1:2"
     assert episode["instruction"] == "Move the cup to the left"
-    assert episode["dataset_outcome"] is False
+    stored = app_context(api).episodes.get(episode["id"])
+    assert (
+        stored is not None and stored.dataset_outcome is False
+    )  # hidden by the API until labelled
     assert episode["frames"] == 36
     assert episode["cameras"] == [
         "exterior_image_1_left",

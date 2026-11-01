@@ -73,6 +73,8 @@ class EpisodeStore:
         db.executescript(SCHEMA)
         ensure_column(db, "episodes", "task_object", "TEXT")
         ensure_column(db, "episodes", "task_target", "TEXT")
+        # Where the source dropped the instruction, the Reference labeller writes one.
+        ensure_column(db, "episodes", "written_instruction", "TEXT")
 
     def folder(self, source: str, index: int) -> Path:
         return self._root / source / f"{index:06d}"
@@ -114,6 +116,11 @@ class EpisodeStore:
             (task_object, task_target, id),
         )
 
+    def write_instruction(self, id: str, instruction: str) -> None:
+        self._db.execute(
+            "UPDATE episodes SET written_instruction = ? WHERE id = ?", (instruction, id)
+        )
+
     def list(self) -> list[Episode]:
         rows = self._db.execute("SELECT * FROM episodes ORDER BY source, source_index")
         return [self._episode(row) for row in rows]
@@ -153,7 +160,7 @@ class EpisodeStore:
             id=row["id"],
             source=row["source"],
             index=row["source_index"],
-            instruction=row["instruction"],
+            instruction=row["instruction"] or row["written_instruction"],
             dataset_outcome=None if outcome is None else bool(outcome),
             frames=row["frames"],
             fps=row["fps"],

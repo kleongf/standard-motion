@@ -16,13 +16,19 @@ import json
 import sqlite3
 from pathlib import Path
 
+from winnow.meta.audio import parse_transcript, transcript_json
 from winnow.meta.cache import CachedReply, MetaCache
-from winnow.meta.models import MetaContent
+from winnow.meta.models import MetaContent, Transcript
 from winnow.meta.transport import Reply, Transport
 
 
 class UnrecordedCallError(RuntimeError):
     pass
+
+
+# The browser captures each turn live, so no two turns' audio match byte for byte: a recorded
+# transcript is keyed by model and options alone, and answers any audio.
+ANY_AUDIO: MetaContent = [{"type": "input_audio"}]
 
 
 def _unrecorded(model: str, content: MetaContent) -> UnrecordedCallError:
@@ -42,6 +48,9 @@ class OfflineTransport:
 
     async def respond(self, model: str, content: MetaContent, options: dict[str, object]) -> Reply:
         raise _unrecorded(model, content)
+
+    async def transcribe(self, model: str, audio: Path, options: dict[str, object]) -> Transcript:
+        raise _unrecorded(model, ANY_AUDIO)
 
 
 def export_recordings(db: sqlite3.Connection, path: Path) -> int:
@@ -110,12 +119,21 @@ class RecordingTransport:
             {**part, "file_id": self._names[str(part["file_id"])]} if "file_id" in part else part
             for part in content
         ]
-        row = {"key": _replay_key(model, portable, options), "model": model}
+        self._write(_replay_key(model, portable, options), model, reply)
+        return reply
+
+    async def transcribe(self, model: str, audio: Path, options: dict[str, object]) -> Transcript:
+        transcript = await self._inner.transcribe(model, audio, options)
+        reply = Reply(transcript_json(transcript), {})
+        self._write(_replay_key(model, ANY_AUDIO, options), model, reply)
+        return transcript
+
+    def _write(self, key: str, model: str, reply: Reply) -> None:
+        row = {"key": key, "model": model}
         row |= {"text": reply.text, "usage": reply.usage, "incomplete": reply.incomplete}
         self._path.parent.mkdir(parents=True, exist_ok=True)
         with self._path.open("a") as out:
             out.write(json.dumps(row) + "\n")
-        return reply
 
 
 class ReplayTransport:
@@ -140,3 +158,9 @@ class ReplayTransport:
         if reply is None:
             raise _unrecorded(model, content)
         return reply
+
+    async def transcribe(self, model: str, audio: Path, options: dict[str, object]) -> Transcript:
+        reply = self._replies.get(_replay_key(model, ANY_AUDIO, options))
+        if reply is None:
+            raise _unrecorded(model, ANY_AUDIO)
+        return parse_transcript(reply.text)

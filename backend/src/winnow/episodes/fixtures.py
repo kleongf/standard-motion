@@ -19,35 +19,65 @@ from winnow.episodes.droid100 import CAMERAS, FPS
 INSTRUCTIONS = ("Put the marker in the pot", "Move the black remote control to the left", "")
 
 
+def failed(index: int) -> bool:
+    """Every third Episode failed: its Dataset outcome says so, and it took two failed grasp
+    attempts before the grasp."""
+    return index % 3 == 2
+
+
+def carry_climb(index: int) -> float:
+    """How fast the arm climbs while carrying, in m per Episode length. Episodes with
+    i % 3 == 1 climb faster, so they release 4.4 cm (i % 6 == 1) or 5.3 cm (i % 6 == 4) above
+    where they picked up: inside the seeded release height's margin (5 cm ± 1 cm), so each
+    needs review, the 5.3 cm ones with less confidence. Robot data only: recorded Meta replies
+    still hold."""
+    return 0.17 + 0.01 * (index % 6) if index % 3 == 1 else 0.10
+
+
 def sliding_block(index: int) -> str:
     """A red block sliding right over grey, under the wrist seed point (190,105) at about 1 s.
-    Its start shifts a little per Episode."""
+    Its start shifts a little per Episode, right through five Episodes and then down, so it
+    stays under the seed point and no two Episodes share a clip."""
     return (
         f"color=c=0x5a6470:size=320x180:rate={FPS:g}[bg];"
         f"color=c=0xd03030:size=60x40:rate={FPS:g}[fg];"
-        f"[bg][fg]overlay=x='{110 + 4 * index}+40*t':y=85"
+        f"[bg][fg]overlay=x='{110 + 4 * (index % 5)}+40*t':y={85 + 2 * (index // 5)}"
     )
 
 
-def state(frames: int, closes: bool = True) -> np.ndarray:
-    """End-effector xyz + roll/pitch/yaw + gripper per frame (droid_100's `observation.state`)."""
+def state(
+    frames: int, closes: bool = True, regrasps: bool = False, climb: float = 0.10
+) -> np.ndarray:
+    """End-effector xyz + roll/pitch/yaw + gripper per frame (droid_100's `observation.state`).
+
+    One closure while carrying by default. With `regrasps`, Episode 42's shape: two closures at
+    the object's height that lift nothing, then the grasp that lifts it. The first closure starts
+    on the same frame either way, so the wrist track's seed (and its recording) doesn't move.
+    """
     t = np.linspace(0.0, 1.0, frames)
     x = 0.4 + 0.2 * t
     z = 0.25 - 0.15 * np.sin(np.pi * np.clip(t * 2, 0, 1))  # dip to the object, then lift
-    z = np.where(t > 0.5, 0.10 + 0.10 * (t - 0.5), z)
-    gripper = ((t > 0.3) & (t < 0.8) & closes).astype(np.float64)  # closed while carrying
+    z = np.where(t > 0.5, 0.10 + climb * (t - 0.5), z)
+    closed = (t > 0.3) & (t < 0.8)  # closed while carrying
+    if regrasps:
+        z = np.where(t < 0.3, 0.25 - 0.5 * t, np.where(t < 0.65, 0.10, 0.10 + 0.25 * (t - 0.65)))
+        closed = ((t > 0.3) & (t < 0.4)) | ((t > 0.45) & (t < 0.55)) | ((t > 0.6) & (t < 0.9))
+    gripper = (closed & closes).astype(np.float64)
     state = np.zeros((frames, 7))
     state[:, 0], state[:, 1], state[:, 2], state[:, 6] = x, 0.0, z, gripper
     return state
 
 
 def _write_parquet(root: Path, episodes: int, frames: int, open_gripper: tuple[int, ...]) -> None:
-    states = [state(frames, closes=i not in open_gripper) for i in range(episodes)]
+    states = [
+        state(frames, closes=i not in open_gripper, regrasps=failed(i), climb=carry_climb(i))
+        for i in range(episodes)
+    ]
     rows = episodes * frames
     episode_index = np.repeat(np.arange(episodes), frames)
     frame_index = np.tile(np.arange(frames), episodes)
     reward = np.zeros(rows)
-    reward[frames - 1 :: frames] = [1.0 if i % 3 != 2 else 0.0 for i in range(episodes)]
+    reward[frames - 1 :: frames] = [0.0 if failed(i) else 1.0 for i in range(episodes)]
     table = pa.table(  # pyright: ignore[reportUnknownMemberType]
         {
             "observation.state": [list(map(float, r)) for s in states for r in s],
@@ -69,14 +99,15 @@ def _write_parquet(root: Path, episodes: int, frames: int, open_gripper: tuple[i
     pq.write_table(tasks, meta / "tasks.parquet")  # pyright: ignore[reportUnknownMemberType]
 
 
-def write_clip(path: Path, frames: int, pattern: str) -> None:
-    """`pattern` is a lavfi test source's name, or a whole lavfi graph."""
+def write_clip(path: Path, frames: int, pattern: str, *options: str) -> None:
+    """`pattern` is a lavfi test source's name, or a whole lavfi graph; `options` are more of
+    x264's."""
     path.parent.mkdir(parents=True, exist_ok=True)
     source = pattern if "=" in pattern else f"{pattern}=size=320x180:rate={FPS:g}"
     subprocess.run(
         [
             *("ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", source),
-            *("-frames:v", str(frames), "-c:v", "libx264", "-pix_fmt", "yuv420p"),
+            *("-frames:v", str(frames), "-c:v", "libx264", "-pix_fmt", "yuv420p", *options),
             *("-bitexact", "-map_metadata", "-1", str(path)),
         ],
         check=True,

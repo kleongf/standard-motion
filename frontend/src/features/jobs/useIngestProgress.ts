@@ -5,7 +5,7 @@ import { useEffect } from "react";
 
 import { useLatestJob } from "./useLatestJob";
 
-const CHANGED_BY_INGEST = [["dataset"], ["episodes"], ["selection"], ["tracks"]];
+const CHANGED_BY_INGEST = [["dataset"], ["episodes"], ["selection"], ["tracks"], ["triage"]];
 
 export function useIngestProgress() {
   const job = useLatestJob("ingest");

@@ -32,7 +32,7 @@ def test_the_route_defines_and_freezes_a_set(ingested: TestClient):
     assert add(ingested, "dev", "droid_100:1", "droid_100:0").status_code == 200
     assert add(ingested, "dev", "droid_100:2", "droid_100:1").status_code == 200  # top up
 
-    frozen = ingested.post("/api/sets/dev/freeze")
+    frozen = ingested.post("/api/sets/dev/freeze", json={"force": True})
 
     assert frozen.status_code == 200
     dev = sets(ingested)["dev"]
@@ -43,7 +43,7 @@ def test_the_route_defines_and_freezes_a_set(ingested: TestClient):
 
 def test_changing_a_frozen_sets_membership_is_refused(ingested: TestClient):
     add(ingested, "test", "droid_100:0")
-    frozen_at = ingested.post("/api/sets/test/freeze").json()["frozen_at"]
+    frozen_at = ingested.post("/api/sets/test/freeze", json={"force": True}).json()["frozen_at"]
 
     added = add(ingested, "test", "droid_100:1")
     removed = ingested.delete("/api/sets/test/episodes/droid_100:0")
@@ -93,7 +93,7 @@ def test_the_cli_defines_and_freezes_sets(
 ):
     assert main(["sets", "add", "dev", "droid_100:0", "droid_100:1"], settings=settings) == 0
     assert main(["sets", "remove", "dev", "droid_100:1"], settings=settings) == 0
-    assert main(["sets", "freeze", "dev"], settings=settings) == 0
+    assert main(["sets", "freeze", "dev", "--yes"], settings=settings) == 0
     capsys.readouterr()
 
     refused = main(["sets", "add", "dev", "droid_100:2"], settings=settings)

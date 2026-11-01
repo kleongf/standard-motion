@@ -12,7 +12,7 @@ Describe what a good robot demonstration looks like in English; Winnow judges ev
 pnpm verify
 ```
 
-Runs backend and frontend typecheck, lint, format check, and tests; checks the generated API types are current and file sizes are in limits; then boots the app and runs the Playwright e2e tests.
+Runs backend and frontend typecheck, lint, format check, and tests; checks the generated API types are current and file sizes are in limits; then boots the app and runs the Playwright e2e tests. Its three parts run alone as `pnpm verify:backend`, `verify:frontend` and `verify:e2e`, which CI runs as parallel jobs.
 
 **Done means** `pnpm verify` passes **and** you have exercised the change in the running app: `pnpm exercise <path> [--click <text>]...` saves screenshots plus console and network errors to `artifacts/exercise/`. Look at the screenshots.
 
@@ -28,6 +28,7 @@ Setup: `pnpm install && uv sync --project backend && pnpm exec playwright instal
 - **Size limits:** 300 lines per source file (500 for tests), cyclomatic complexity 10. Split by responsibility when you hit them; don't raise the limit.
 - **Naming:** Python `snake_case` modules, `PascalCase` models; TS components in `PascalCase.tsx`, everything else `camelCase`.
 - **Datasets:** read LeRobot parquet and mp4 directly (pyarrow, ffmpeg); don't depend on the `lerobot` package.
+- **e2e Episodes:** all specs share one server whose labels, sets and boxes are permanent, so each spec claims its own fixture Episodes in `EPISODES` (`e2e/helpers.ts`) and ingests, changes and asserts on only those; every spec must pass alone (`playwright test e2e/<file>`).
 
 ## Agent skills
 

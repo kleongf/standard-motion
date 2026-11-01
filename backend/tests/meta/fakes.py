@@ -6,8 +6,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from winnow.meta.client import MetaClient
-from winnow.meta.models import MetaContent
+from winnow.meta.models import MetaContent, Transcript
 from winnow.meta.transport import Reply
+
+
+class NoTranscribe:
+    """For a scripted transport whose tests never transcribe."""
+
+    async def transcribe(self, model: str, audio: Path, options: dict[str, object]) -> Transcript:
+        raise AssertionError(f"{type(self).__name__} doesn't transcribe")
 
 
 @dataclass
@@ -19,15 +26,23 @@ class FakeTransport:
     gate: asyncio.Event | None = None  # when set, calls wait for it, to hold them in flight
     calls: list[tuple[str, MetaContent]] = field(default_factory=list[tuple[str, MetaContent]])
     uploads: list[Path] = field(default_factory=list[Path])
+    transcript: Transcript = field(default_factory=lambda: Transcript(turns=()))
+    transcribed: list[Path] = field(default_factory=list[Path])
     in_flight: int = 0
     max_in_flight: int = 0
 
     async def upload(self, path: Path) -> str:
         self.uploads.append(path)
-        return f"file-{len(self.uploads)}"
+        file_id = f"file-{len(self.uploads)}"
+        await asyncio.sleep(0)  # a real upload yields while it sends
+        return file_id
 
     async def count_tokens(self, model: str, content: MetaContent) -> int:
         return 1000
+
+    async def transcribe(self, model: str, audio: Path, options: dict[str, object]) -> Transcript:
+        self.transcribed.append(audio)
+        return self.transcript
 
     async def respond(self, model: str, content: MetaContent, options: dict[str, object]) -> Reply:
         self.calls.append((model, content))

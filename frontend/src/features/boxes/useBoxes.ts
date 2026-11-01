@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { components } from "../../api/schema";
 import { datasetStatusKey } from "../dataset/useDatasetStatus";
+import { latestJobKey } from "../jobs/useLatestJob";
 
 export type Box = components["schemas"]["Box"];
 export type BoxDraw = components["schemas"]["BoxDraw"];
@@ -39,6 +40,7 @@ export function useSaveBox() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: boxesKey }),
         queryClient.invalidateQueries({ queryKey: datasetStatusKey }),
+        queryClient.invalidateQueries({ queryKey: latestJobKey("box") }), // the work it queued
       ]);
     },
   });

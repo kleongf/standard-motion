@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 from meta_sam_parser import SegmentationBoxRecord, video_segmentation_format
 
+from winnow.tracking.models import TrackBox
+
 
 @dataclass(frozen=True)
 class TrackedBox:
@@ -37,4 +39,17 @@ def parse_boxes(text: str) -> list[TrackedBox]:
         )
         for record in snapshots[-1].records
         if isinstance(record, SegmentationBoxRecord)
+    ]
+
+
+def one_per_frame(boxes: list[TrackedBox]) -> list[TrackBox]:
+    """SAM may report more than one box on a frame; keep its most confident."""
+    best: dict[int, TrackedBox] = {}
+    for box in boxes:
+        kept = best.get(box.frame)
+        if kept is None or (box.confidence or 0) > (kept.confidence or 0):
+            best[box.frame] = box
+    return [
+        TrackBox(frame=b.frame, left=b.left, top=b.top, right=b.right, bottom=b.bottom)
+        for b in sorted(best.values(), key=lambda b: b.frame)
     ]

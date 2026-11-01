@@ -29,10 +29,23 @@ class CostLog:
         self._reserved_usd = 0.0  # estimates of calls in flight in this process
 
     def spent_usd(self) -> float:
+        return sum(entry.usd for entry in self.entries())
+
+    def entries(self) -> list[CostEntry]:
+        """Every logged call, oldest first; a cache hit is logged at $0."""
         if not self.path.exists():
-            return 0.0
-        lines = self.path.read_text().splitlines()
-        return sum(float(json.loads(line)["usd"]) for line in lines if line.strip())
+            return []
+        rows = [json.loads(line) for line in self.path.read_text().splitlines() if line.strip()]
+        return [
+            CostEntry(
+                str(row["model"]),
+                str(row["purpose"]),
+                float(row["usd"]),
+                float(row.get("latency_s", 0.0)),
+                dict(row.get("detail", {})),
+            )
+            for row in rows
+        ]
 
     def ensure_affordable(self, estimate_usd: float) -> None:
         committed = self.spent_usd() + self._reserved_usd

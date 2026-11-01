@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from winnow.meta.models import Image, Part, Text, Video
+from winnow.meta.models import Audio, Image, Part, Text, Video
 from winnow.meta.transport import Reply
 
 SCHEMA = """
@@ -48,6 +48,8 @@ def _part_key(part: Part) -> dict[str, str]:
             return {"video": file_sha256(path)}
         case Image(path):
             return {"image": file_sha256(path)}
+        case Audio(path):
+            return {"audio": file_sha256(path)}
 
 
 def request_key(
