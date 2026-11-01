@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { EPISODES, episodeId, ingest, referenceLabel } from "./helpers.ts";
 
@@ -30,6 +30,21 @@ test.beforeEach(async ({ request }) => {
   await referenceLabel(request, [ID]);
 });
 
+/** One push-to-talk turn on V, which counts once the microphone is live; resolves when its
+ * POST /voice has answered. */
+async function speak(page: Page) {
+  const heard = page.waitForResponse(
+    (r) => r.request().method() === "POST" && r.url().endsWith("/voice"),
+  );
+  const voice = page.getByRole("region", { name: "Voice" });
+  await page.keyboard.down("v");
+  // "Listening" waits for the microphone's first audio: only then does the hold count.
+  await expect(voice.getByRole("button", { name: /Listening/ })).toBeVisible();
+  await page.waitForTimeout(1500); // talk: a turn under 0.3 s isn't sent
+  await page.keyboard.up("v");
+  expect((await heard).ok()).toBe(true);
+}
+
 test("a confirmed chip from a spoken turn takes the Episode out of the queue", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (err) => errors.push(err.message));
@@ -40,13 +55,13 @@ test("a confirmed chip from a spoken turn takes the Episode out of the queue", a
   const voice = page.getByRole("region", { name: "Voice" });
   await expect(voice).toBeVisible();
 
-  await page.keyboard.down("v");
-  // "Listening" waits for the microphone's first audio: only then does the hold count.
-  await expect(voice.getByRole("button", { name: /Listening/ })).toBeVisible();
-  await page.waitForTimeout(1500); // talk: a turn under 0.3 s isn't sent
-  await page.keyboard.up("v");
+  await speak(page);
 
   await expect(voice.getByTestId("voice-heard")).toContainText("It drops the marker right here");
+  await expect(voice.getByRole("alert")).toHaveCount(0);
+  // The microphone stays open between turns: the next press records on it at once.
+  await expect(voice.getByTestId("mic-on")).toBeVisible();
+  await speak(page);
   await expect(voice.getByRole("alert")).toHaveCount(0);
   const chip = voice.getByRole("group", { name: NEVER_DROPS });
   await expect(chip).toContainText("Fail");
