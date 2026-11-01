@@ -1,8 +1,9 @@
 """Moving an Episode's meta/episodes row and frames to its place in the export."""
 
 import pyarrow as pa
+import pytest
 
-from winnow.export.tables import rebased
+from winnow.export.tables import rebased, renumbered
 
 QUANTILES = ("q01", "q10", "q50", "q90", "q99")
 
@@ -36,3 +37,10 @@ def test_rebasing_shifts_every_index_stat_but_std_and_remaps_the_task():
     assert moved["stats/task_index/mean"] == [0.0]
     assert moved["stats/task_index/std"] == [0.0]
     assert all(moved[f"stats/task_index/{q}"] == [0.0] for q in QUANTILES)
+
+
+def test_renumbering_a_task_index_the_export_has_no_task_for_raises():
+    frames = pa.table({"episode_index": [3, 3], "task_index": [4, 9]})  # pyright: ignore[reportUnknownMemberType]
+
+    with pytest.raises(ValueError, match="task_index 9"):
+        renumbered(frames, 0, 0, {4: 0})

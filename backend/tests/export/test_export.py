@@ -3,6 +3,7 @@ Reason beside it. The Test set is never exported."""
 
 import json
 from collections.abc import Iterator
+from datetime import datetime
 from pathlib import Path
 from typing import cast
 
@@ -246,6 +247,36 @@ def test_every_episode_not_kept_is_listed_with_its_reason(exported: Path):
     ]
 
 
+def test_the_manifest_maps_each_exported_episode_to_its_source_and_the_counts_add_up(
+    exported: Path, api: TestClient
+):
+    manifest = json.loads((exported / "manifest.json").read_text())
+
+    kept = [("droid_1.0.1", new, old) for new, old in enumerate(KEPT_101)] + [("droid_100", 0, 1)]
+    assert manifest["kept"] == [
+        {
+            "exported_episode_index": new,
+            "source": source,
+            "source_episode_index": old,
+            "episode_id": f"{source}:{old}",
+            "decision": "keep",
+        }
+        for source, new, old in kept
+    ]
+    assert manifest["skipped"] == {"reject": 2, "needs_review": 0, "test_set": 2}
+    ctx = app_context(api)
+    assert len(manifest["kept"]) + sum(manifest["skipped"].values()) == len(ctx.episodes.list())
+    rejections = (exported / "rejections.jsonl").read_text().splitlines()
+    assert len(rejections) == manifest["skipped"]["reject"] + manifest["skipped"]["needs_review"]
+    for source in ("droid_1.0.1", "droid_100"):
+        info = json.loads((exported / source / "meta" / "info.json").read_text())
+        assert info["total_episodes"] == sum(k["source"] == source for k in manifest["kept"])
+    assert manifest["rubric_version"] == ctx.rubrics.latest().version
+    assert manifest["margin_multiplier"] == 1.0
+    assert manifest["not_reference_labelled"] == 2
+    assert datetime.fromisoformat(manifest["created_at"]).tzinfo is not None
+
+
 def test_cli_exports_to_the_folder_given_and_never_over_another_export(
     api: TestClient, settings: Settings, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ):
@@ -257,7 +288,8 @@ def test_cli_exports_to_the_folder_given_and_never_over_another_export(
         f"yet), to {out}"
     )
     assert written in capsys.readouterr().out
-    assert sorted(p.name for p in out.iterdir()) == ["droid_1.0.1", "droid_100", "rejections.jsonl"]
+    names = sorted(p.name for p in out.iterdir())
+    assert names == ["droid_1.0.1", "droid_100", "manifest.json", "rejections.jsonl"]
     assert main(["export", str(out)], settings=settings) == 1
     assert "already exists" in capsys.readouterr().out
 

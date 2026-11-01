@@ -1,6 +1,7 @@
 """The export: every kept Episode (see plan.py for which), written per source as a LeRobot v3.0
-dataset, with the Reason for each one not kept in rejections.jsonl. The Test set is never
-exported, its Reasons neither."""
+dataset, with the Reason for each one not kept in rejections.jsonl and, in manifest.json, where
+each kept Episode came from and what decided it. The Test set is never exported, its Reasons
+neither."""
 
 import asyncio
 import shutil
@@ -19,6 +20,7 @@ from winnow.export.plan import ExportPlan, export_plan
 from winnow.jobs.models import Step, WorkItem
 
 REJECTIONS = "rejections.jsonl"
+MANIFEST = "manifest.json"  # what the export holds and what it was decided with
 
 
 class ExportError(Exception):
@@ -45,6 +47,8 @@ def write_export(sources: Mapping[str, Source], plan: ExportPlan, out: Path) -> 
         write_lerobot(_exporter(sources[name]), indices, partial / name)
     lines = "".join(f"{r.model_dump_json()}\n" for r in plan.rejections)
     (partial / REJECTIONS).write_text(lines)
+    manifest = plan.manifest(datetime.now(UTC)).model_dump_json(indent=2)
+    (partial / MANIFEST).write_text(manifest + "\n")
     partial.replace(out)
 
 

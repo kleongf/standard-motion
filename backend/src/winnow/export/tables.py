@@ -69,7 +69,10 @@ def renumbered(frames: pa.Table, new: int, start: int, tasks: Mapping[int, int])
     table = _replaced(table, "index", list(range(start, start + count)))
     if "task_index" in table.column_names:
         old = [int(str(t)) for t in table.column("task_index").to_pylist()]
-        table = _replaced(table, "task_index", [tasks.get(t, t) for t in old])
+        unknown = sorted(set(old) - set(tasks))
+        if unknown:
+            raise ValueError(f"task_index {unknown[0]} has no task among the exported Episodes'")
+        table = _replaced(table, "task_index", [tasks[t] for t in old])
     return table
 
 

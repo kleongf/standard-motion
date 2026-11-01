@@ -5,10 +5,11 @@ UI can warn before it runs."""
 
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime
 
 from winnow.core.context import AppContext
 from winnow.episodes.models import Episode
-from winnow.export.models import ExportScope, Rejection
+from winnow.export.models import ExportScope, Manifest, ManifestEpisode, Rejection, Skipped
 from winnow.reference_labels.gate import revealed_ids
 from winnow.triage.service import plain_reason, scored
 
@@ -18,6 +19,36 @@ class ExportPlan:
     kept: dict[str, list[int]]  # source -> its kept Episodes' indices, ascending
     rejections: list[Rejection]
     unlabelled: int  # of the Episodes decided, those without a Reference label
+    test_set: int  # Episodes left out for being in it
+    rubric_version: int
+    s: float  # the margin multiplier the version is scored with
+
+    def manifest(self, created_at: datetime) -> Manifest:
+        """Each source's kept Episodes are renumbered from 0 in order, as they're written."""
+        kept = [
+            ManifestEpisode(
+                exported_episode_index=new,
+                source=source,
+                source_episode_index=index,
+                episode_id=f"{source}:{index}",
+                decision="keep",
+            )
+            for source in sorted(self.kept)
+            for new, index in enumerate(self.kept[source])
+        ]
+        decisions = [r.decision for r in self.rejections]
+        return Manifest(
+            created_at=created_at.isoformat(),
+            rubric_version=self.rubric_version,
+            margin_multiplier=self.s,
+            not_reference_labelled=self.unlabelled,
+            kept=kept,
+            skipped=Skipped(
+                reject=decisions.count("reject"),
+                needs_review=decisions.count("needs_review"),
+                test_set=self.test_set,
+            ),
+        )
 
     def summary(self, out: str) -> str:
         kept = sum(len(indices) for indices in self.kept.values())
@@ -30,9 +61,13 @@ class ExportPlan:
         )
 
 
+def _test_set(ctx: AppContext) -> set[str]:
+    return set(ctx.sets.get("test").episode_ids)
+
+
 def _decided(ctx: AppContext) -> list[Episode]:
     """Every Episode the export decides on: all those outside the Test set."""
-    test_set = set(ctx.sets.get("test").episode_ids)
+    test_set = _test_set(ctx)
     return [e for e in ctx.episodes.list() if e.id not in test_set]
 
 
@@ -48,7 +83,7 @@ def export_scope(ctx: AppContext) -> ExportScope:
 
 def export_plan(ctx: AppContext) -> ExportPlan:
     episodes = _decided(ctx)
-    _, triages = scored(ctx, episodes)
+    version, triages = scored(ctx, episodes)
     kept: defaultdict[str, list[int]] = defaultdict(list)
     rejections: list[Rejection] = []
     for episode, triage in zip(episodes, triages, strict=True):
@@ -67,4 +102,7 @@ def export_plan(ctx: AppContext) -> ExportPlan:
         kept={source: sorted(i) for source, i in kept.items()},
         rejections=rejections,
         unlabelled=export_scope(ctx).unlabelled,
+        test_set=len(_test_set(ctx)),
+        rubric_version=version.version,
+        s=ctx.calibrations.s_for(version.version),
     )
