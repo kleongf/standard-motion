@@ -6,6 +6,7 @@ import { useCallback, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
+import { useHealth } from "../core/useHealth";
 import type { Playhead } from "../episodes/usePlayhead";
 import type { StartCapture } from "./capture";
 import { usePushToTalk, type TalkPhase } from "./usePushToTalk";
@@ -20,6 +21,13 @@ interface Props {
   /** Saves the chip's answer as a `review` label; the chip leaves once it resolves. */
   onConfirm: (phrase: string, value: HeardChip["value"]) => Promise<unknown>;
   start?: StartCapture; // the microphone; tests pass a fake one
+}
+
+/** Shown only when the Meta API (or a replay of it) can hear a turn: without it, V does
+ * nothing. */
+export function VoicePanel(props: Props) {
+  const health = useHealth();
+  return health.data?.meta_available ? <Voice {...props} /> : null;
 }
 
 /** The turns heard so far, each landing on its own: a turn heard later than the next one began
@@ -59,7 +67,7 @@ function useHeardTurns(episodeId: string) {
   return { chips, heard, hearing: hearing > 0, error, onTurn, drop };
 }
 
-export function VoicePanel(props: Props) {
+function Voice(props: Props) {
   const { playhead } = props;
   const turns = useHeardTurns(props.episodeId);
   const talk = usePushToTalk({ t: playhead.t, onTurn: turns.onTurn, start: props.start });

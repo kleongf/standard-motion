@@ -168,3 +168,32 @@ test("a turn too short to hear says so in an alert", async () => {
     "Too short to hear: hold V while you talk",
   );
 });
+
+test("without the Meta API there is no Voice panel, and V opens no microphone", async () => {
+  stubBackend({ metaAvailable: false });
+  const start = vi.fn(mic);
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={client}>
+      <VoicePanel
+        episodeId="droid_100:1"
+        unsure={[NEVER_DROPS]}
+        playhead={playhead}
+        saving={false}
+        onConfirm={() => Promise.resolve()}
+        start={start}
+      />
+    </QueryClientProvider>,
+  );
+  await waitFor(() => {
+    expect(globalThis.fetch).toHaveBeenCalled();
+  });
+  await act(async () => {
+    await Promise.resolve();
+  });
+
+  fireEvent.keyDown(globalThis.window, { key: "v", code: "KeyV" });
+
+  expect(screen.queryByRole("region", { name: "Voice" })).not.toBeInTheDocument();
+  expect(start).not.toHaveBeenCalled();
+});
