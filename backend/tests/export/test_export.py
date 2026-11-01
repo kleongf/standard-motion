@@ -13,7 +13,7 @@ import pyarrow.parquet as pq
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.helpers import app_context, decoded, reference_label, wait_for_job
+from tests.helpers import app_context, decoded, reference_label, rgb, wait_for_job
 from winnow.app import create_app
 from winnow.baseline.prompts import FROZEN
 from winnow.cli import main
@@ -24,6 +24,7 @@ from winnow.episodes.droid101_files import LocalFiles
 from winnow.episodes.fixtures import clip_path
 from winnow.episodes.models import EpisodeSignals
 from winnow.export.service import export_kept
+from winnow.export.stats import QUANTILES
 from winnow.labels.models import LabelDraw
 from winnow.labels.service import save_label
 from winnow.rubric.models import Rubric
@@ -187,6 +188,31 @@ def test_stats_json_holds_the_stats_of_the_exported_data_on_both_sources(exporte
             assert ours["count"] == [data.num_rows]
             low, middle, high = (np.asarray(ours[q]) for q in ("q01", "q50", "q99"))
             assert (low <= middle).all() and (middle <= high).all(), column
+
+
+def test_stats_json_holds_every_cameras_pixel_stats_on_both_sources(exported: Path):
+    # lerobot-train gives every camera ImageNet's mean and std by default, which fails on a
+    # camera stats.json has nothing for; and normalizing by the data's own needs them anyway.
+    for name in ("droid_100", "droid_1.0.1"):
+        out = exported / name
+        stats = json.loads((out / "meta" / "stats.json").read_text())
+        info = json.loads((out / "meta" / "info.json").read_text())
+        cameras = [key for key, f in info["features"].items() if f["dtype"] == "video"]
+
+        assert len(cameras) == 3, name
+        for camera in cameras:
+            assert camera in stats, (name, camera)
+            ours = {stat: np.asarray(value) for stat, value in stats[camera].items()}
+            assert set(ours) == {"min", "max", "mean", "std", "count", *QUANTILES}
+            assert all(v.shape == (3, 1, 1) for s, v in ours.items() if s != "count"), camera
+            folder = out / "videos" / camera / "chunk-000"
+            pixels = np.concatenate([rgb(clip) for clip in sorted(folder.glob("*.mp4"))]) / 255
+            # Episodes under 100 frames have every frame sampled, at half size, as LeRobot does.
+            assert ours["count"].tolist() == [info["total_frames"]]
+            np.testing.assert_allclose(ours["mean"].ravel(), pixels.mean(axis=(0, 1, 2)), atol=0.01)
+            np.testing.assert_allclose(ours["std"].ravel(), pixels.std(axis=(0, 1, 2)), atol=0.01)
+            assert (ours["min"] >= 0).all() and (ours["max"] <= 1).all(), camera
+            assert (ours["q01"] <= ours["q50"]).all() and (ours["q50"] <= ours["q99"]).all()
 
 
 def test_droid100_exports_every_column_of_its_kept_episode_renumbered(

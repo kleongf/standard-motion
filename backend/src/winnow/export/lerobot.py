@@ -1,6 +1,7 @@
 """Writes chosen Episodes of a source as one LeRobot v3.0 dataset, renumbered from 0 in the
 order given: every column of the source's data, one data file, and one video file per Episode
-and camera, located by meta/episodes, with meta/stats.json combining their stats."""
+and camera, located by meta/episodes, with meta/stats.json combining their stats (a camera's
+computed from its clip where the source has none)."""
 
 import json
 from collections.abc import Mapping
@@ -13,6 +14,7 @@ import pyarrow.parquet as pq
 from winnow.export.info import CHUNKS_SIZE, DATA_PATH, VIDEO_PATH, info_json, video_feature
 from winnow.export.stats import aggregate_stats
 from winnow.export.tables import Placed, rebased, renumbered, tasks_table, video_keys
+from winnow.export.video_stats import video_stats
 
 EPISODES_PATH = "meta/episodes/chunk-000/file-000.parquet"
 
@@ -66,6 +68,26 @@ def _place(
     return Placed(chunk, file, source.write_video(row, key, path)), path
 
 
+def _with_video_stats(
+    row: dict[str, Any], clips: Mapping[str, tuple[Placed, Path]]
+) -> dict[str, Any]:
+    """The row with each camera's stats, computed from its exported clip where the source has
+    none: LeRobot's training reads them for every camera."""
+    for key, (placed, clip) in clips.items():
+        if row.get(f"stats/{key}/mean") is None:
+            row |= video_stats(clip, placed.from_timestamp, int(row["length"]), key)
+    return row
+
+
+def _episodes_table(rows: list[dict[str, Any]], source: pa.Schema) -> pa.Table:
+    """The exported meta/episodes, in the source's schema plus any stats columns added."""
+    added = [name for name in rows[0] if source.get_field_index(name) < 0] if rows else []
+    if not added:
+        return pa.Table.from_pylist(rows, schema=source)
+    extra = pa.Table.from_pylist([{name: row[name] for name in added} for row in rows]).schema
+    return pa.Table.from_pylist(rows, schema=pa.unify_schemas([source, extra]))
+
+
 def write_lerobot(source: ExportSource, indices: list[int], out: Path) -> None:
     info = source.info()
     chunks = int((info or {}).get("chunks_size") or CHUNKS_SIZE)
@@ -79,15 +101,15 @@ def write_lerobot(source: ExportSource, indices: list[int], out: Path) -> None:
     start = 0
     for new, row in enumerate(rows):
         frames.append(renumbered(source.frames(row), new, start, task_numbers))
-        videos: dict[str, Placed] = {}
-        for key in keys:
-            videos[key], clip = _place(source, row, key, new, out, chunks)
+        clips = {key: _place(source, row, key, new, out, chunks) for key in keys}
+        for key, (_, clip) in clips.items():
             first_clips.setdefault(key, clip)
-        exported.append(rebased(row, new, start, videos, frames[-1]))
+        videos = {key: placed for key, (placed, _) in clips.items()}
+        exported.append(_with_video_stats(rebased(row, new, start, videos, frames[-1]), clips))
         start += frames[-1].num_rows
     data = pa.concat_tables(frames)
     _write_parquet(data, out / DATA_PATH.format(chunk_index=0, file_index=0))
-    _write_parquet(pa.Table.from_pylist(exported, schema=table.schema), out / EPISODES_PATH)
+    _write_parquet(_episodes_table(exported, table.schema), out / EPISODES_PATH)
     _write_parquet(tasks_table(texts), out / "meta" / "tasks.parquet")
     stats = json.dumps(aggregate_stats(exported), indent=4)
     (out / "meta" / "stats.json").write_text(stats + "\n")

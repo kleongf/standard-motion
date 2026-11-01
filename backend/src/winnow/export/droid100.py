@@ -48,8 +48,8 @@ class Droid100Export:
         return self._data.take(pa.array(self._rows_of(index), type=pa.int64()))
 
     def rows(self, indices: list[int]) -> pa.Table:
-        """Each Episode's row as LeRobot writes it, its stats computed from its frames: video
-        stats aren't, since the clips aren't read."""
+        """Each Episode's row as LeRobot writes it, its stats computed from its frames; the
+        cameras' are left to the exporter, which computes them from the clips it writes."""
         tasks = self.task_texts()
         rows: list[dict[str, Any]] = []
         for index in indices:

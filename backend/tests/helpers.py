@@ -3,12 +3,15 @@ import time
 from pathlib import Path
 from typing import cast
 
+import numpy as np
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from numpy.typing import NDArray
 
 from winnow.baseline.prompts import FROZEN
 from winnow.boxes.models import BoxDraw
 from winnow.core.context import AppContext
+from winnow.episodes.clips import probe
 from winnow.tracking.models import FrameBox, TargetBox, Track, TrackBox, TrackKind
 
 
@@ -79,6 +82,17 @@ def track_cleanly(api: TestClient, episode_id: str) -> None:
             made_at="2026-10-30T00:00:00+00:00",
         )
     )
+
+
+def rgb(clip: Path) -> NDArray[np.uint8]:
+    """A clip's decoded frames as (frames, height, width, 3)."""
+    frames, width, height = probe(clip)
+    out = subprocess.run(
+        ["ffmpeg", "-loglevel", "error", "-i", str(clip), "-f", "rawvideo", "-pix_fmt", "rgb24",
+         "-"],
+        check=True, capture_output=True,
+    ).stdout  # fmt: skip
+    return np.frombuffer(out, np.uint8).reshape(frames, height, width, 3)
 
 
 def reference_label(api: TestClient, episode_id: str) -> None:
