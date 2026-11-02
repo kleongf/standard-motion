@@ -15,23 +15,23 @@ import sys
 import tempfile
 from pathlib import Path
 
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.core.context import AppContext, build_context
+from standard_motion.core.settings import get_settings
+from standard_motion.criteria.measured import seconds
+from standard_motion.episodes.fixtures import write_fixture_source
+from standard_motion.episodes.service import ingest_items
+from standard_motion.episodes.store import episode_id
+from standard_motion.meta.models import MetaContent
+from standard_motion.meta.replay import RecordingTransport, ReplayTransport
+from standard_motion.meta.transport import Reply
+from standard_motion.reference_labels.models import PhraseLabel, ReferenceLabelDraw
+from standard_motion.reference_labels.service import save_label
+from standard_motion.triage.reason_service import reason_items
+from standard_motion.triage.service import template_triages
+from standard_motion.triage.spark_reason import deciding
 from tests.meta.fakes import NoTranscribe
 from tests.record_meta import E2E_EPISODES, RECORDINGS
-from winnow.baseline.prompts import FROZEN
-from winnow.core.context import AppContext, build_context
-from winnow.core.settings import get_settings
-from winnow.criteria.measured import seconds
-from winnow.episodes.fixtures import write_fixture_source
-from winnow.episodes.service import ingest_items
-from winnow.episodes.store import episode_id
-from winnow.meta.models import MetaContent
-from winnow.meta.replay import RecordingTransport, ReplayTransport
-from winnow.meta.transport import Reply
-from winnow.reference_labels.models import PhraseLabel, ReferenceLabelDraw
-from winnow.reference_labels.service import save_label
-from winnow.triage.reason_service import reason_items
-from winnow.triage.service import template_triages
-from winnow.triage.spark_reason import deciding
 
 REASON_ANSWERS = Path(__file__).parent / "recordings" / "reason_answers.jsonl"
 REASON_EPISODE = 20  # the reason spec's (EPISODES.reason in e2e/helpers.ts)

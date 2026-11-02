@@ -8,11 +8,11 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from numpy.typing import NDArray
 
-from winnow.baseline.prompts import FROZEN
-from winnow.boxes.models import BoxDraw
-from winnow.core.context import AppContext
-from winnow.episodes.clips import probe
-from winnow.tracking.models import FrameBox, TargetBox, Track, TrackBox, TrackKind
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.boxes.models import BoxDraw
+from standard_motion.core.context import AppContext
+from standard_motion.episodes.clips import probe
+from standard_motion.tracking.models import FrameBox, TargetBox, Track, TrackBox, TrackKind
 
 
 def wait_for_job(api: TestClient, job_id: int, timeout_s: float = 60.0) -> dict[str, object]:

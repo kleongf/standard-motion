@@ -23,22 +23,22 @@ import sys
 import tempfile
 from pathlib import Path
 
+from standard_motion.core.context import AppContext, build_context
+from standard_motion.core.settings import get_settings
+from standard_motion.episodes.fixtures import write_fixture_source
+from standard_motion.episodes.service import ingest_items
+from standard_motion.episodes.store import episode_id
+from standard_motion.interview.models import TextDraw
+from standard_motion.interview.service import current
+from standard_motion.interview.text import answer_text
+from standard_motion.interview.text_prompt import MAPPING_SCHEMA_NAME, REWRITE_SCHEMA_NAME
+from standard_motion.meta.models import MetaContent
+from standard_motion.meta.replay import RecordingTransport, ReplayTransport
+from standard_motion.meta.transport import Reply
+from standard_motion.rubric.service import compile_draft
 from tests.meta.fakes import NoTranscribe
 from tests.record_meta import E2E_DEV_SET, E2E_EPISODES, RECORDINGS
 from tests.rubric.scripted import criterion, phrase
-from winnow.core.context import AppContext, build_context
-from winnow.core.settings import get_settings
-from winnow.episodes.fixtures import write_fixture_source
-from winnow.episodes.service import ingest_items
-from winnow.episodes.store import episode_id
-from winnow.interview.models import TextDraw
-from winnow.interview.service import current
-from winnow.interview.text import answer_text
-from winnow.interview.text_prompt import MAPPING_SCHEMA_NAME, REWRITE_SCHEMA_NAME
-from winnow.meta.models import MetaContent
-from winnow.meta.replay import RecordingTransport, ReplayTransport
-from winnow.meta.transport import Reply
-from winnow.rubric.service import compile_draft
 
 INTERVIEW_ANSWERS = Path(__file__).parent / "recordings" / "interview_answers.jsonl"
 CAREFUL = "grasps it once and quickly"

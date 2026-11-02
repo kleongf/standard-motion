@@ -5,6 +5,11 @@ from collections.abc import Sequence
 
 import numpy as np
 
+from standard_motion.criteria.facts import EpisodeFacts
+from standard_motion.criteria.models import Criterion
+from standard_motion.rubric.models import AnchorPreview, CriterionPreview
+from standard_motion.rubric.preview import anchor_preview
+from standard_motion.triage.models import Label
 from tests.triage.robot_data import (
     CLEAN_GRIPPER,
     CLEAN_Z,
@@ -19,11 +24,6 @@ from tests.triage.robot_data import (
 from tests.triage.robot_data import (
     facts as make_facts,
 )
-from winnow.criteria.facts import EpisodeFacts
-from winnow.criteria.models import Criterion
-from winnow.rubric.models import AnchorPreview, CriterionPreview
-from winnow.rubric.preview import anchor_preview
-from winnow.triage.models import Label
 
 N_CLEAN = len(CLEAN_GRIPPER)
 N_REGRASP = len(REGRASP_GRIPPER)

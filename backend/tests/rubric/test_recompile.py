@@ -7,12 +7,12 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
+from standard_motion.rubric.models import CriterionEdit, DraftEdit
+from standard_motion.rubric.service import edit_draft
 from tests.helpers import app_context, reference_label, wait_for_job
 from tests.rubric.scripted import ScriptedCompile, criterion, phrase
-from winnow.app import create_app
-from winnow.core.settings import Settings
-from winnow.rubric.models import CriterionEdit, DraftEdit
-from winnow.rubric.service import edit_draft
 
 DESCRIPTION = "Tidy pick: one grasp only, gently lowered, and no long pauses."
 ONE_GRASP = "one grasp only"

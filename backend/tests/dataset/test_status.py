@@ -1,8 +1,8 @@
 from fastapi.testclient import TestClient
 
+from standard_motion.core.settings import Settings
+from standard_motion.meta.costs import CostEntry, CostLog
 from tests.helpers import wait_for_job
-from winnow.core.settings import Settings
-from winnow.meta.costs import CostEntry, CostLog
 
 
 def test_status_counts_ingested_episodes_per_source_and_meta_spend(

@@ -1,9 +1,9 @@
 """For the LeRobot format check only (scripts/check-lerobot-export.sh): write the Episodes named
 on the command line as an export, with the exporter the app uses, ignoring Triage decisions.
 
-The app and `winnow export` only export Episodes by decision. This tool exists so the format can
-be checked on real Episodes before any are kept; it isn't part of the app and never should be.
-It builds no app context: no database, no Meta API.
+The app and `standard-motion export` only export Episodes by decision. This tool exists so the
+format can be checked on real Episodes before any are kept; it isn't part of the app and never
+should be. It builds no app context: no database, no Meta API.
 
     uv run --project backend python backend/tools/export_episodes.py <new-dir> \\
         droid_100:3 droid_100:16 droid_1.0.1:1
@@ -13,10 +13,10 @@ import argparse
 import sys
 from pathlib import Path
 
-from winnow.core.settings import get_settings
-from winnow.episodes.sources import sources_from
-from winnow.export.plan import ExportPlan
-from winnow.export.run import write_export
+from standard_motion.core.settings import get_settings
+from standard_motion.episodes.sources import sources_from
+from standard_motion.export.plan import ExportPlan
+from standard_motion.export.run import write_export
 
 
 def _kept(episode_ids: list[str]) -> dict[str, list[int]]:

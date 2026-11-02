@@ -1,6 +1,6 @@
-# Winnow
+# Standard Motion
 
-Winnow filters recorded robot demonstrations against a plain-English description of what "expert" looks like, keeping the good ones and explaining every rejection.
+Standard Motion filters recorded robot demonstrations against a plain-English description of what "expert" looks like, keeping the good ones and explaining every rejection.
 
 ## Language
 
@@ -29,7 +29,7 @@ One clause of a Description, the unit that Criteria trace back to and that Refer
 _Avoid_: Clause, requirement
 
 **Rubric**:
-The set of criteria Winnow compiles from a user's Description, used to judge every Episode.
+The set of criteria Standard Motion compiles from a user's Description, used to judge every Episode.
 _Avoid_: Filter, spec, checklist; never use for the hackathon's scoring
 
 **Criterion**:
@@ -57,7 +57,7 @@ The one number, s, that widens or narrows every measured and tracked Criterion's
 _Avoid_: Scale, temperature, tolerance
 
 **Threshold suggestion**:
-A threshold Winnow proposes for a Criterion when two or more labels contradict its crisp result: midway between the closest labelled pass and fail values, their gap as its margin. Only accepting it, as a new Rubric version, moves the threshold; labels never do on their own.
+A threshold Standard Motion proposes for a Criterion when two or more labels contradict its crisp result: midway between the closest labelled pass and fail values, their gap as its margin. Only accepting it, as a new Rubric version, moves the threshold; labels never do on their own.
 _Avoid_: Auto-tune, correction
 
 **Triage decision**:
@@ -69,15 +69,15 @@ The one-sentence account of why an Episode got its Triage decision, written from
 _Avoid_: Explanation, rationale, justification
 
 **Needs review**:
-The Triage decision for an Episode Winnow isn't confident about, routed to a human instead of being kept or rejected automatically.
+The Triage decision for an Episode Standard Motion isn't confident about, routed to a human instead of being kept or rejected automatically.
 _Avoid_: Uncertain, flagged, borderline
 
 **Audit sample**:
-A seeded random sample of the Episodes Winnow decided on its own (up to 12 Keeps and 5 Rejects) outside the Test set, drawn once per Rubric version and margin multiplier s. An auditor marks each Good (every Phrase passes) or Bad (naming a failing Phrase); the marks measure Keep precision over the sampled Keeps that are still Keeps, and how many good Episodes Winnow rejected among the Rejects still rejected, and never change a Triage decision.
+A seeded random sample of the Episodes Standard Motion decided on its own (up to 12 Keeps and 5 Rejects) outside the Test set, drawn once per Rubric version and margin multiplier s. An auditor marks each Good (every Phrase passes) or Bad (naming a failing Phrase); the marks measure Keep precision over the sampled Keeps that are still Keeps, and how many good Episodes Standard Motion rejected among the Rejects still rejected, and never change a Triage decision.
 _Avoid_: Spot check, QA sample
 
 **Reference label**:
-A human's judgment of one Episode against the description, made without seeing what Winnow or a baseline said, used to score them.
+A human's judgment of one Episode against the description, made without seeing what Standard Motion or a baseline said, used to score them.
 _Avoid_: Ground truth, gold label, annotation
 
 **Dataset outcome**:
@@ -93,7 +93,7 @@ The Episodes the Rubric may be written, calibrated, and tuned against; never use
 _Avoid_: Train set, validation set
 
 **Demo video**:
-The hackathon submission video showing Winnow in use.
+The hackathon submission video showing Standard Motion in use.
 _Avoid_: Demo (on its own)
 
 **Judging criteria**:

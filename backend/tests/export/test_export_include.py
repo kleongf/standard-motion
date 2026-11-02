@@ -9,11 +9,11 @@ from typing import cast
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
+from standard_motion.export.droid100 import Droid100Export
+from standard_motion.rubric.models import Rubric
 from tests.helpers import app_context, reference_label, wait_for_job
-from winnow.app import create_app
-from winnow.core.settings import Settings
-from winnow.export.droid100 import Droid100Export
-from winnow.rubric.models import Rubric
 
 # 0 grasps cleanly: Keep. 1 releases high, within the margin: Needs review. 2 regrasps and 4
 # never closes: Reject. 2 has no Reference label; 4 is in the Test set.

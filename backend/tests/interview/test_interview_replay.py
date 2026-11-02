@@ -9,6 +9,9 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
+from standard_motion.meta.replay import ReplayTransport
 from tests.helpers import reference_label, wait_for_job
 from tests.interview.client import say, skip_to
 from tests.record_interview import (
@@ -27,9 +30,6 @@ from tests.record_interview import (
     WITHIN,
 )
 from tests.record_meta import E2E_DEV_SET, RECORDINGS
-from winnow.app import create_app
-from winnow.core.settings import Settings
-from winnow.meta.replay import ReplayTransport
 
 DEV = [f"droid_100:{i}" for i in E2E_DEV_SET]
 

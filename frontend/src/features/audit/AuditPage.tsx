@@ -1,4 +1,4 @@
-// Audit: a seeded sample of Winnow's own Keeps (and a few Rejects), drawn once per Rubric version
+// Audit: a seeded sample of Standard Motion's own Keeps (and a few Rejects), drawn once per Rubric version
 // and margin multiplier s (calibrating the version changes its Keeps, so it is drawn afresh)
 // from the Episodes outside the Test set. The auditor marks each Good or Bad; the header states
 // Keep precision over the Keeps still kept, and how many marked Rejects were good Episodes. The
@@ -66,15 +66,15 @@ function SampleStatus(props: { audit: ReturnType<typeof useAudit> }) {
   return (
     <div className="max-w-xl rounded-md border p-4">
       <p className="text-sm">
-        Check a random sample of the Episodes Winnow decided on its own: up to 12 Keeps and 5
-        Rejects with a Reference label, none from the Test set. It’s drawn once for Rubric v
+        Check a random sample of the Episodes Standard Motion decided on its own: up to 12 Keeps and
+        5 Rejects with a Reference label, none from the Test set. It’s drawn once for Rubric v
         {audit.data.rubric_version} at s = {sText(audit.data.s)}, with its seed recorded.
       </p>
       {audit.data.earlier_s !== null && (
         <p className="mt-2 text-sm text-amber-800 dark:text-amber-300" data-testid="audit-redraw">
           Calibration changed s from {sText(audit.data.earlier_s)} to {sText(audit.data.s)} since
-          the last sample, and with it which Episodes Winnow keeps: draw a fresh sample. Episodes
-          drawn again keep their marks.
+          the last sample, and with it which Episodes Standard Motion keeps: draw a fresh sample.
+          Episodes drawn again keep their marks.
         </p>
       )}
       <Button

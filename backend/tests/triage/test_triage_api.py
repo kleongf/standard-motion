@@ -6,11 +6,11 @@ import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.rubric.models import Rubric
+from standard_motion.rubric.store import RubricStore
 from tests.conftest import OPEN_GRIPPER_EPISODE
 from tests.helpers import app_context, ask_visual, reference_label, track_cleanly, wait_for_job
-from winnow.baseline.prompts import FROZEN
-from winnow.rubric.models import Rubric
-from winnow.rubric.store import RubricStore
 
 FIRST_TRY, NEVER_DROPS, PLACES, NO_PAUSES = FROZEN.phrases
 HIGH_RELEASE_EPISODE = 1  # the fixture's i % 3 == 1 release within the release height's margin

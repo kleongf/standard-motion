@@ -5,11 +5,11 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.core.settings import Settings
 from tests.helpers import wait_for_job
 from tests.record_meta import RECORDINGS
-from winnow.app import create_app
-from winnow.baseline.prompts import FROZEN
-from winnow.core.settings import Settings
 
 FIRST_TRY, NEVER_DROPS, PLACES, NO_PAUSES = FROZEN.phrases
 

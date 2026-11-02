@@ -1,4 +1,4 @@
-// Winnow and the baselines side by side: counts first, each rate's 95% Wilson interval under it.
+// Standard Motion and the baselines side by side: counts first, each rate's 95% Wilson interval under it.
 // This is the only place Spark alone appears in the app.
 import {
   Table,
@@ -61,8 +61,8 @@ export function ComparisonTable(props: { report: EvaluationReport }) {
           count Episodes meeting the Description that were rejected; coverage counts Episodes
           decided without a person; balanced accuracy averages failures rejected and Episodes
           meeting the Description kept, over the Episodes each system decided. Ranges are 95% Wilson
-          intervals. Undecided is Winnow&apos;s Needs review, or Spark alone with no majority
-          answer.
+          intervals. Undecided is Standard Motion&apos;s Needs review, or Spark alone with no
+          majority answer.
         </InfoTip>
       </p>
     </>

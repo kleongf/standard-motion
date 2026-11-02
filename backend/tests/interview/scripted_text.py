@@ -4,10 +4,10 @@ the calls that read the curator's text from their own script."""
 import json
 from dataclasses import dataclass, field
 
+from standard_motion.interview.text_prompt import MAPPING_SCHEMA_NAME, REWRITE_SCHEMA_NAME
+from standard_motion.meta.models import MetaContent
+from standard_motion.meta.transport import Reply
 from tests.rubric.scripted import USAGE, ScriptedCompile
-from winnow.interview.text_prompt import MAPPING_SCHEMA_NAME, REWRITE_SCHEMA_NAME
-from winnow.meta.models import MetaContent
-from winnow.meta.transport import Reply
 
 TEXT_FORMATS = (MAPPING_SCHEMA_NAME, REWRITE_SCHEMA_NAME)
 

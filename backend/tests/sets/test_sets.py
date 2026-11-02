@@ -1,9 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.cli import main
+from standard_motion.core.settings import Settings
 from tests.helpers import wait_for_job
-from winnow.cli import main
-from winnow.core.settings import Settings
 
 
 @pytest.fixture

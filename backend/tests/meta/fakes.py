@@ -5,9 +5,9 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from winnow.meta.client import MetaClient
-from winnow.meta.models import MetaContent, Transcript
-from winnow.meta.transport import Reply
+from standard_motion.meta.client import MetaClient
+from standard_motion.meta.models import MetaContent, Transcript
+from standard_motion.meta.transport import Reply
 
 
 class NoTranscribe:

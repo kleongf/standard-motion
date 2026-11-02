@@ -29,7 +29,7 @@ export function QueueTable(props: {
   if (props.episodes.length === 0) {
     return (
       <p className="mt-6 text-sm text-muted-foreground">
-        No Episodes in this set yet: add them with `winnow sets add`.
+        No Episodes in this set yet: add them with `standard-motion sets add`.
       </p>
     );
   }

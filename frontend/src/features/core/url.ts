@@ -2,7 +2,7 @@
 // instance stays in sync: navigating fires one event they all listen to.
 import { useEffect, useState } from "react";
 
-const CHANGE = "winnow:navigate";
+const CHANGE = "standard-motion:navigate";
 
 function current(): URLSearchParams {
   return new URLSearchParams(globalThis.location.search);

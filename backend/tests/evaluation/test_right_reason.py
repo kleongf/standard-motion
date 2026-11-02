@@ -4,12 +4,18 @@ slack. Expected values are worked by hand."""
 
 import pytest
 
-from winnow.baseline.prompts import FROZEN
-from winnow.evaluation.cases import Claim, EvaluationCase, Ranking, SparkDecision, frozen_phrase
-from winnow.evaluation.models import Slack
-from winnow.evaluation.right_reason import measured_slack, right_reason
-from winnow.reference_labels.models import FailInterval, PhraseLabel, ReferenceLabel
-from winnow.triage.models import TriageDecision
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.evaluation.cases import (
+    Claim,
+    EvaluationCase,
+    Ranking,
+    SparkDecision,
+    frozen_phrase,
+)
+from standard_motion.evaluation.models import Slack
+from standard_motion.evaluation.right_reason import measured_slack, right_reason
+from standard_motion.reference_labels.models import FailInterval, PhraseLabel, ReferenceLabel
+from standard_motion.triage.models import TriageDecision
 
 FIRST_TRY, NEVER_DROPS, PLACES, NO_PAUSES = FROZEN.phrases
 
@@ -66,7 +72,7 @@ def test_without_a_relabelled_interval_there_is_no_slack():
 
 def test_a_rubric_phrase_is_read_as_the_frozen_phrase_it_overlaps_most():
     # A compiled Rubric may split the Description differently from the frozen Phrases that
-    # Reference labels are given per; Winnow's claim is matched on the frozen one.
+    # Reference labels are given per; Standard Motion's claim is matched on the frozen one.
     assert frozen_phrase(FIRST_TRY) == FIRST_TRY
     assert frozen_phrase("grasps the object") == FIRST_TRY
     assert frozen_phrase("the target named in the instruction, no long") == PLACES
@@ -77,8 +83,8 @@ def test_a_rubric_phrase_is_read_as_the_frozen_phrase_it_overlaps_most():
 def case(
     n: int,
     fails: dict[str, tuple[float, float]],
-    winnow: TriageDecision,
-    winnow_says: Claim | None,
+    standard_motion: TriageDecision,
+    standard_motion_says: Claim | None,
     spark: SparkDecision | None,
     spark_says: Claim | None,
 ) -> EvaluationCase:
@@ -86,20 +92,20 @@ def case(
         episode_id=f"droid_100:{n}",
         duration_s=10.0,
         failed={p: FailInterval(start_s=a, end_s=b) for p, (a, b) in fails.items()},
-        winnow=winnow,
+        standard_motion=standard_motion,
         spark_alone=spark,
-        winnow_claim=winnow_says,
+        standard_motion_claim=standard_motion_says,
         spark_alone_claim=spark_says,
-        winnow_ranking=Ranking(lean="reject", confidence=0.9),
+        standard_motion_ranking=Ranking(lean="reject", confidence=0.9),
         spark_alone_ranking=Ranking(lean="reject", confidence=0.9),
     )
 
 
 FIRST_TRY_LATE = Claim(FIRST_TRY, 2.5)
 CASES = [
-    # Both reject a first-try failure; Winnow says so 0.5 s after the labelled interval.
+    # Both reject a first-try failure; Standard Motion says so 0.5 s after the labelled interval.
     case(0, {FIRST_TRY: (1.0, 2.0)}, "reject", FIRST_TRY_LATE, "reject", Claim(FIRST_TRY, 1.5)),
-    # Winnow names the wrong Phrase; Spark alone is 1 s early.
+    # Standard Motion names the wrong Phrase; Spark alone is 1 s early.
     case(1, {PLACES: (5.0, 6.0)}, "reject", Claim(NO_PAUSES, 5.5), "reject", Claim(PLACES, 4.0)),
     # Not a Reject from either: not scored for right reason.
     case(2, {FIRST_TRY: (0.0, 1.0)}, "needs_review", None, "keep", None),
@@ -121,10 +127,13 @@ def test_right_reason_counts_correct_rejects_naming_a_failing_phrase_inside_its_
     slack = Slack(seconds=0.5, edges=2, episodes=1)
     rows = {r.system: r for r in right_reason(CASES, slack).rows}
 
-    assert list(rows) == ["winnow", "spark_alone"]
-    winnow, spark = rows["winnow"].at_slack, rows["spark_alone"].at_slack
-    assert winnow is not None and spark is not None
-    assert (winnow.count, winnow.of) == (1, 3)  # only Episode 0, now inside by the slack
+    assert list(rows) == ["standard_motion", "spark_alone"]
+    standard_motion, spark = rows["standard_motion"].at_slack, rows["spark_alone"].at_slack
+    assert standard_motion is not None and spark is not None
+    assert (standard_motion.count, standard_motion.of) == (
+        1,
+        3,
+    )  # only Episode 0, now inside by the slack
     assert (spark.count, spark.of) == (2, 3)  # Episodes 0 and 4; Episode 1 is still 0.5 s early
 
 
@@ -135,6 +144,10 @@ def test_right_reason_is_also_a_curve_over_zero_to_three_seconds_of_slack():
     spark = {p.slack_s: (p.right, p.of) for p in rows["spark_alone"].curve}
     assert list(spark) == [i * 0.25 for i in range(13)]
     assert (spark[0.0], spark[0.75], spark[1.0], spark[3.0]) == ((2, 3), (2, 3), (3, 3), (3, 3))
-    winnow = {p.slack_s: (p.right, p.of) for p in rows["winnow"].curve}
-    assert (winnow[0.25], winnow[0.5], winnow[3.0]) == ((0, 3), (1, 3), (1, 3))
-    assert rows["winnow"].at_slack is None  # no measured slack, no headline k/n
+    standard_motion = {p.slack_s: (p.right, p.of) for p in rows["standard_motion"].curve}
+    assert (standard_motion[0.25], standard_motion[0.5], standard_motion[3.0]) == (
+        (0, 3),
+        (1, 3),
+        (1, 3),
+    )
+    assert rows["standard_motion"].at_slack is None  # no measured slack, no headline k/n

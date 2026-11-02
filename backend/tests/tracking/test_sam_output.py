@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from winnow.tracking.sam_output import parse_boxes
+from standard_motion.tracking.sam_output import parse_boxes
 
 # Frames 0 and 2 of a real SAM 3.1 response (episode 3, gripper box prompt).
 SAM_SAMPLE = (Path(__file__).parent / "sam_sample.txt").read_text()

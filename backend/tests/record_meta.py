@@ -23,24 +23,24 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import get_args
 
-from winnow.baseline.prompts import FROZEN
-from winnow.boxes.models import BoxDraw, ExteriorCamera
-from winnow.core.context import AppContext, build_context
-from winnow.core.settings import Settings, get_settings
-from winnow.episodes.fixtures import write_fixture_source
-from winnow.episodes.service import ingest_items
-from winnow.episodes.store import episode_id
-from winnow.jobs.models import WorkItem
-from winnow.meta.audio import wav_duration_ms
-from winnow.meta.costs import CostEntry
-from winnow.meta.limits import DEFAULT_LIMITS
-from winnow.meta.models import MetaContent, Transcript
-from winnow.meta.openai_transport import OpenAITransport
-from winnow.meta.pricing import SAM, sam_cost, spark_cost, transcribe_cost
-from winnow.meta.replay import RecordingTransport, ReplayTransport, UnrecordedCallError
-from winnow.meta.transport import Reply, Transport
-from winnow.rubric.service import compile_draft
-from winnow.tracking.exterior import box_items
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.boxes.models import BoxDraw, ExteriorCamera
+from standard_motion.core.context import AppContext, build_context
+from standard_motion.core.settings import Settings, get_settings
+from standard_motion.episodes.fixtures import write_fixture_source
+from standard_motion.episodes.service import ingest_items
+from standard_motion.episodes.store import episode_id
+from standard_motion.jobs.models import WorkItem
+from standard_motion.meta.audio import wav_duration_ms
+from standard_motion.meta.costs import CostEntry
+from standard_motion.meta.limits import DEFAULT_LIMITS
+from standard_motion.meta.models import MetaContent, Transcript
+from standard_motion.meta.openai_transport import OpenAITransport
+from standard_motion.meta.pricing import SAM, sam_cost, spark_cost, transcribe_cost
+from standard_motion.meta.replay import RecordingTransport, ReplayTransport, UnrecordedCallError
+from standard_motion.meta.transport import Reply, Transport
+from standard_motion.rubric.service import compile_draft
+from standard_motion.tracking.exterior import box_items
 
 RECORDINGS = Path(__file__).parent / "recordings" / "fixture_episodes.jsonl"
 E2E_EPISODES = 24  # what scripts/e2e-server.ts writes

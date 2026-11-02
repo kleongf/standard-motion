@@ -1,8 +1,8 @@
 import base64, sys, time
 from pathlib import Path
-from winnow.core.settings import get_settings
-from winnow.meta.client import MetaClient, _as_input
-from winnow.meta.costs import CostEntry
+from standard_motion.core.settings import get_settings
+from standard_motion.meta.client import MetaClient, _as_input
+from standard_motion.meta.costs import CostEntry
 m = MetaClient(get_settings())
 def url(p): return "data:image/png;base64," + base64.b64encode(Path(p).read_bytes()).decode()
 for arg in sys.argv[1:]:

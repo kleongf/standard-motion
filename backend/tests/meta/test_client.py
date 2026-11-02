@@ -3,13 +3,13 @@ from pathlib import Path
 
 import pytest
 
+from standard_motion.meta.client import IncompleteReplyError
+from standard_motion.meta.costs import BudgetExceededError
+from standard_motion.meta.limits import Limit
+from standard_motion.meta.models import SamRequest, SparkCall, SparkRequest, Text, Video
+from standard_motion.meta.pricing import SPARK_CONTRIBUTOR
+from standard_motion.meta.transport import FileGoneError, Reply, TransientError
 from tests.meta.fakes import FakeTime, FakeTransport, MakeClient
-from winnow.meta.client import IncompleteReplyError
-from winnow.meta.costs import BudgetExceededError
-from winnow.meta.limits import Limit
-from winnow.meta.models import SamRequest, SparkCall, SparkRequest, Text, Video
-from winnow.meta.pricing import SPARK_CONTRIBUTOR
-from winnow.meta.transport import FileGoneError, Reply, TransientError
 
 SCHEMA: dict[str, object] = {"type": "object"}
 

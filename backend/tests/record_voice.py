@@ -3,8 +3,8 @@ Free: no call reaches the Meta API.
 
 e2e's voice spec holds V over Chromium's fake microphone, which plays FIXTURE_WAV. What the
 browser captures differs every run, so replay answers any audio with the one transcript recorded
-here (winnow.meta.replay ANY_AUDIO), and Spark's mapping of it onto the spec's Episode's unsure
-Phrases is scripted (SAID, MARKS). This replays RECORDINGS to ingest that Episode, gives it a
+here (standard_motion.meta.replay ANY_AUDIO), and Spark's mapping of it onto the spec's Episode's
+unsure Phrases is scripted (SAID, MARKS). This replays RECORDINGS to ingest that Episode, gives it a
 Reference label as e2e does, then runs the real voice service once, keeping the replies RECORDINGS
 doesn't have. Rerun after changing the voice prompt or schema, or what makes that Episode unsure;
 e2e then fails with UnrecordedCallError until you do.
@@ -16,19 +16,19 @@ import sys
 import tempfile
 from pathlib import Path
 
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.core.context import AppContext, build_context
+from standard_motion.core.settings import get_settings
+from standard_motion.episodes.fixtures import write_fixture_source
+from standard_motion.episodes.service import ingest_items
+from standard_motion.episodes.store import episode_id
+from standard_motion.meta.models import MetaContent, Transcript, Turn
+from standard_motion.meta.replay import RecordingTransport, ReplayTransport
+from standard_motion.meta.transport import Reply
+from standard_motion.reference_labels.models import PhraseLabel, ReferenceLabelDraw
+from standard_motion.reference_labels.service import save_label
+from standard_motion.voice.service import transcribe_turn
 from tests.record_meta import E2E_EPISODES, RECORDINGS
-from winnow.baseline.prompts import FROZEN
-from winnow.core.context import AppContext, build_context
-from winnow.core.settings import get_settings
-from winnow.episodes.fixtures import write_fixture_source
-from winnow.episodes.service import ingest_items
-from winnow.episodes.store import episode_id
-from winnow.meta.models import MetaContent, Transcript, Turn
-from winnow.meta.replay import RecordingTransport, ReplayTransport
-from winnow.meta.transport import Reply
-from winnow.reference_labels.models import PhraseLabel, ReferenceLabelDraw
-from winnow.reference_labels.service import save_label
-from winnow.voice.service import transcribe_turn
 
 VOICE_ANSWERS = Path(__file__).parent / "recordings" / "voice_answers.jsonl"
 FIXTURE_WAV = Path(__file__).parents[2] / "e2e" / "fixtures" / "voice-turn.wav"

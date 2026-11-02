@@ -1,18 +1,18 @@
-"""The source ablation: Winnow re-scored with only some sources' Criteria, each row's false keeps,
-right reason and coverage counted against Reference labels."""
+"""The source ablation: Standard Motion re-scored with only some sources' Criteria, each row's
+false keeps, right reason and coverage counted against Reference labels."""
 
 from collections.abc import Sequence
 
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.evaluation.ablation import MASKS, ablation, masked
+from standard_motion.evaluation.cases import Claim, EvaluationCase
+from standard_motion.evaluation.models import Slack
+from standard_motion.evaluation.protocol_models import SourceMask
+from standard_motion.evaluation.stats import Proportion
+from standard_motion.rubric.models import Rubric
+from standard_motion.rubric.seed import SEEDED
+from standard_motion.triage.models import TriageDecision
 from tests.evaluation.labelled import case
-from winnow.baseline.prompts import FROZEN
-from winnow.evaluation.ablation import MASKS, ablation, masked
-from winnow.evaluation.cases import Claim, EvaluationCase
-from winnow.evaluation.models import Slack
-from winnow.evaluation.protocol_models import SourceMask
-from winnow.evaluation.stats import Proportion
-from winnow.rubric.models import Rubric
-from winnow.rubric.seed import SEEDED
-from winnow.triage.models import TriageDecision
 
 FIRST_TRY, NEVER_DROPS, PLACES = FROZEN.phrases[:3]
 SLACK = Slack(seconds=0.5, edges=2, episodes=1)

@@ -5,12 +5,12 @@ from typing import Literal
 
 import numpy as np
 
+from standard_motion.calibration.labelled import LabelledEpisode, patterns, suggestions
+from standard_motion.criteria.facts import EpisodeFacts
+from standard_motion.criteria.models import Criterion
+from standard_motion.triage.models import Label
+from standard_motion.triage.scoring import score
 from tests.triage.robot_data import CLEAN_GRIPPER, FIRST_TRY, PLACES, facts, rubric
-from winnow.calibration.labelled import LabelledEpisode, patterns, suggestions
-from winnow.criteria.facts import EpisodeFacts
-from winnow.criteria.models import Criterion
-from winnow.triage.models import Label
-from winnow.triage.scoring import score
 
 RISING = np.linspace(0, 0.1, 45).tolist()
 

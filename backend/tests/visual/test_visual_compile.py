@@ -6,10 +6,10 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
 from tests.rubric.scripted import ScriptedCompile, criterion, phrase
 from tests.visual.answers import PARAPHRASES, QUESTION
-from winnow.app import create_app
-from winnow.core.settings import Settings
 
 DESCRIPTION = "Tidy place: puts the cup on the saucer."
 ON_SAUCER = "puts the cup on the saucer"

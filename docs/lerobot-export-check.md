@@ -1,10 +1,10 @@
 # Checking an export with real LeRobot
 
-The tests read exports with pyarrow and Winnow's own readers. `scripts/check-lerobot-export.sh` checks an export with the real `lerobot` library instead. It is opt-in and never part of `pnpm verify` or CI.
+The tests read exports with pyarrow and Standard Motion's own readers. `scripts/check-lerobot-export.sh` checks an export with the real `lerobot` library instead. It is opt-in and never part of `pnpm verify` or CI.
 
 For each dataset in an export folder (`droid_100/`, `droid_1.0.1/`), it:
 
-1. loads `LeRobotDataset(repo_id="local/winnow-export", root=<dataset>)`;
+1. loads `LeRobotDataset(repo_id="local/standard_motion-export", root=<dataset>)`;
 2. checks that `meta/stats.json` has min, max, mean, std, count and q01–q99 for every non-text feature, shaped like the feature (cameras `(3, 1, 1)`);
 3. reads the first, middle and last frame of every Episode, with every camera's image. It reads each frame twice: once plain, and once with `delta_timestamps` of `[-2/fps, -1/fps, 0]` on one camera and the action. Decoding enforces LeRobot's 1e-4 s timestamp tolerance. The check also confirms that each window holds the frames before it and that the task matches the Episode's;
 4. trains ACT for 2 steps with `lerobot-train` (`--policy.chunk_size=10`, batch size 2), on MPS when available, else CPU.
@@ -14,11 +14,11 @@ The issue asked for `[-0.1, 0]`. LeRobot rejects any delta that isn't a multiple
 ## Run it
 
 ```sh
-# an export the app or `winnow export` wrote
+# an export the app or `standard-motion export` wrote
 scripts/check-lerobot-export.sh data/exports/<stamp>
 
 # or write chosen Episodes first, then check them
-DATA_DIR=/tmp/winnow-check scripts/check-lerobot-export.sh --episodes /tmp/winnow-check/export \
+DATA_DIR=/tmp/standard_motion-check scripts/check-lerobot-export.sh --episodes /tmp/standard_motion-check/export \
   droid_100:3 droid_100:16 droid_1.0.1:1 droid_1.0.1:9
 ```
 
@@ -30,7 +30,7 @@ Options after the export folder (after `--` when using `--episodes`):
 
 It exits non-zero if any dataset fails. To try another LeRobot release, set `LEROBOT='lerobot[training]==X.Y.Z'`.
 
-**`--episodes` ignores Triage decisions.** The app and `winnow export` export Episodes by decision: the Keeps, or with Keep + Needs review (`--include keep_and_review`) the Needs review Episodes too. With no Spark or tracks, most real Episodes end up Needs review, so Keep only would export nothing. This mode lets you check the format on real Episodes anyway. It calls the exporter directly through `backend/tools/export_episodes.py`, which exists only for this check and is not part of the app. It builds no app context, so it uses no database and makes no Meta API calls. droid_100 is downloaded into `$DATA_DIR/droid_100`, and droid_1.0.1 is range-read from the Hub. Point `DATA_DIR` at a scratch folder to keep it out of your real data.
+**`--episodes` ignores Triage decisions.** The app and `standard-motion export` export Episodes by decision: the Keeps, or with Keep + Needs review (`--include keep_and_review`) the Needs review Episodes too. With no Spark or tracks, most real Episodes end up Needs review, so Keep only would export nothing. This mode lets you check the format on real Episodes anyway. It calls the exporter directly through `backend/tools/export_episodes.py`, which exists only for this check and is not part of the app. It builds no app context, so it uses no database and makes no Meta API calls. droid_100 is downloaded into `$DATA_DIR/droid_100`, and droid_1.0.1 is range-read from the Hub. Point `DATA_DIR` at a scratch folder to keep it out of your real data.
 
 ## Cost
 

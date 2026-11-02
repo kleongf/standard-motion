@@ -5,11 +5,11 @@ Every answer is the real SAM box in `sam_sample.txt`, which a mask must accompan
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from standard_motion.meta.models import MetaContent
+from standard_motion.meta.pricing import SAM
+from standard_motion.meta.transport import Reply
 from tests.baseline.scripted import ScriptedSpark
 from tests.meta.fakes import NoTranscribe
-from winnow.meta.models import MetaContent
-from winnow.meta.pricing import SAM
-from winnow.meta.transport import Reply
 
 _SAMPLE = (Path(__file__).parent / "sam_sample.txt").read_text().splitlines()[0]
 _RECORD = _SAMPLE[_SAMPLE.index(">") + 1 :]  # one object's box and mask, without its frame tag

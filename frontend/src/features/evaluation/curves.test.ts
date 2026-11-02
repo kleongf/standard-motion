@@ -5,8 +5,8 @@ import { riskSeries, slackSeries, valueAt } from "./curves";
 describe("curves", () => {
   it("plots risk against coverage, covering more Episodes at each point", () => {
     const curve = {
-      system: "winnow" as const,
-      label: "Winnow",
+      system: "standard_motion" as const,
+      label: "Standard Motion",
       episodes: 4,
       points: [
         { confidence: 0.9, covered: 2, errors: 0 },
@@ -37,8 +37,8 @@ describe("curves", () => {
 
   it("draws no right-reason line without a correct Reject", () => {
     const row = {
-      system: "winnow" as const,
-      label: "Winnow",
+      system: "standard_motion" as const,
+      label: "Standard Motion",
       at_slack: null,
       curve: [{ slack_s: 0, right: 0, of: 0 }],
     };

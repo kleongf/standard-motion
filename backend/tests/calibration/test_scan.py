@@ -2,7 +2,7 @@
 leave-one-out check: s ∈ {2, 1.5, 1, 0.75, 0.5}, widest first, keeping the last whose errors have
 a one-sided Clopper–Pearson upper bound ≤ 0.2 at 90%."""
 
-from winnow.calibration.scan import GRID, Pattern, scan, unstable
+from standard_motion.calibration.scan import GRID, Pattern, scan, unstable
 
 
 def pairs(n: int, first_wrong_at: dict[float, int]) -> list[Pattern]:

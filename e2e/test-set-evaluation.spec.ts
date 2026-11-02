@@ -6,7 +6,7 @@ import { EPISODES, episodeId, ingest } from "./helpers.ts";
 const OWN = EPISODES.testSetEvaluation.map(episodeId);
 
 /** Fail the first Phrase ("grasps the object on the first try") over `interval`, pass the rest:
- * the fixture Episode is rejected after failed grasps, so Winnow's Reject is a correct one. A
+ * the fixture Episode is rejected after failed grasps, so Standard Motion's Reject is a correct one. A
  * label already there is kept, since labels never change. */
 async function labelFirstTryFailure(
   request: APIRequestContext,
@@ -50,22 +50,29 @@ test("the Evaluation page runs the Test set, shows the comparison and logs the r
     /^Test set · Rubric v\d+ · \d+ of \d+ Episodes labelled · \d+ description failures?$/,
   );
   const comparison = page.getByRole("table", { name: "Comparison" });
-  for (const system of ["Winnow", "Winnow (all Needs review kept)", "Spark alone", "Length alone"])
+  for (const system of [
+    "Standard Motion",
+    "Standard Motion (all Needs review kept)",
+    "Spark alone",
+    "Length alone",
+  ])
     await expect(comparison.getByRole("cell", { name: system, exact: true })).toBeVisible();
   // Counts first, then the interval; never "±".
-  await expect(page.getByTestId("system-winnow")).toContainText(/\d+ of \d+/);
+  await expect(page.getByTestId("system-standard_motion")).toContainText(/\d+ of \d+/);
   await expect(page.getByText(/Length alone keeps Episodes [≥≤] [\d.]+ s/)).toBeVisible();
   await expect(page.locator("main")).not.toContainText("±");
 
   // Right reason at the slack measured from the relabel, and over 0–3 s of slack.
   await expect(page.getByText(/Slack [\d.]+ s: the 95th percentile/)).toBeVisible();
-  await expect(page.getByTestId("right-reason-at-slack")).toContainText(/Winnow \d+ of \d+/);
+  await expect(page.getByTestId("right-reason-at-slack")).toContainText(
+    /Standard Motion \d+ of \d+/,
+  );
   await expect(page.getByRole("img", { name: "Right reason over slack" })).toBeVisible();
-  // Both risk–coverage curves, with Winnow's own coverage marked.
+  // Both risk–coverage curves, with Standard Motion's own coverage marked.
   const risk = page.getByRole("img", { name: "Risk against coverage" });
-  for (const system of ["winnow", "spark_alone"])
+  for (const system of ["standard_motion", "spark_alone"])
     await expect(risk.getByTestId(`curve-${system}`).locator("circle").first()).toBeVisible();
-  await expect(risk.getByTestId("curve-marker")).toContainText("Winnow decides");
+  await expect(risk.getByTestId("curve-marker")).toContainText("Standard Motion decides");
   await expect(page.getByRole("table", { name: "Matched coverage" })).toBeVisible();
   await expect(page.getByTestId("mcnemar")).toContainText("Only Spark alone right");
   const phrases = page.getByRole("table", { name: "Failures per Phrase" });
@@ -82,7 +89,7 @@ test("the Evaluation page runs the Test set, shows the comparison and logs the r
   for (const track of ["Wrist object track", "Exterior object track"])
     await expect(tracking.getByRole("cell", { name: track })).toBeVisible();
   // Cost per 1,000 Episodes from the replayed calls' cost log, and the label-mode timer.
-  await expect(page.getByTestId("cost-winnow")).toContainText(/\$\d+\.\d{2}/);
+  await expect(page.getByTestId("cost-standard_motion")).toContainText(/\$\d+\.\d{2}/);
   await expect(page.getByTestId("minutes-saved")).toContainText(/\d+\.\d min/);
   await expect(page.getByRole("table", { name: "Cost by step" })).toContainText(
     "Wrist object track (SAM)",

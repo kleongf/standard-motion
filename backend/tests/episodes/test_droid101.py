@@ -5,8 +5,8 @@ from pathlib import Path
 import numpy as np
 from fastapi.testclient import TestClient
 
+from standard_motion.core.settings import Settings
 from tests.helpers import app_context, wait_for_job
-from winnow.core.settings import Settings
 
 
 def frames(clip: Path) -> int:

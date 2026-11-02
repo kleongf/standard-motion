@@ -16,19 +16,19 @@ import sys
 import tempfile
 from pathlib import Path
 
+from standard_motion.core.context import AppContext, build_context
+from standard_motion.core.settings import get_settings
+from standard_motion.episodes.fixtures import write_fixture_source
+from standard_motion.episodes.service import ingest_items
+from standard_motion.episodes.store import episode_id
+from standard_motion.jobs.models import WorkItem
+from standard_motion.meta.models import MetaContent
+from standard_motion.meta.replay import RecordingTransport, ReplayTransport
+from standard_motion.meta.transport import Reply
+from standard_motion.visual.models import AnswerValue
+from standard_motion.visual.steps import visual_items
 from tests.meta.fakes import NoTranscribe
 from tests.record_meta import E2E_EPISODES, RECORDINGS
-from winnow.core.context import AppContext, build_context
-from winnow.core.settings import get_settings
-from winnow.episodes.fixtures import write_fixture_source
-from winnow.episodes.service import ingest_items
-from winnow.episodes.store import episode_id
-from winnow.jobs.models import WorkItem
-from winnow.meta.models import MetaContent
-from winnow.meta.replay import RecordingTransport, ReplayTransport
-from winnow.meta.transport import Reply
-from winnow.visual.models import AnswerValue
-from winnow.visual.steps import visual_items
 
 VISUAL_ANSWERS = Path(__file__).parent / "recordings" / "visual_answers.jsonl"
 # Per fixture Episode folder, each sample's answer in the order asked; every sample passes else.

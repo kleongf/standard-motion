@@ -3,7 +3,7 @@
 import pyarrow as pa
 import pytest
 
-from winnow.export.tables import rebased, renumbered
+from standard_motion.export.tables import rebased, renumbered
 
 QUANTILES = ("q01", "q10", "q50", "q90", "q99")
 

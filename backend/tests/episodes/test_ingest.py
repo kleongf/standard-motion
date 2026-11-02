@@ -4,9 +4,9 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+from standard_motion.core.settings import Settings
 from tests.conftest import CORRUPT_EPISODE
 from tests.helpers import app_context, wait_for_job
-from winnow.core.settings import Settings
 
 
 def ingest(api: TestClient, *indices: int) -> dict[str, object]:

@@ -4,11 +4,11 @@ from collections.abc import Sequence
 
 import numpy as np
 
-from winnow.criteria.facts import EpisodeFacts
-from winnow.criteria.models import Criterion, RubricSettings, Setting, Window
-from winnow.episodes.models import EpisodeSignals
-from winnow.rubric.models import Rubric
-from winnow.triage.models import Triage
+from standard_motion.criteria.facts import EpisodeFacts
+from standard_motion.criteria.models import Criterion, RubricSettings, Setting, Window
+from standard_motion.episodes.models import EpisodeSignals
+from standard_motion.rubric.models import Rubric
+from standard_motion.triage.models import Triage
 
 FIRST_TRY = "grasps the object on the first try"
 PLACES = "places it on the target"

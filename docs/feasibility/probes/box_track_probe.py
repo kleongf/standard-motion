@@ -1,10 +1,10 @@
 import json, sys
 from collections import Counter
 from meta_sam_parser import FramePrompt, PromptBox, PromptObject, build_object_prompt
-from winnow.core.settings import get_settings
-from winnow.episodes.droid100 import h264_clip, load_signals
-from winnow.meta.client import MetaClient
-from winnow.tracking.sam_output import parse_boxes
+from standard_motion.core.settings import get_settings
+from standard_motion.episodes.droid100 import h264_clip, load_signals
+from standard_motion.meta.client import MetaClient
+from standard_motion.tracking.sam_output import parse_boxes
 s = get_settings(); d = s.data_dir / "droid_100"; m = MetaClient(s)
 for arg in sys.argv[1:]:
     ep, l, t, r, b, tag = (int(x) if i < 5 else x for i, x in enumerate(arg.split(",")))

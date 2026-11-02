@@ -40,7 +40,7 @@ export function TestRunLog(props: { shownId: number | null; onShow: (run: TestRu
           <TableHead>Run</TableHead>
           <TableHead className="text-right">Rubric</TableHead>
           <TableHead className="text-right">Labelled</TableHead>
-          <TableHead>Winnow false keeps</TableHead>
+          <TableHead>Standard Motion false keeps</TableHead>
           <TableHead>Spark alone false keeps</TableHead>
         </TableRow>
       </TableHeader>
@@ -61,7 +61,7 @@ export function TestRunLog(props: { shownId: number | null; onShow: (run: TestRu
             <TableCell className="text-right tabular-nums">
               {run.report.labelled} of {run.report.episodes}
             </TableCell>
-            <TableCell className="tabular-nums">{falseKeeps(run, "winnow")}</TableCell>
+            <TableCell className="tabular-nums">{falseKeeps(run, "standard_motion")}</TableCell>
             <TableCell className="tabular-nums">{falseKeeps(run, "spark_alone")}</TableCell>
           </TableRow>
         ))}

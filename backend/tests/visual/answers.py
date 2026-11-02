@@ -1,8 +1,14 @@
 """A visual Criterion and hand-written Spark answers to it, for scoring tests."""
 
+from standard_motion.criteria.models import Criterion, Window
+from standard_motion.visual.models import (
+    AnswerValue,
+    VisualAnswers,
+    VisualClip,
+    VisualReply,
+    VisualSample,
+)
 from tests.triage.robot_data import PLACES
-from winnow.criteria.models import Criterion, Window
-from winnow.visual.models import AnswerValue, VisualAnswers, VisualClip, VisualReply, VisualSample
 
 QUESTION = "Is the object resting in or on the target at the end?"
 PARAPHRASES = [

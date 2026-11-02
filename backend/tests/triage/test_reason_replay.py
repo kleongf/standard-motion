@@ -7,12 +7,12 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
+from standard_motion.meta.replay import ReplayTransport
 from tests.helpers import reference_label, wait_for_job
 from tests.record_meta import RECORDINGS
 from tests.record_reason import REASON_ANSWERS, REASON_EPISODE
-from winnow.app import create_app
-from winnow.core.settings import Settings
-from winnow.meta.replay import ReplayTransport
 
 EPISODE = f"droid_100:{REASON_EPISODE}"
 

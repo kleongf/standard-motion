@@ -39,7 +39,7 @@ export function SelectionPage() {
       {all.length === 0 && !candidates.isPending && (
         <p className="rounded-lg border p-4 text-sm">
           No sample yet. Draw one with{" "}
-          <code className="font-mono">winnow select droid_1.0.1 --size 300 --seed 0</code>.
+          <code className="font-mono">standard-motion select droid_1.0.1 --size 300 --seed 0</code>.
         </p>
       )}
       {all.length > 0 && (

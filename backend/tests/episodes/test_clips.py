@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from winnow.episodes import clips
+from standard_motion.episodes import clips
 
 
 def test_a_failed_cropped_cut_leaves_no_partial_file(

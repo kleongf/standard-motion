@@ -5,10 +5,10 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from standard_motion.meta.models import MetaContent, Transcript, Turn
+from standard_motion.meta.transport import Reply
 from tests.meta.test_transcribe_transport import transport_answering
 from tests.visual.scripted import ScriptedVisual
-from winnow.meta.models import MetaContent, Transcript, Turn
-from winnow.meta.transport import Reply
 
 USAGE = {"input_tokens": 600, "output_tokens": 80}
 

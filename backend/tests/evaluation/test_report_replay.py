@@ -9,18 +9,18 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.core.settings import Settings
+from standard_motion.evaluation.models import EvaluationReport
+from standard_motion.evaluation.protocol_models import Disagreement
+from standard_motion.meta.costs import CostLog
+from standard_motion.meta.replay import ReplayTransport
 from tests.evaluation.test_evaluation_api import reference_label
 from tests.helpers import ask_visual, wait_for_job
 from tests.record_meta import RECORDINGS
 from tests.record_visual import VISUAL_ANSWERS
 from tests.rubric.replay import CountingReplay
-from winnow.app import create_app
-from winnow.baseline.prompts import FROZEN
-from winnow.core.settings import Settings
-from winnow.evaluation.models import EvaluationReport
-from winnow.evaluation.protocol_models import Disagreement
-from winnow.meta.costs import CostLog
-from winnow.meta.replay import ReplayTransport
 
 FIRST_TRY = FROZEN.phrases[0]
 # Fixture Episode 0 grasps cleanly, 2 is rejected after failed grasps, and 10's scripted visual
@@ -96,8 +96,8 @@ def test_cost_per_1000_episodes_is_extrapolated_from_what_ingest_logged(
 
     assert wrist > 0 and visual > 0 and baseline > 0
     assert cost.episodes == 3
-    assert cost.winnow_usd == pytest.approx(wrist + visual)
-    assert cost.winnow_per_1000_usd == pytest.approx((wrist + visual) / 3 * 1000)
+    assert cost.standard_motion_usd == pytest.approx(wrist + visual)
+    assert cost.standard_motion_per_1000_usd == pytest.approx((wrist + visual) / 3 * 1000)
     assert cost.spark_alone_usd == pytest.approx(baseline)
     assert [s.step for s in cost.steps] == ["track_wrist", "visual", "baseline"]
 
@@ -108,9 +108,9 @@ def test_each_disagreement_names_both_decisions_and_the_reference_label(labelled
     ]
 
     # Episode 2: both reject, so it isn't listed.
-    assert [(r.episode_id, r.winnow, r.spark_alone, r.set_name) for r in rows] == [
+    assert [(r.episode_id, r.standard_motion, r.spark_alone, r.set_name) for r in rows] == [
         ("droid_100:0", "needs_review", "reject", "test"),
         ("droid_100:10", "needs_review", "reject", "test"),
     ]
-    assert all(r.spark_alone_reason and r.winnow_reason for r in rows)
+    assert all(r.spark_alone_reason and r.standard_motion_reason for r in rows)
     assert all(r.failed_phrases == [] for r in rows)

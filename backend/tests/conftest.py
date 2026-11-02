@@ -6,14 +6,14 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
+from standard_motion.episodes.fixtures import write_fixture_source
+from standard_motion.episodes.fixtures_droid101 import write_droid101_fixture
 from tests.helpers import wait_for_job
 from tests.record_meta import E2E_EPISODES
 from tests.tracking.scripted_sam import ScriptedSam
 from tests.visual.scripted import ScriptedVisual
-from winnow.app import create_app
-from winnow.core.settings import Settings
-from winnow.episodes.fixtures import write_fixture_source
-from winnow.episodes.fixtures_droid101 import write_droid101_fixture
 
 # Episode 3 of the fixture source has unreadable video; in Episode 4 the gripper never closes.
 CORRUPT_EPISODE = 3

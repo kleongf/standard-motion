@@ -5,8 +5,9 @@ import { INCLUDE_LABELS } from "./exportText";
 import type { Include } from "./useExport";
 
 const HINTS: Record<Include, string> = {
-  keep: "Only Episodes Winnow kept.",
-  keep_and_review: "Also the Episodes Winnow wasn’t sure about; manifest.json marks each one.",
+  keep: "Only Episodes Standard Motion kept.",
+  keep_and_review:
+    "Also the Episodes Standard Motion wasn’t sure about; manifest.json marks each one.",
 };
 
 const CHOICES: Include[] = ["keep", "keep_and_review"];

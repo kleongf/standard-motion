@@ -425,8 +425,9 @@ export interface paths {
         };
         /**
          * List Disagreements
-         * @description Reference-labelled Episodes where Winnow's Triage decision, as the Workstation shows it
-         *     now, differs from Spark alone's majority answer. Scored on every read, with no Meta call.
+         * @description Reference-labelled Episodes where Standard Motion's Triage decision, as the Workstation
+         *     shows it now, differs from Spark alone's majority answer. Scored on every read, with no Meta
+         *     call.
          */
         get: operations["list_disagreements_api_evaluation_disagreements_get"];
         put?: never;
@@ -448,8 +449,8 @@ export interface paths {
         put?: never;
         /**
          * Post Evaluation Run
-         * @description Scores Winnow and the baselines against a set's Reference labels. A Test set run is
-         *     appended to the Test run log; `winnow eval` returns the same report.
+         * @description Scores Standard Motion and the baselines against a set's Reference labels. A Test set run is
+         *     appended to the Test run log; `standard-motion eval` returns the same report.
          */
         post: operations["post_evaluation_run_api_evaluation_runs_post"];
         delete?: never;
@@ -1117,9 +1118,9 @@ export interface components {
     schemas: {
         /**
          * AblationRow
-         * @description Winnow re-scored from what is already stored with only some sources' Criteria: a masked
-         *     source's Criteria are left out, as if the Rubric had been compiled without that model, so a
-         *     Phrase only they checked goes unchecked. No Meta call is made.
+         * @description Standard Motion re-scored from what is already stored with only some sources' Criteria: a
+         *     masked source's Criteria are left out, as if the Rubric had been compiled without that model,
+         *     so a Phrase only they checked goes unchecked. No Meta call is made.
          */
         AblationRow: {
             coverage: components["schemas"]["Proportion"];
@@ -1697,8 +1698,8 @@ export interface components {
         };
         /**
          * Disagreement
-         * @description A Reference-labelled Episode where Winnow's Triage decision (as the Workstation shows it
-         *     now) and Spark alone's majority answer differ.
+         * @description A Reference-labelled Episode where Standard Motion's Triage decision (as the Workstation
+         *     shows it now) and Spark alone's majority answer differ.
          */
         Disagreement: {
             /** Episode Id */
@@ -1712,12 +1713,12 @@ export interface components {
             /** Spark Alone Reason */
             spark_alone_reason: string | null;
             /**
-             * Winnow
+             * Standard Motion
              * @enum {string}
              */
-            winnow: "keep" | "reject" | "needs_review";
-            /** Winnow Reason */
-            winnow_reason: string;
+            standard_motion: "keep" | "reject" | "needs_review";
+            /** Standard Motion Reason */
+            standard_motion_reason: string;
         };
         /**
          * DraftEdit
@@ -2215,8 +2216,8 @@ export interface components {
         };
         /**
          * MatchedCoverage
-         * @description Keep precision with Spark alone held to Winnow's coverage: its most confident Episodes,
-         *     never splitting a tie, so it covers at most `target`.
+         * @description Keep precision with Spark alone held to Standard Motion's coverage: its most confident
+         *     Episodes, never splitting a tie, so it covers at most `target`.
          */
         MatchedCoverage: {
             /** Episodes */
@@ -2237,20 +2238,20 @@ export interface components {
              * System
              * @enum {string}
              */
-            system: "winnow" | "winnow_review_kept" | "spark_alone" | "length_alone";
+            system: "standard_motion" | "standard_motion_review_kept" | "spark_alone" | "length_alone";
         };
         /**
          * McNemar
-         * @description Discordant pairs between Winnow and Spark alone, counts only: on the Episodes both decided,
-         *     how many only one of them got right.
+         * @description Discordant pairs between Standard Motion and Spark alone, counts only: on the Episodes both
+         *     decided, how many only one of them got right.
          */
         McNemar: {
             /** Compared */
             compared: number;
             /** Spark Alone Only Right */
             spark_alone_only_right: number;
-            /** Winnow Only Right */
-            winnow_only_right: number;
+            /** Standard Motion Only Right */
+            standard_motion_only_right: number;
         };
         /**
          * MetaCost
@@ -2266,12 +2267,12 @@ export interface components {
             spark_alone_per_1000_usd: number | null;
             /** Spark Alone Usd */
             spark_alone_usd: number;
+            /** Standard Motion Per 1000 Usd */
+            standard_motion_per_1000_usd: number | null;
+            /** Standard Motion Usd */
+            standard_motion_usd: number;
             /** Steps */
             steps: components["schemas"]["StepCost"][];
-            /** Winnow Per 1000 Usd */
-            winnow_per_1000_usd: number | null;
-            /** Winnow Usd */
-            winnow_usd: number;
         };
         /**
          * Moment
@@ -2337,10 +2338,10 @@ export interface components {
             phrase: string;
             /** Spark Alone Rejects */
             spark_alone_rejects: number;
+            /** Standard Motion Rejects */
+            standard_motion_rejects: number;
             /** Too Few */
             too_few: boolean;
-            /** Winnow Rejects */
-            winnow_rejects: number;
         };
         /** PhraseLabel */
         PhraseLabel: {
@@ -2479,8 +2480,9 @@ export interface components {
         };
         /**
          * ReviewTime
-         * @description A person's minutes, from the label-mode timer: what Winnow saves by deciding Episodes
-         *     automatically, and the human cost per Episode left (one hand-drawn box plus Needs review).
+         * @description A person's minutes, from the label-mode timer: what Standard Motion saves by deciding
+         *     Episodes automatically, and the human cost per Episode left (one hand-drawn box plus Needs
+         *     review).
          */
         ReviewTime: {
             /** Decided */
@@ -2516,7 +2518,7 @@ export interface components {
              * System
              * @enum {string}
              */
-            system: "winnow" | "winnow_review_kept" | "spark_alone" | "length_alone";
+            system: "standard_motion" | "standard_motion_review_kept" | "spark_alone" | "length_alone";
         };
         /** RiskCoverage */
         RiskCoverage: {
@@ -2530,7 +2532,7 @@ export interface components {
              * System
              * @enum {string}
              */
-            system: "winnow" | "winnow_review_kept" | "spark_alone" | "length_alone";
+            system: "standard_motion" | "standard_motion_review_kept" | "spark_alone" | "length_alone";
         };
         /**
          * RiskPoint
@@ -2755,7 +2757,7 @@ export interface components {
              * System
              * @enum {string}
              */
-            system: "winnow" | "spark_alone" | "other";
+            system: "standard_motion" | "spark_alone" | "other";
             /** Usd */
             usd: number;
         };
@@ -2805,7 +2807,7 @@ export interface components {
              * System
              * @enum {string}
              */
-            system: "winnow" | "winnow_review_kept" | "spark_alone" | "length_alone";
+            system: "standard_motion" | "standard_motion_review_kept" | "spark_alone" | "length_alone";
             /** Undecided */
             undecided: number;
         };

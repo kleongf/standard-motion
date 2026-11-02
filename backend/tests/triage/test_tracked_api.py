@@ -2,9 +2,9 @@
 
 from fastapi.testclient import TestClient
 
+from standard_motion.baseline.prompts import FROZEN
 from tests.helpers import reference_label, wait_for_job
 from tests.tracking.boxing import EXTERIOR_2, save_box
-from winnow.baseline.prompts import FROZEN
 
 _, NEVER_DROPS, PLACES, _ = FROZEN.phrases
 KEPT_EPISODE = "droid_100:0"  # grasps first time, releases low, never pauses

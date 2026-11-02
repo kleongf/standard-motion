@@ -37,7 +37,7 @@ export function useTestRuns() {
   });
 }
 
-/** Episodes where Spark alone and Winnow disagree, scored live on every read. */
+/** Episodes where Spark alone and Standard Motion disagree, scored live on every read. */
 export function useDisagreements() {
   return useQuery({
     queryKey: ["evaluation", "disagreements"],
@@ -50,7 +50,7 @@ export function useDisagreements() {
   });
 }
 
-/** Score Winnow and the baselines on a set; a Test set run is also logged. */
+/** Score Standard Motion and the baselines on a set; a Test set run is also logged. */
 export function useRunEvaluation() {
   const queryClient = useQueryClient();
   return useMutation({

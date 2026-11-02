@@ -6,13 +6,13 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
 from tests.helpers import ask_visual, reference_label, wait_for_job
 from tests.interview.scripted_text import ScriptedText
 from tests.rubric.scripted import phrase, video_criterion
 from tests.visual.answers import PARAPHRASES, QUESTION
 from tests.visual.scripted import CompileAndAsk, ScriptedVisual
-from winnow.app import create_app
-from winnow.core.settings import Settings
 
 ON_SAUCER = "puts the cup on the saucer"
 UPRIGHT = "keeps it upright"

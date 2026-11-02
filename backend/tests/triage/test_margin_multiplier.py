@@ -4,11 +4,11 @@ calibration tunes it."""
 import numpy as np
 import pytest
 
+from standard_motion.criteria.facts import EpisodeFacts
+from standard_motion.criteria.models import Criterion
+from standard_motion.triage.confidence import effective_margin
+from standard_motion.triage.scoring import score
 from tests.triage.robot_data import CLEAN_GRIPPER, PLACES, facts, rubric
-from winnow.criteria.facts import EpisodeFacts
-from winnow.criteria.models import Criterion
-from winnow.triage.confidence import effective_margin
-from winnow.triage.scoring import score
 
 STRAIGHT = np.linspace(0, 0.3, 45).tolist()
 RISING = np.linspace(0, 0.1, 45).tolist()

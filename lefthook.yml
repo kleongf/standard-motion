@@ -8,9 +8,9 @@ pre-commit:
     frontend:
       glob: "frontend/**/*.{ts,tsx,js,json}"
       run: >-
-        pnpm --filter winnow-frontend run typecheck &&
-        pnpm --filter winnow-frontend run lint &&
-        pnpm --filter winnow-frontend run format:check
+        pnpm --filter standard-motion-frontend run typecheck &&
+        pnpm --filter standard-motion-frontend run lint &&
+        pnpm --filter standard-motion-frontend run format:check
     api-types:
       glob: "backend/**/*.py"
       run: bash scripts/gen-api.sh --check

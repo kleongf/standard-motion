@@ -6,13 +6,13 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.core.settings import Settings
+from standard_motion.rubric.models import DraftPhrase, RubricDraft
 from tests.helpers import app_context, ask_visual, reference_label, track_cleanly, wait_for_job
 from tests.tracking.boxing import EXTERIOR_2, save_box
 from tests.tracking.scripted_sam import SAMPLE_BOX
 from tests.visual.scripted import ScriptedVisual
-from winnow.baseline.prompts import FROZEN
-from winnow.core.settings import Settings
-from winnow.rubric.models import DraftPhrase, RubricDraft
 
 _, _, PLACES, _ = FROZEN.phrases
 KEPT = "droid_100:0"  # the fixture's i % 3 == 0: one clean grasp, released low

@@ -1,8 +1,8 @@
 """Why an export would write no Episode: each cause in turn, and none while it writes some or
 could, with Episodes awaiting a Reference label."""
 
-from winnow.export.models import DecisionCounts
-from winnow.export.tally import exported_count, nothing_exported
+from standard_motion.export.models import DecisionCounts
+from standard_motion.export.tally import exported_count, nothing_exported
 
 
 def counts(

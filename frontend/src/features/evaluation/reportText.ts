@@ -1,4 +1,4 @@
-// The report's wording, shared with `winnow eval`: counts first, then 95% intervals, never "±".
+// The report's wording, shared with `standard-motion eval`: counts first, then 95% intervals, never "±".
 import type { LengthRule, Proportion, Slack } from "./useEvaluation";
 
 /** e.g. "1 of 4". */

@@ -2,10 +2,10 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from winnow.criteria.english import english
-from winnow.criteria.grasps import closures
-from winnow.criteria.models import Criterion, Window
-from winnow.rubric.seed import SEEDED
+from standard_motion.criteria.english import english
+from standard_motion.criteria.grasps import closures
+from standard_motion.criteria.models import Criterion, Window
+from standard_motion.rubric.seed import SEEDED
 
 
 def test_closures_are_the_stretches_above_the_closed_level():

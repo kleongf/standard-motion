@@ -2,7 +2,7 @@
 import { navigate, useSearchParams } from "./url";
 
 // Grouped by the work, in the order it's done: set up the Episodes and their blind labels, curate
-// with a Rubric and export the Episodes it keeps, then measure Winnow against the baselines (only needed to prove it works).
+// with a Rubric and export the Episodes it keeps, then measure Standard Motion against the baselines (only needed to prove it works).
 export const setupPages = ["prepare", "reference"] as const;
 export const curatePages = ["describe", "episodes", "review", "audit", "export"] as const;
 export const measurePages = ["select", "evaluation"] as const;

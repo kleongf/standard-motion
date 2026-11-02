@@ -1,8 +1,8 @@
 import base64, json, sys
 from pathlib import Path
-from winnow.core.settings import get_settings
-from winnow.meta.client import MetaClient
-from winnow.meta.pricing import SPARK_CONTRIBUTOR
+from standard_motion.core.settings import get_settings
+from standard_motion.meta.client import MetaClient
+from standard_motion.meta.pricing import SPARK_CONTRIBUTOR
 m = MetaClient(get_settings())
 SCHEMA = {"type": "object", "additionalProperties": False, "required": ["objects"], "properties": {"objects": {"type": "array", "items": {"type": "object", "additionalProperties": False, "required": ["label", "visible", "x_min", "y_min", "x_max", "y_max"], "properties": {"label": {"type": "string"}, "visible": {"type": "boolean"}, "x_min": {"type": "integer"}, "y_min": {"type": "integer"}, "x_max": {"type": "integer"}, "y_max": {"type": "integer"}}}}}}
 def url(p): return "data:image/png;base64," + base64.b64encode(Path(p).read_bytes()).decode()

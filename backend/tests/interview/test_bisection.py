@@ -1,6 +1,6 @@
 """Bisecting an assumed threshold over anchor Episodes with known values."""
 
-from winnow.interview.bisection import Answered, Point, next_point, resolve, separated
+from standard_motion.interview.bisection import Answered, Point, next_point, resolve, separated
 
 # Eight anchor Episodes, 0.5 apart.
 POINTS = [Point(f"droid_100:{i}", 0.5 * (i + 1)) for i in range(8)]

@@ -1,8 +1,8 @@
 import json, sys
-from winnow.core.settings import get_settings
-from winnow.episodes.droid100 import CAMERAS, h264_clip, load_signals
-from winnow.meta.client import MetaClient
-from winnow.meta.pricing import SPARK_CONTRIBUTOR, SPARK_STANDARD
+from standard_motion.core.settings import get_settings
+from standard_motion.episodes.droid100 import CAMERAS, h264_clip, load_signals
+from standard_motion.meta.client import MetaClient
+from standard_motion.meta.pricing import SPARK_CONTRIBUTOR, SPARK_STANDARD
 s = get_settings(); d = s.data_dir / "droid_100"; m = MetaClient(s)
 INSTRUCTIONS = {
     42: "Move the black remote control to the left",

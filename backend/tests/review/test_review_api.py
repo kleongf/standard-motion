@@ -1,15 +1,15 @@
 """The Review queue: Needs review Episodes, strictly least confident first, each with only the
-Phrases Winnow couldn't decide. An answered Episode that is decided leaves it."""
+Phrases Standard Motion couldn't decide. An answered Episode that is decided leaves it."""
 
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.rubric.models import Rubric
 from tests.conftest import OPEN_GRIPPER_EPISODE
 from tests.helpers import app_context, ask_visual, reference_label, track_cleanly, wait_for_job
-from winnow.baseline.prompts import FROZEN
-from winnow.rubric.models import Rubric
 
 _, NEVER_DROPS, _, _ = FROZEN.phrases
 INDICES = [0, 1, 2, OPEN_GRIPPER_EPISODE]

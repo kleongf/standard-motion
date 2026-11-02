@@ -1,9 +1,9 @@
-# Winnow
+# Standard Motion
 
-Describe what a good robot demonstration looks like in English; Winnow judges every Episode against it, keeps the good ones, routes uncertain ones to a human, and explains every rejection.
+Describe what a good robot demonstration looks like in English; Standard Motion judges every Episode against it, keeps the good ones, routes uncertain ones to a human, and explains every rejection.
 
 - **Intent and plan:** [docs/plan.md](docs/plan.md)
-- **Planning map:** [Winnow week build spec](https://github.com/kleongf/winnow/issues/1) (decisions live in its tickets)
+- **Planning map:** [Standard Motion week build spec](https://github.com/kleongf/winnow/issues/1) (decisions live in its tickets)
 - **Vocabulary:** [GLOSSARY.md](GLOSSARY.md). Use its terms in code and prose: Episode, Rubric, Criterion, Criterion result, Triage decision. Never name anything `demo` or `verdict`.
 
 ## Verify
@@ -21,9 +21,9 @@ Setup: `pnpm install && uv sync --project backend && pnpm exec playwright instal
 ## Conventions
 
 - **Layout:** `backend/` is Python 3.13 (uv, FastAPI, Pydantic, pyright strict, ruff, pytest). `frontend/` is React + strict TypeScript (Vite, TanStack Query, shadcn/ui on Radix with Tailwind, ESLint, Prettier, Vitest); add components with `pnpm dlx shadcn add`, which writes the generated, unlinted `src/components/ui/`. `e2e/` is Playwright; `scripts/` is repo tooling.
-- **One directory per feature,** named after the glossary: `backend/src/winnow/<feature>/` with `models.py` (Pydantic types), `service.py` (logic), `routes.py` (FastAPI router, mounted under `/api` in `app.py`); tests in `backend/tests/<feature>/`. The frontend mirrors it in `frontend/src/features/<feature>/`. `core/` holds settings and app-level routes. Create a feature directory when its first code lands.
-- **Meta API:** every call goes through `backend/src/winnow/meta/` (auth, retries, rate limits, cost log). Tests and CI never call it; use fixtures.
-- **Secrets:** read through `winnow.core.settings`, loaded from `.env`. Never hard-code or log them.
+- **One directory per feature,** named after the glossary: `backend/src/standard_motion/<feature>/` with `models.py` (Pydantic types), `service.py` (logic), `routes.py` (FastAPI router, mounted under `/api` in `app.py`); tests in `backend/tests/<feature>/`. The frontend mirrors it in `frontend/src/features/<feature>/`. `core/` holds settings and app-level routes. Create a feature directory when its first code lands.
+- **Meta API:** every call goes through `backend/src/standard_motion/meta/` (auth, retries, rate limits, cost log). Tests and CI never call it; use fixtures.
+- **Secrets:** read through `standard_motion.core.settings`, loaded from `.env`. Never hard-code or log them.
 - **Frontend data:** fetch only via TanStack Query hooks that call `frontend/src/api/client.ts`. Its types are generated from the backend's OpenAPI schema: after changing a route or model, run `pnpm gen:api` and commit `schema.ts`. Never hand-write API types. UI state is React local state; no global store.
 - **Size limits:** 300 lines per source file (500 for tests), cyclomatic complexity 10. Split by responsibility when you hit them; don't raise the limit.
 - **Naming:** Python `snake_case` modules, `PascalCase` models; TS components in `PascalCase.tsx`, everything else `camelCase`.

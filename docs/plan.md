@@ -1,21 +1,21 @@
-# Winnow — Project Plan
+# Standard Motion — Project Plan
 
 *Meta Global AI Developer Hackathon · Indie Developer track · Theme: Push the Frontier (robotics)*
 
-**Working name:** Winnow
+**Working name:** Standard Motion
 **Alternatives:** Plainsight, Assay, Sift, Keepers
 
 ---
 
 ## 1. The pitch (keep it this short)
 
-**One line:** Describe what a good robot demonstration looks like. Winnow watches every one and keeps only those.
+**One line:** Describe what a good robot demonstration looks like. Standard Motion watches every one and keeps only those.
 
 **Problem (one sentence):** Robots learn from human demonstrations, but teams can't watch thousands of them, and today's best AI judges say "success" when they're unsure, so bad demos slip into training.
 
 **Solution (one sentence):** You write "expert" in plain English; Meta's models check every episode against it, keep the good ones, flag the uncertain ones for a human, and show exactly why each rejected one failed.
 
-**Why I'm building it:** My robotics club (Triton Droids) is training a ping pong policy and struggling to curate expert demonstrations. Winnow is my own project; ping pong is the motivation, not the product.
+**Why I'm building it:** My robotics club (Triton Droids) is training a ping pong policy and struggling to curate expert demonstrations. Standard Motion is my own project; ping pong is the motivation, not the product.
 
 **Pitch test:** a non-roboticist should be able to repeat the one-liner back after hearing it once.
 
@@ -67,9 +67,9 @@
 
 ---
 
-## 5. How Winnow works
+## 5. How Standard Motion works
 
-1. **Describe (an interview)** — e.g. *"Expert pick-and-place: grasps on the first try, never drops the object, places it inside the target, no long pauses."* Spark drafts the Rubric and splits the Description into Phrases (each Checked, Context, or Unsupported); Winnow's code checks coverage: Phrases no Criterion covers, and values Spark had to assume. Code then picks questions anchored on Episodes from an **anchor pool** (the Dev set during evaluation; no dataset-wide numbers before the run), worded from templates: uncovered Phrases first, then assumed thresholds by bisection ("Is this 1.8 s pause long?", ≤ 3 per threshold, margin = the bracketing gap), then hard/soft and the grasp settings, then Episodes where a Phrase's Criteria disagree. Spark recompiles only when the user answers in free text. It ends when every Phrase is covered; Run never blocks, and leftover assumptions stay visible. Every answer is also a label, keyed by (Episode, Phrase). Decided in [Rubric compile and the Describe interview](https://github.com/kleongf/winnow/issues/18).
+1. **Describe (an interview)** — e.g. *"Expert pick-and-place: grasps on the first try, never drops the object, places it inside the target, no long pauses."* Spark drafts the Rubric and splits the Description into Phrases (each Checked, Context, or Unsupported); Standard Motion's code checks coverage: Phrases no Criterion covers, and values Spark had to assume. Code then picks questions anchored on Episodes from an **anchor pool** (the Dev set during evaluation; no dataset-wide numbers before the run), worded from templates: uncovered Phrases first, then assumed thresholds by bisection ("Is this 1.8 s pause long?", ≤ 3 per threshold, margin = the bracketing gap), then hard/soft and the grasp settings, then Episodes where a Phrase's Criteria disagree. Spark recompiles only when the user answers in free text. It ends when every Phrase is covered; Run never blocks, and leftover assumptions stay visible. Every answer is also a label, keyed by (Episode, Phrase). Decided in [Rubric compile and the Describe interview](https://github.com/kleongf/winnow/issues/18).
 2. **Compile** — each Criterion is a **typed call** to one fixed primitive with one comparator (params, threshold, unit, margin, window, camera views, source Phrase), and the English shown to the user is rendered from those fields, so the Rubric and the code can't drift apart. A Phrase may compile to several Criteria from different sources (e.g. placement = a visual question + box overlap with a SAM text-prompted target box); all run, and their disagreement is an uncertainty signal. One Spark call with a capabilities manifest, one repair turn, else Unsupported. Hard or soft comes from the wording. The user drags thresholds, toggles hard/soft, or disables a Criterion directly; structural changes go through the chat. Spark routes each Criterion to the cheapest source that can decide it:
    - **Measured from robot data** (end-effector pose + gripper in droid_100; joint states and camera extrinsics too in droid_1.0.1): failed grasp attempts, pauses, completion time, release height, path efficiency.
    - **Tracked from SAM 3.1** across the views each Criterion needs (wrist for in-hand, one boxed exterior view for placement): object slips in transit, falls after release, moved, overlaps the target box at the end.
@@ -98,7 +98,7 @@
 | Model | Role | What makes it more than a basic integration |
 |---|---|---|
 | **SAM 3.1** (Model API, `sam-3.1`) | Tracks the gripper and objects from a seed box (text prompts fail on the gripper and small objects at 320×180); each call takes one concept and one camera and returns per-frame boxes, masks, track ids, and confidence | The *measurement backbone*: with robot data, it decides physical facts (lifted, dropped, moved, inside target) across camera views, and steers Spark to the right moment and crop |
-| **Muse Spark 1.3** | Runs the Describe interview; composes typed Criteria; picks what SAM tracks; judges only what geometry can't; writes Reasons; proposes missing Criteria | Never the holistic judge (that's the baseline). Checks run in Winnow's own code (the API has no hosted code execution), which Spark calls as function tools |
+| **Muse Spark 1.3** | Runs the Describe interview; composes typed Criteria; picks what SAM tracks; judges only what geometry can't; writes Reasons; proposes missing Criteria | Never the holistic judge (that's the baseline). Checks run in Standard Motion's own code (the API has no hosted code execution), which Spark calls as function tools |
 | **Muse Voice Transcribe** | Push-to-talk labeling on the Review page: narrate while watching an Episode | Each turn is transcribed through the backend; its moment is the playhead at the turn's onset (the API has no word-level timestamps); one Spark call maps the transcript onto the Episode's unsure Phrases as pass or fail, shown as chips the user confirms before they save as ordinary review labels (voice is only the input mode). Answering the Describe interview by voice is slides-only |
 | **Muse Glimmer** (open weights; hosted via OpenRouter, not on the Meta Model API) | One-way second opinion on keyframes for end-state visual Criteria Spark answered unanimously; disagreement only adds Needs review (images only, no video); running locally is roadmap (needs a 32 GB+ Mac) | Different model than Spark catches different mistakes; open-weights bonus |
 | **Muse Wonder** | (Stretch / roadmap) agent that improves the rubric against labeled episodes, with budget and stopping rules | Applies my self-monitoring research-agent architecture |
@@ -126,7 +126,7 @@
 
 - **Track:** Indie. **Theme:** Push the Frontier (robotics).
 - **Hero demo:** pick-and-place on public data.
-- **Bar to beat:** same episodes, same Meta model — **Spark alone vs. Winnow**. Win on **right decision for the right reason**: decision accuracy and false-keep rate on true failures, plus whether each Reject's Reason matches what happened (failure type and time). On Day 1, Spark alone got all 5 decisions right but told the wrong story on episode 42.
+- **Bar to beat:** same episodes, same Meta model — **Spark alone vs. Standard Motion**. Win on **right decision for the right reason**: decision accuracy and false-keep rate on true failures, plus whether each Reject's Reason matches what happened (failure type and time). On Day 1, Spark alone got all 5 decisions right but told the wrong story on episode 42.
 - **Ping pong:** motivation and "what's next," not the product.
 - **Cost tier:** contributor tier is fine (public data); escalated judging needs the standard tier (contributor has no `max` reasoning and a 150 RPM cap).
 - **Philosophy:** somewhat functional + very well presented. Not everything needs to be built.
@@ -144,7 +144,7 @@
 | 1:10 | Click a rejected "success": video + SAM masks, timeline marking where it failed, gripper data, one-line reason | Wow moment |
 | 1:35 | Needs-review pile → narrate a verdict by voice → thresholds update | Self-monitoring + Meta tooling |
 | 2:00 | Change one sentence ("pauses are fine") → instant re-sort | Flexibility |
-| 2:15 | Results: Winnow vs Spark alone; cost per 1,000 episodes | Proof |
+| 2:15 | Results: Standard Motion vs Spark alone; cost per 1,000 episodes | Proof |
 | 2:35 | "Any robot, any task, described in English." Ping pong as what's next | Close |
 
 ---
@@ -189,7 +189,7 @@ The **cost cascade** needs no separate build: routing to the cheapest source is 
 
 ## 11. Build plan
 
-Build days are Thu Oct 29 – Mon Nov 2; Nov 3–4 is for the Demo video and submission. The table is a guide, not a contract. Only two orderings are fixed: the user's blind Reference labels land before any tuning (and before they see Winnow's or Spark-alone's output on those Episodes), and the gate comes before any nice-to-have.
+Build days are Thu Oct 29 – Mon Nov 2; Nov 3–4 is for the Demo video and submission. The table is a guide, not a contract. Only two orderings are fixed: the user's blind Reference labels land before any tuning (and before they see Standard Motion's or Spark-alone's output on those Episodes), and the gate comes before any nice-to-have.
 
 | Day | Build | Human |
 |---|---|---|

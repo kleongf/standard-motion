@@ -1,10 +1,10 @@
-"""`winnow ask`: the latest Rubric's visual Criteria asked from the command line."""
+"""`standard-motion ask`: the latest Rubric's visual Criteria asked from the command line."""
 
 import pytest
 
+from standard_motion.cli import main
+from standard_motion.core.settings import Settings
 from tests.visual.scripted import ScriptedVisual
-from winnow.cli import main
-from winnow.core.settings import Settings
 
 
 def test_the_cli_asks_the_latest_rubrics_visual_criteria(

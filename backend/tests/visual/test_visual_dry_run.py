@@ -10,17 +10,17 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
+from standard_motion.meta.models import MetaContent
+from standard_motion.meta.transport import Reply
+from standard_motion.visual.service import DRY_RUN
 from tests.helpers import app_context, reference_label, wait_for_job
 from tests.interview.client import answer, interview, say, skip_to
 from tests.interview.scripted_text import ScriptedText
 from tests.rubric.scripted import phrase, video_criterion
 from tests.visual.answers import PARAPHRASES, QUESTION
 from tests.visual.scripted import CompileAndAsk, ScriptedVisual, response_format
-from winnow.app import create_app
-from winnow.core.settings import Settings
-from winnow.meta.models import MetaContent
-from winnow.meta.transport import Reply
-from winnow.visual.service import DRY_RUN
 
 ON_SAUCER = "puts the cup on the saucer"
 DESCRIPTION = f"Tidy place: {ON_SAUCER}."

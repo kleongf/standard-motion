@@ -7,11 +7,11 @@ from pathlib import Path
 import httpx2
 import pytest
 
+from standard_motion.meta.models import Transcript, Turn
+from standard_motion.meta.openai_transport import OpenAITransport
+from standard_motion.meta.pricing import VOICE_TRANSCRIBE
+from standard_motion.meta.transport import TransientError, UnusableReplyError
 from tests.meta.test_transcribe import write_wav
-from winnow.meta.models import Transcript, Turn
-from winnow.meta.openai_transport import OpenAITransport
-from winnow.meta.pricing import VOICE_TRANSCRIBE
-from winnow.meta.transport import TransientError, UnusableReplyError
 
 OPTIONS: dict[str, object] = {"audioEncoding": "WAV", "mode": "PUSH_TO_TALK"}
 

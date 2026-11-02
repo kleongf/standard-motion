@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from winnow.cli import main
-from winnow.core.settings import Settings
+from standard_motion.cli import main
+from standard_motion.core.settings import Settings
 
 
 def test_cli_ingest_adds_the_same_episodes_the_route_would(

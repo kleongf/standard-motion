@@ -7,11 +7,11 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from winnow.app import create_app
-from winnow.core.db import open_db
-from winnow.core.settings import Settings
-from winnow.jobs.models import WorkItem
-from winnow.jobs.store import JobStore
+from standard_motion.app import create_app
+from standard_motion.core.db import open_db
+from standard_motion.core.settings import Settings
+from standard_motion.jobs.models import WorkItem
+from standard_motion.jobs.store import JobStore
 
 INTERRUPTED = "interrupted; run it again"
 ITEMS = [WorkItem("ingest", {"index": i}, f"droid_100:{i}") for i in range(3)]
@@ -20,9 +20,9 @@ ITEMS = [WorkItem("ingest", {"index": i}, f"droid_100:{i}") for i in range(3)]
 CREATE_AND_EXIT = """
 import sys
 from pathlib import Path
-from winnow.core.db import open_db
-from winnow.jobs.models import WorkItem
-from winnow.jobs.store import JobStore
+from standard_motion.core.db import open_db
+from standard_motion.jobs.models import WorkItem
+from standard_motion.jobs.store import JobStore
 
 store = JobStore(open_db(Path(sys.argv[1])))
 job_id = store.create("ingest", [WorkItem("ingest", {"index": i}, str(i)) for i in range(3)])
@@ -37,7 +37,7 @@ def _statuses(api: TestClient, job_id: int) -> list[tuple[str, str | None]]:
 
 
 def test_a_live_processs_job_survives_another_app_starting(settings: Settings) -> None:
-    # This test process owns the job, as the CLI owned its `winnow select` job.
+    # This test process owns the job, as the CLI owned its `standard-motion select` job.
     db = open_db(settings.db_path)
     store = JobStore(db)
     job_id = store.create("ingest", ITEMS)

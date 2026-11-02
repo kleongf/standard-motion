@@ -2,8 +2,8 @@
 
 import pytest
 
-from winnow.audit.models import AuditMark
-from winnow.audit.service import KEEPS, REJECTS, draw, keep_precision
+from standard_motion.audit.models import AuditMark
+from standard_motion.audit.service import KEEPS, REJECTS, draw, keep_precision
 
 
 def ids(prefix: str, count: int) -> list[str]:
