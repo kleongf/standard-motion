@@ -130,6 +130,15 @@ def conclusive_fail(result: CriterionResult) -> bool:
     return result.status == "fail" and PRIMITIVES[result.primitive].conclusive
 
 
+def _contradicted(fail: CriterionResult, deciding: list[CriterionResult]) -> bool:
+    """A conclusive fail beside a conclusive pass of another kind on its Phrase, e.g. a tracked
+    overlap of 0 against Spark seeing it placed in every sample: one source is wrong."""
+    return any(
+        r.status == "pass" and PRIMITIVES[r.primitive].conclusive and r.kind != fail.kind
+        for r in deciding
+    )
+
+
 def _outvoted(result: CriterionResult) -> bool:
     """Whether a passing Criterion beside it can pass its Phrase anyway."""
     if result.status == "pass":
@@ -138,10 +147,11 @@ def _outvoted(result: CriterionResult) -> bool:
 
 
 def phrase_result(phrase: str, results: list[CriterionResult], label: Label | None) -> PhraseResult:
-    """Fails on any crisp conclusive fail; passes when one of its Criteria passes and the rest
-    are only unsure, counting only the passing ones' p; else unsure. An inconclusive primitive
-    can't fail a Phrase, so its fail or unsure always blocks a pass: that is its whole say.
-    Only hard Criteria decide a Phrase that has any; a human label overrides them all."""
+    """Fails on any crisp conclusive fail, unless a conclusive pass of another kind contradicts
+    it (then unsure); passes when one of its Criteria passes and the rest are only unsure,
+    counting only the passing ones' p; else unsure. An inconclusive primitive can't fail a
+    Phrase, so its fail or unsure always blocks a pass: that is its whole say. Only hard
+    Criteria decide a Phrase that has any; a human label overrides them all."""
     hard = [r for r in results if r.hard]
     deciding = hard or results
     status: Status | None = None
@@ -149,7 +159,7 @@ def phrase_result(phrase: str, results: list[CriterionResult], label: Label | No
     if label is not None:
         status = label.value
         p = 1.0 if label.value == "pass" else 0.0
-    elif any(conclusive_fail(r) for r in deciding):
+    elif any(conclusive_fail(r) and not _contradicted(r, deciding) for r in deciding):
         status = "fail"
     elif any(r.status == "pass" for r in deciding) and all(map(_outvoted, deciding)):
         status = "pass"

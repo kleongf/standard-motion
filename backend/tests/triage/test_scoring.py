@@ -6,8 +6,8 @@ import numpy as np
 from standard_motion.criteria.facts import EpisodeFacts
 from standard_motion.criteria.models import RubricSettings, Setting, Window
 from standard_motion.episodes.models import EpisodeSignals
-from standard_motion.triage.models import Label
-from standard_motion.triage.scoring import score
+from standard_motion.triage.models import CriterionResult, Label
+from standard_motion.triage.scoring import phrase_result, score
 from tests.triage.robot_data import (
     CLEAN_GRIPPER,
     CLEAN_Z,
@@ -63,6 +63,56 @@ def test_closures_before_the_grasp_are_failed_attempts_and_reject_with_their_tim
         result.moments[1].t,
         result.moments[2].t,
     ]
+
+
+def test_an_earlier_closure_that_lifted_is_a_multi_step_grasp_not_a_failed_attempt():
+    # Two closures, each rising 10 cm: a first object moved, then the last grasp.
+    two_lifts = facts(
+        frames((0, 10), (1, 10), (0, 5), (1, 20)), frames((DOWN, 15), (UP, 5), (DOWN, 10), (UP, 15))
+    )
+
+    [result] = score(rubric(first_try()), two_lifts).criteria
+
+    assert (result.status, result.value) == ("pass", 1)
+    assert [m.label for m in result.moments] == ["Grasp"]
+
+
+def test_a_closure_that_never_lifted_before_the_grasp_is_still_a_failed_attempt():
+    no_lift_then_lift = facts(
+        frames((0, 10), (1, 10), (0, 5), (1, 20)), frames((DOWN, 30), (UP, 15))
+    )
+
+    [result] = score(rubric(first_try()), no_lift_then_lift).criteria
+
+    assert (result.status, result.value) == ("fail", 2)
+
+
+def _placement(kind: str, primitive: str, status: str) -> CriterionResult:
+    [base] = score(rubric(first_try()), facts(CLEAN_GRIPPER, CLEAN_Z)).criteria
+    return base.model_copy(
+        update={"phrase": PLACES, "kind": kind, "primitive": primitive, "status": status}
+    )
+
+
+def test_a_tracked_fail_against_a_unanimous_visual_pass_is_unsure():
+    overlap_fail = _placement("tracked", "final_overlap", "fail")
+    spark_pass = _placement("visual", "ask_video", "pass")
+
+    assert phrase_result(PLACES, [overlap_fail, spark_pass], None).status == "unsure"
+
+
+def test_a_tracked_fail_beside_a_split_visual_answer_still_fails():
+    overlap_fail = _placement("tracked", "final_overlap", "fail")
+    spark_split = _placement("visual", "ask_video", "unsure")
+
+    assert phrase_result(PLACES, [overlap_fail, spark_split], None).status == "fail"
+
+
+def test_two_tracked_criteria_never_contradict_each_other():
+    lost = _placement("tracked", "in_hand_lost_s", "fail")
+    fell = _placement("tracked", "fall_after_release", "pass")
+
+    assert phrase_result(PLACES, [lost, fell], None).status == "fail"
 
 
 def test_the_grasp_is_the_last_closure_that_rises_the_rubrics_grasp_rule():

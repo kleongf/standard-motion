@@ -19,7 +19,7 @@ SEEDED_SETTINGS = RubricSettings(
         value=0.02,
         margin=0.01,
         assumption="The grasp is the last closure during which the arm rises 2 cm; earlier "
-        "closures are failed attempts.",
+        "closures that never rose are failed attempts.",
     ),
 )
 
