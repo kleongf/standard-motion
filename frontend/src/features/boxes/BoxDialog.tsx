@@ -1,4 +1,5 @@
-// Save & next through Episodes that need a box: 1/2 pick the exterior view, Enter saves.
+// Save & next through Episodes that need a box: 1/2 pick the exterior view, Enter saves. The
+// view's whole clip loops beside frame 0, so the moved object is easy to recognise.
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 
-import type { Episode } from "../episodes/useEpisodes";
+import { clipUrl, type Episode } from "../episodes/useEpisodes";
 import { BoxCanvas } from "./BoxCanvas";
 import type { Rect } from "./boxFromDrag";
 import { frame0Url, useSaveBox, type ExteriorCamera } from "./useBoxes";
@@ -68,7 +69,7 @@ export function BoxDialog(props: { queue: Episode[]; onClose: () => void }) {
       }}
     >
       <DialogContent
-        className="sm:max-w-4xl"
+        className="sm:max-w-6xl"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
         }}
@@ -81,6 +82,11 @@ export function BoxDialog(props: { queue: Episode[]; onClose: () => void }) {
             {episode.instruction ? `“${episode.instruction}”: ` : ""}drag a box around the object
             being moved, in the view where it looks biggest.
           </DialogDescription>
+          {episode.task_object && (
+            <p className="text-sm">
+              <span className="font-medium">Object:</span> {episode.task_object}
+            </p>
+          )}
         </DialogHeader>
         <div className="flex items-center gap-1">
           {VIEWS.map((v) => (
@@ -102,12 +108,35 @@ export function BoxDialog(props: { queue: Episode[]; onClose: () => void }) {
               : "drag on the frame"}
           </span>
         </div>
-        <BoxCanvas
-          key={`${episode.id}-${camera}`}
-          src={frame0Url(episode.id, camera)}
-          box={box}
-          onDraw={setBox}
-        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <figure>
+            <BoxCanvas
+              key={`${episode.id}-${camera}`}
+              src={frame0Url(episode.id, camera)}
+              box={box}
+              onDraw={setBox}
+            />
+            <figcaption className="mt-1 text-xs text-muted-foreground">
+              Frame 0: draw here
+            </figcaption>
+          </figure>
+          <figure>
+            <video
+              key={`${episode.id}-${camera}`}
+              src={clipUrl(episode.id, camera)}
+              aria-label="Episode clip"
+              className="aspect-video w-full rounded bg-black"
+              autoPlay
+              loop
+              muted
+              playsInline
+              controls
+            />
+            <figcaption className="mt-1 text-xs text-muted-foreground">
+              The whole Episode, looping
+            </figcaption>
+          </figure>
+        </div>
         {save.error && (
           <p role="alert" className="text-sm text-destructive">
             {save.error.message}
