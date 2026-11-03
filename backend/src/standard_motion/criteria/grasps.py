@@ -1,8 +1,9 @@
 """The grasp rule: which gripper closure is the grasp, and which were failed attempts.
 
 The grasp is the last closure during which the end effector rises at least the Rubric's
-`grasp_rise_m`; earlier closures are failed attempts. Closures are read against the Rubric's
-gripper-closed level, never a hard-coded one.
+`grasp_rise_m`; earlier closures that never rose are failed attempts, and earlier ones that did
+are grasps of a multi-step task. Closures are read against the Rubric's gripper-closed level,
+never a hard-coded one.
 """
 
 from dataclasses import dataclass
@@ -44,6 +45,7 @@ def rise_m(z: FloatArray, closure: Interval) -> float:
 @dataclass(frozen=True)
 class Grasps:
     closures: list[Interval]
+    lifted: list[bool]  # per closure: the end effector rose `grasp_rise_m` during it
     grasp: int | None  # index into `closures`; None when no closure rose enough
     frames: int  # in the Episode
     released: bool  # the grasp opened before the Episode ended
@@ -56,8 +58,12 @@ class Grasps:
 
     @property
     def failed(self) -> list[Interval]:
-        """Closures before the grasp; all of them when there is none."""
-        return self.closures if self.grasp is None else self.closures[: self.grasp]
+        """Closures before the grasp that never lifted; all of them when there is none."""
+        if self.grasp is None:
+            return self.closures
+        return [
+            c for c, up in zip(self.closures[: self.grasp], self.lifted, strict=False) if not up
+        ]
 
     @property
     def the_grasp(self) -> Interval | None:
@@ -67,8 +73,9 @@ class Grasps:
 def find_grasps(signals: EpisodeSignals, settings: RubricSettings) -> Grasps:
     found = closures(signals.gripper, settings.gripper_closed_level.value)
     z = signals.position[:, 2]
-    lifting = [i for i, c in enumerate(found) if rise_m(z, c) >= settings.grasp_rise_m.value]
+    lifted = [rise_m(z, c) >= settings.grasp_rise_m.value for c in found]
+    lifting = [i for i, up in enumerate(lifted) if up]
     grasp = lifting[-1] if lifting else None
     frames = len(signals.gripper)
     released = grasp is not None and found[grasp].end < frames - 1
-    return Grasps(found, grasp, frames, released, settings)
+    return Grasps(found, lifted, grasp, frames, released, settings)
