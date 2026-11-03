@@ -49,11 +49,7 @@ export function ReferenceLabelsPage() {
   const byId = new Map(episodes.map((e) => [e.id, e]));
   return (
     <Page width="content">
-      <PageHeader
-        title="Reference labels"
-        subtitle={description && `“${description.text}”`}
-        info="Label blind, before any tuning: no Triage decision, Criterion result or baseline answer shows here, and an Episode's Dataset outcome appears only once it's labelled."
-      />
+      <PageHeader title="Reference labels" subtitle={description && `“${description.text}”`} />
       <div className="flex items-center gap-2">
         <Tabs
           label="Queue"
@@ -78,12 +74,6 @@ export function ReferenceLabelsPage() {
           {queue === "relabel" ? "Start relabelling" : "Start labelling"} ({remaining.length})
         </Button>
       </div>
-      {queue === "relabel" && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          A day after the first pass, relabel about 15 Dev set Episodes. They are kept apart from
-          the first pass and measure how far your own interval edges move.
-        </p>
-      )}
       <QueueTable
         episodes={members.flatMap((id) => byId.get(id) ?? [])}
         labels={labels}

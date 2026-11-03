@@ -65,8 +65,7 @@ export function VersionPanel(props: {
   return (
     <div>
       <p className="mb-3 text-xs text-muted-foreground">
-        {origin === "seed" ? "Seeded" : "Run"} {new Date(createdAt).toLocaleString()} · frozen, so
-        nothing here can change. Edits go to the draft.
+        {origin === "seed" ? "Seeded" : "Run"} {new Date(createdAt).toLocaleString()}
       </p>
       <div className="rounded-lg border bg-card p-4">
         <div className="mb-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">

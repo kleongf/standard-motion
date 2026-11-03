@@ -97,7 +97,7 @@ export function AnchorHistogram(props: {
       </svg>
       <div className="flex justify-between text-[10px] text-muted-foreground tabular-nums">
         <span>{formatValue(domain.min, preview.unit)}</span>
-        {unmeasured > 0 && <span>{unmeasured} not measured, so unsure</span>}
+        {unmeasured > 0 && <span>{unmeasured} not measured</span>}
         <span>{formatValue(domain.max, preview.unit)}</span>
       </div>
       {props.onDrag && (

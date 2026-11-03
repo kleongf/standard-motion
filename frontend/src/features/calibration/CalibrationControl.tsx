@@ -66,11 +66,6 @@ export function CalibrationControl(props: { calibration: Calibration }) {
         </p>
       ))}
       {run.error && <p className="mt-2 text-xs text-destructive">{run.error.message}</p>}
-      <p className="mt-2 text-[11px] text-muted-foreground">
-        Every margin is max(noise floor, interview gap) × s, tuned on the Dev set’s interview and
-        review labels. A new Rubric version from Run starts at s = 1.0 until it is calibrated; one
-        made by accepting a suggestion keeps this s.
-      </p>
     </section>
   );
 }

@@ -26,7 +26,6 @@ export function PreparePage() {
           status.data &&
           `${String(status.data.episodes)} Episodes · Meta API spend so far $${status.data.cost_usd.toFixed(2)}`
         }
-        info="Everything here belongs to the Dataset, not a Project: clips, tracks and hand-drawn boxes. Nothing here depends on a Description."
       />
       {status.data && <StatusGrid status={status.data} />}
       <SetStatus />

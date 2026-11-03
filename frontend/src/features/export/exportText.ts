@@ -49,7 +49,3 @@ export function writesText(preview: ExportPreview): string {
   }
   return `${writes}, plus those of the ${episodes(awaiting)} awaiting a Reference label that are ${decisions}.`;
 }
-
-export function testSetText(testSet: number): string {
-  return `${episodes(testSet)} in the Test set ${testSet === 1 ? "is" : "are"} left out: the Test set is never exported.`;
-}

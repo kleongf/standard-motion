@@ -107,9 +107,6 @@ export function YourCall(props: {
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-[11px] text-muted-foreground">
-        Phrases that already passed or failed aren’t asked.
-      </p>
     </section>
   );
 }

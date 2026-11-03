@@ -64,22 +64,15 @@ function SampleStatus(props: { audit: ReturnType<typeof useAudit> }) {
   if (audit.isPending) return <p className="text-sm text-muted-foreground">Loading the sample…</p>;
   if (audit.isError) return <p className="text-sm text-destructive">{audit.error.message}</p>;
   return (
-    <div className="max-w-xl rounded-md border p-4">
-      <p className="text-sm">
-        Check a random sample of the Episodes Standard Motion decided on its own: up to 12 Keeps and
-        5 Rejects with a Reference label, none from the Test set. It’s drawn once for Rubric v
-        {audit.data.rubric_version} at s = {sText(audit.data.s)}, with its seed recorded.
-      </p>
+    <div className="flex max-w-xl flex-col items-start gap-3">
       {audit.data.earlier_s !== null && (
-        <p className="mt-2 text-sm text-amber-800 dark:text-amber-300" data-testid="audit-redraw">
+        <p className="text-sm text-amber-800 dark:text-amber-300" data-testid="audit-redraw">
           Calibration changed s from {sText(audit.data.earlier_s)} to {sText(audit.data.s)} since
-          the last sample, and with it which Episodes Standard Motion keeps: draw a fresh sample.
-          Episodes drawn again keep their marks.
+          the last sample: draw a fresh sample.
         </p>
       )}
       <Button
         size="sm"
-        className="mt-3"
         disabled={drawSample.isPending}
         onClick={() => {
           drawSample.mutate();
@@ -88,7 +81,7 @@ function SampleStatus(props: { audit: ReturnType<typeof useAudit> }) {
         Draw the sample
       </Button>
       {drawSample.isError && (
-        <p role="alert" className="mt-2 text-xs text-destructive">
+        <p role="alert" className="text-xs text-destructive">
           {drawSample.error.message}
         </p>
       )}
@@ -104,9 +97,8 @@ function AuditHeader(props: { sample: AuditSample | undefined; current: AuditIte
     <PageHeader
       title="Audit"
       subtitle={
-        sample?.seed == null
-          ? "Keep precision, from a seeded sample"
-          : `${String(marked)} of ${String(items.length)} marked · Rubric v${String(sample.rubric_version)} · seed ${String(sample.seed)} · drawn at s = ${sText(sample.s)}`
+        sample?.seed != null &&
+        `${String(marked)} of ${String(items.length)} marked · Rubric v${String(sample.rubric_version)}`
       }
       progress={sample?.seed == null ? undefined : marked / Math.max(1, items.length)}
       actions={sample?.seed != null && <AuditStats sample={sample} current={current} />}

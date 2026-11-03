@@ -58,9 +58,7 @@ test("auditing one Keep Good and another Bad updates Keep precision", async ({ p
   const precision = page.getByTestId("audit-precision");
   await expect(draw.or(precision)).toBeVisible();
   if (await draw.isVisible()) await draw.click();
-  await expect(
-    page.getByText(/marked · Rubric v\d+ · seed \d+ · drawn at s = 1\.0$/),
-  ).toBeVisible();
+  await expect(page.getByText(/marked · Rubric v\d+$/)).toBeVisible();
   await expect(precision).toHaveText("No Keeps marked yet");
 
   const strip = page.getByRole("region", { name: "Sample" });

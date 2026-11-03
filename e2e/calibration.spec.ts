@@ -106,7 +106,6 @@ test("the version in use calibrates s and accepts a suggested threshold", async 
   await page.goto(`/?page=describe&version=${String(v)}`);
   const control = page.getByRole("region", { name: "Calibration" });
   await expect(control.getByTestId("multiplier")).toHaveText("s = 1.0 · not tuned yet");
-  await expect(control).toContainText("starts at s = 1.0 until it is calibrated");
 
   // From here the replies are stubbed: twelve labels to tune on, then the scan's result, then
   // the next version, which keeps the s its suggestion was made at.
@@ -155,7 +154,7 @@ test("the version in use calibrates s and accepts a suggested threshold", async 
   );
   await expect(page.getByRole("article", { name: SUGGESTED })).toBeVisible();
   await expect(control.getByTestId("multiplier")).toHaveText("s = 2.0 · tuned on 12 labels");
-  await expect(page.getByText(/^Run .* · frozen/)).toBeVisible();
+  await expect(page.getByText(/^Run \d/)).toBeVisible();
   expect(errors).toEqual([]);
 });
 

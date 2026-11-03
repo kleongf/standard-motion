@@ -9,7 +9,7 @@ import { Page, PageHeader, SectionHeading } from "../core/PageHeader";
 import { useLatestJob } from "../jobs/useLatestJob";
 import { ExportButton } from "./ExportButton";
 import { ExportStatus } from "./ExportStatus";
-import { testSetText, totalCounts, unlabelledWarning, writesText } from "./exportText";
+import { totalCounts, unlabelledWarning, writesText } from "./exportText";
 import { IncludeChoice } from "./IncludeChoice";
 import { PastExports } from "./PastExports";
 import { PreviewTable } from "./PreviewTable";
@@ -43,7 +43,6 @@ function PreviewNotes(props: { preview: ExportPreview }) {
           {unlabelledWarning(total.awaiting_label)}
         </p>
       )}
-      {total.test_set > 0 && <p className="text-muted-foreground">{testSetText(total.test_set)}</p>}
     </div>
   );
 }
@@ -70,10 +69,7 @@ export function ExportPage() {
     <Page width="content">
       <PageHeader
         title="Export"
-        subtitle={
-          preview &&
-          `Every Episode outside the Test set, by its Triage decision under Rubric v${String(preview.rubric_version)}, as a LeRobot v3.0 dataset per source`
-        }
+        subtitle={preview && `Rubric v${String(preview.rubric_version)}`}
       />
       {empty ? (
         <NextStep page="prepare" action="Go to Prepare">
@@ -86,10 +82,7 @@ export function ExportPage() {
             <IncludeChoice value={include} onChange={setInclude} />
           </section>
           <section>
-            <SectionHeading
-              title="Preview"
-              meta="Decisions are shown only for Reference-labelled Episodes"
-            />
+            <SectionHeading title="Preview" />
             {preview && (
               <>
                 <PreviewTable preview={preview} />

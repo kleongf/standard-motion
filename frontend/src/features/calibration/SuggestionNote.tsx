@@ -27,8 +27,7 @@ export function SuggestionNote(props: { action: SuggestionAction }) {
         </span>
         {suggestion.suggested_english}
         <div className="mt-0.5 text-sky-900/80 dark:text-sky-200/80">
-          {suggestion.contradicting} of {suggestion.labelled} labels contradict it now; midway
-          between the closest labelled pass and fail.
+          {suggestion.contradicting} of {suggestion.labelled} labels contradict it now
         </div>
       </div>
       <Button size="xs" disabled={pending} onClick={onAccept}>

@@ -58,9 +58,6 @@ export function LabelPanel(props: {
           {clock(elapsed.seconds)}
         </span>
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Judge each Phrase from the video alone. For a fail, scrub to where it starts and ends.
-      </p>
       <ul className="mt-2">
         {phrases.map((phrase, i) => (
           <PhraseJudgment
@@ -76,12 +73,7 @@ export function LabelPanel(props: {
       </ul>
       {needsInstruction && (
         <label className="mt-3 block text-xs font-medium">
-          Instruction{" "}
-          <span className="font-normal text-muted-foreground">
-            {suggestedInstruction(episode)
-              ? "(none recorded; suggested from the task the selection pass named, so check it)"
-              : "(none recorded)"}
-          </span>
+          Instruction <span className="font-normal text-muted-foreground">(none recorded)</span>
           <Textarea
             className="mt-1 min-h-12 text-sm"
             placeholder="The task this Episode attempts, e.g. Put the marker in the cup"

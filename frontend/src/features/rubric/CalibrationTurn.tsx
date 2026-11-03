@@ -16,7 +16,7 @@ export function CalibrationTurn() {
   const suggested = calibration.suggestions.length;
   return (
     <AgentRow>
-      <p>Rubric v{version} is in use. Calibrate its margins on your interview and review labels:</p>
+      <p>Rubric v{version} is in use.</p>
       <CalibrationControl calibration={calibration} />
       {suggested > 0 && (
         <Button

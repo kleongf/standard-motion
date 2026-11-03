@@ -45,7 +45,7 @@ export function TargetDialog(props: {
           <DialogTitle>Episode {episode.index} · target box</DialogTitle>
           <DialogDescription>
             {episode.instruction ? `“${episode.instruction}”: ` : ""}drag a box around where the
-            object should end up. It replaces SAM&apos;s.
+            object should end up.
           </DialogDescription>
         </DialogHeader>
         <BoxCanvas src={frame0Url(episode.id, props.box.camera)} box={rect} onDraw={draw} />

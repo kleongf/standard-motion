@@ -27,9 +27,6 @@ function OnlyRejects(props: { episodeIds: string[] }) {
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 text-xs">
-        <p className="mb-2 text-muted-foreground">
-          Rejected only because of this Criterion: without it each would not be Rejected.
-        </p>
         <ul className="grid gap-1">
           {props.episodeIds.map((id) => (
             <li key={id}>

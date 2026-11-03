@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { exportedOf, testSetText, totalCounts, writesText } from "./exportText";
+import { exportedOf, totalCounts, writesText } from "./exportText";
 import type { ExportPreview } from "./useExport";
 
 const SOURCES = [
@@ -38,14 +38,5 @@ test("says what an export writes, with the Episodes awaiting a label decided as 
   };
   expect(writesText({ ...one, exported: 1 })).toBe(
     "Writes 1 Episode, plus the 1 Episode awaiting a Reference label if it’s kept.",
-  );
-});
-
-test("says the Test set is left out, in the singular for one", () => {
-  expect(testSetText(1)).toBe(
-    "1 Episode in the Test set is left out: the Test set is never exported.",
-  );
-  expect(testSetText(4)).toBe(
-    "4 Episodes in the Test set are left out: the Test set is never exported.",
   );
 });

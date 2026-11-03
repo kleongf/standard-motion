@@ -4,12 +4,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { INCLUDE_LABELS } from "./exportText";
 import type { Include } from "./useExport";
 
-const HINTS: Record<Include, string> = {
-  keep: "Only Episodes Standard Motion kept.",
-  keep_and_review:
-    "Also the Episodes Standard Motion wasn’t sure about; manifest.json marks each one.",
-};
-
 const CHOICES: Include[] = ["keep", "keep_and_review"];
 
 export function IncludeChoice(props: { value: Include; onChange: (include: Include) => void }) {
@@ -24,12 +18,9 @@ export function IncludeChoice(props: { value: Include; onChange: (include: Inclu
       className="gap-3"
     >
       {CHOICES.map((choice) => (
-        <label key={choice} className="flex cursor-pointer items-start gap-2.5 text-sm">
-          <RadioGroupItem value={choice} className="mt-0.5" />
-          <span>
-            <span className="font-medium">{INCLUDE_LABELS[choice]}</span>
-            <span className="block text-xs text-muted-foreground">{HINTS[choice]}</span>
-          </span>
+        <label key={choice} className="flex cursor-pointer items-center gap-2.5 text-sm">
+          <RadioGroupItem value={choice} />
+          <span className="font-medium">{INCLUDE_LABELS[choice]}</span>
         </label>
       ))}
     </RadioGroup>

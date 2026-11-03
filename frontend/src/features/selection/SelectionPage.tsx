@@ -32,10 +32,7 @@ export function SelectionPage() {
 
   return (
     <Page width="content">
-      <PageHeader
-        title="droid_1.0.1 selection"
-        info="A fixed-seed sample, mostly flagged failures, chosen by task type only: confirm each pick-and-place Episode, or exclude it as not pick-and-place or with an object too small to see. Whether the Episode succeeded is hidden here on purpose."
-      />
+      <PageHeader title="droid_1.0.1 selection" />
       {all.length === 0 && !candidates.isPending && (
         <p className="rounded-lg border p-4 text-sm">
           No sample yet. Draw one with{" "}

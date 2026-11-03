@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { AwaitingLabelTag } from "../referenceLabels/AwaitingLabel";
 import { SetTag } from "../sets/SetTag";
 import type { SetName } from "../sets/useSets";
-import { formatQuality, QUALITY_TITLE } from "../triage/formatQuality";
+import { formatQuality } from "../triage/formatQuality";
 import { STATUS_CHIP, TriageBadge } from "../triage/TriageBadge";
 import type { TriageRow } from "../triage/useTriage";
 import { sortColumn, type SortColumn, type SortOrder } from "./episodeFilters";
@@ -108,7 +108,7 @@ export function EpisodeTable(props: {
           <SortHead
             column="quality"
             label="Quality"
-            title={QUALITY_TITLE}
+            title="Sort by quality"
             sort={props.sort}
             onSort={props.onSort}
           />

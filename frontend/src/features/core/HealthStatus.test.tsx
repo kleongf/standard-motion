@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 
 import { HealthStatus } from "./HealthStatus";
@@ -17,14 +17,18 @@ function renderWithQuery() {
   );
 }
 
-test("shows whether the Meta API key is configured", async () => {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(() => Promise.resolve(Response.json({ status: "ok", meta_api_key_configured: true }))),
+test("shows nothing once the backend answers", async () => {
+  const fetch = vi.fn(() =>
+    Promise.resolve(Response.json({ status: "ok", meta_api_key_configured: true })),
   );
+  vi.stubGlobal("fetch", fetch);
   renderWithQuery();
 
-  expect(await screen.findByTestId("health-status")).toHaveTextContent("key configured");
+  await waitFor(() => {
+    expect(screen.queryByText("Connecting to backend…")).not.toBeInTheDocument();
+  });
+  expect(fetch).toHaveBeenCalled();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
 
 test("reports an unreachable backend", async () => {
