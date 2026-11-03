@@ -8,10 +8,10 @@ from pathlib import Path
 
 import pytest
 
+from standard_motion.meta.models import TranscribeRequest, Transcript, Turn
+from standard_motion.meta.pricing import VOICE_TRANSCRIBE
+from standard_motion.meta.replay import RecordingTransport, ReplayTransport
 from tests.meta.fakes import FakeTransport, MakeClient
-from winnow.meta.models import TranscribeRequest, Transcript, Turn
-from winnow.meta.pricing import VOICE_TRANSCRIBE
-from winnow.meta.replay import RecordingTransport, ReplayTransport
 
 SAID = Transcript(turns=(Turn(text="It drops the marker here.", start_ms=0, end_ms=3000),))
 

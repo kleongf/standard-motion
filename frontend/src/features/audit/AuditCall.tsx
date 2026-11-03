@@ -10,8 +10,8 @@ import { DECISION_LABELS } from "../triage/useTriage";
 import type { AuditItem } from "./useAudit";
 
 const KIND_TEXT: Record<AuditItem["kind"], string> = {
-  keep: "Winnow kept it",
-  reject: "Winnow rejected it",
+  keep: "Standard Motion kept it",
+  reject: "Standard Motion rejected it",
 };
 
 export function AuditCall(props: {

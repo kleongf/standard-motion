@@ -1,4 +1,4 @@
-// The $0 source ablation and SAM's tracking health: what each Meta model adds to Winnow, and how
+// The $0 source ablation and SAM's tracking health: what each Meta model adds to Standard Motion, and how
 // often SAM lost the object. Both are re-scored from what is stored, with no Meta call.
 import {
   Table,
@@ -21,9 +21,9 @@ export function AblationTable(props: { rows: AblationRow[] }) {
         title="Source ablation"
         info={
           <>
-            Winnow re-scored from the cache with only some sources&apos; Criteria, as if the Rubric
-            had been compiled without the others; a Phrase only they checked goes unchecked. No Meta
-            call is made, so it costs $0.
+            Standard Motion re-scored from the cache with only some sources&apos; Criteria, as if
+            the Rubric had been compiled without the others; a Phrase only they checked goes
+            unchecked. No Meta call is made, so it costs $0.
           </>
         }
       />

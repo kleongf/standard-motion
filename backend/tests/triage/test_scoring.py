@@ -3,6 +3,11 @@ results, Triage decision and Reason."""
 
 import numpy as np
 
+from standard_motion.criteria.facts import EpisodeFacts
+from standard_motion.criteria.models import RubricSettings, Setting, Window
+from standard_motion.episodes.models import EpisodeSignals
+from standard_motion.triage.models import Label
+from standard_motion.triage.scoring import score
 from tests.triage.robot_data import (
     CLEAN_GRIPPER,
     CLEAN_Z,
@@ -19,11 +24,6 @@ from tests.triage.robot_data import (
     still,
     text,
 )
-from winnow.criteria.facts import EpisodeFacts
-from winnow.criteria.models import RubricSettings, Setting, Window
-from winnow.episodes.models import EpisodeSignals
-from winnow.triage.models import Label
-from winnow.triage.scoring import score
 
 CRISP = RubricSettings(
     gripper_closed_level=Setting(value=0.2, margin=0), grasp_rise_m=Setting(value=0.02, margin=0)

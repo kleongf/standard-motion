@@ -1,10 +1,10 @@
-"""Check a Winnow export with the real `lerobot` library: for each dataset in it, load it, read
-the first, middle and last frame of every Episode (each camera, and one camera and the action
+"""Check a Standard Motion export with the real `lerobot` library: for each dataset in it, load it,
+read the first, middle and last frame of every Episode (each camera, and one camera and the action
 with a window of past frames, which LeRobot decodes to within 1e-4 s), check meta/stats.json
 covers every feature its normalizers read, then train a small ACT policy on it for a few steps.
 
 Opt-in, never part of `pnpm verify` or CI: `lerobot` isn't a dependency. It runs in a throwaway
-environment, via scripts/check-lerobot-export.sh. It imports nothing from Winnow.
+environment, via scripts/check-lerobot-export.sh. It imports nothing from Standard Motion.
 """
 
 import argparse
@@ -20,7 +20,7 @@ import lerobot  # pyright: ignore
 import torch  # pyright: ignore
 from lerobot.datasets.lerobot_dataset import LeRobotDataset  # pyright: ignore
 
-REPO_ID = "local/winnow-export"
+REPO_ID = "local/standard_motion-export"
 STATS = ("min", "max", "mean", "std", "count", "q01", "q10", "q50", "q90", "q99")
 
 
@@ -127,7 +127,7 @@ def read_frames(root: Path, backend: str | None) -> list[str]:
 
 def train(root: Path, steps: int, device: str, backend: str | None) -> list[float]:
     """Train ACT for `steps` steps with lerobot-train; returns each logged loss."""
-    with tempfile.TemporaryDirectory(prefix="winnow-lerobot-train-") as scratch:
+    with tempfile.TemporaryDirectory(prefix="standard_motion-lerobot-train-") as scratch:
         command = [
             *(sys.executable, "-m", "lerobot.scripts.lerobot_train"),
             f"--dataset.repo_id={REPO_ID}", f"--dataset.root={root}",

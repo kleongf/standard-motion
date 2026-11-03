@@ -8,14 +8,14 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.cli import main
+from standard_motion.core.settings import Settings
+from standard_motion.jobs.models import WorkItem
 from tests.helpers import app_context, ask_visual, reference_label, track_cleanly, wait_for_job
 from tests.rubric.scripted import ScriptedCompile, criterion, phrase
 from tests.triage.scripted import ScriptedReason
-from winnow.app import create_app
-from winnow.baseline.prompts import FROZEN
-from winnow.cli import main
-from winnow.core.settings import Settings
-from winnow.jobs.models import WorkItem
 
 NEVER_DROPS = FROZEN.phrases[1]
 KEPT, UNSURE, REJECTED = "droid_100:0", "droid_100:1", "droid_100:2"

@@ -9,7 +9,7 @@ import {
   referenceLabel,
 } from "./helpers.ts";
 
-// Two Episodes Winnow keeps on its own: each grasps cleanly and, boxed in Exterior 2 with the
+// Two Episodes Standard Motion keeps on its own: each grasps cleanly and, boxed in Exterior 2 with the
 // target drawn, has a healthy track ending on it. The sample holds every revealed auto-Keep
 // outside the Test set, so it holds both; this asserts on them only.
 const [FIRST, SECOND] = [episodeId(EPISODES.audit[0]), episodeId(EPISODES.audit[1])];
@@ -83,7 +83,7 @@ test("auditing one Keep Good and another Bad updates Keep precision", async ({ p
   await expect(item(SECOND)).toContainText("Keep · Bad");
   await expect(precision).toHaveText(/^1\/2 good · 95% CI 0\.\d\d–0\.\d\d$/);
 
-  // An audit label measures precision only: Winnow's Triage decision stands.
+  // An audit label measures precision only: Standard Motion's Triage decision stands.
   expect(await decision(request, SECOND)).toBe("keep");
   expect(errors).toEqual([]);
 });

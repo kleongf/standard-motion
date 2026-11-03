@@ -4,8 +4,8 @@ import json
 
 import pytest
 
-from winnow.rubric.answer import CheckedPhrase, check_phrase, parse_answer
-from winnow.rubric.examples import EXAMPLES, Example
+from standard_motion.rubric.answer import CheckedPhrase, check_phrase, parse_answer
+from standard_motion.rubric.examples import EXAMPLES, Example
 
 
 @pytest.mark.parametrize("example", EXAMPLES, ids=lambda e: e.description[:30])

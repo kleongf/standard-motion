@@ -1,5 +1,5 @@
-"""Until an Episode has a first-pass Reference label, its Winnow and Spark-alone outputs stay out
-of every API response the app reads, so labels are given blind."""
+"""Until an Episode has a first-pass Reference label, its Standard Motion and Spark-alone outputs
+stay out of every API response the app reads, so labels are given blind."""
 
 import pytest
 from fastapi.testclient import TestClient

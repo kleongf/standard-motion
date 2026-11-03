@@ -104,7 +104,7 @@ test("a disagreement on the Evaluation page opens its Workstation", async ({ pag
   await referenceLabel(request, [episodeId(SECOND)]);
   await page.goto("/?page=evaluation");
 
-  const list = page.getByRole("table", { name: "Spark alone and Winnow disagree" });
+  const list = page.getByRole("table", { name: "Spark alone and Standard Motion disagree" });
   const row = list
     .getByRole("row")
     .filter({ has: page.getByRole("cell", { name: episodeId(SECOND), exact: true }) });

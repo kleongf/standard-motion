@@ -1,7 +1,7 @@
 import json
-from winnow.core.settings import get_settings
-from winnow.meta.client import MetaClient
-from winnow.meta.pricing import SPARK_CONTRIBUTOR
+from standard_motion.core.settings import get_settings
+from standard_motion.meta.client import MetaClient
+from standard_motion.meta.pricing import SPARK_CONTRIBUTOR
 s = get_settings(); m = MetaClient(s)
 DESCRIPTION = "Expert pick-and-place: grasps on the first try, never drops the object, places it inside the target, no long pauses."
 CONTEXT = """You are compiling a plain-English description of an expert robot demonstration into a Rubric of separate, checkable Criteria.

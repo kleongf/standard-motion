@@ -3,11 +3,11 @@ Episodes do, and re-encoded losslessly when it doesn't: either way, exactly its 
 
 from pathlib import Path
 
+from standard_motion.episodes.droid101 import Droid101
+from standard_motion.episodes.droid101_files import LocalFiles
+from standard_motion.episodes.fixtures_droid101 import write_droid101_fixture
+from standard_motion.export.droid101 import Droid101Export
 from tests.helpers import decoded
-from winnow.episodes.droid101 import Droid101
-from winnow.episodes.droid101_files import LocalFiles
-from winnow.episodes.fixtures_droid101 import write_droid101_fixture
-from winnow.export.droid101 import Droid101Export
 
 KEY = "observation.images.wrist_left"
 SHARED = f"videos/{KEY}/chunk-000/file-000.mp4"

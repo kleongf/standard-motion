@@ -20,11 +20,11 @@ function Matched(props: { matched: MatchedCoverage }) {
       <SectionHeading
         level={3}
         title="Keep precision at matched coverage"
-        meta={`Winnow decides ${String(matched.target)} of ${String(matched.episodes)}`}
+        meta={`Standard Motion decides ${String(matched.target)} of ${String(matched.episodes)}`}
         info={
           <>
-            Winnow decides {matched.target} of {matched.episodes} Episodes; Spark alone is held to
-            its most confident Episodes up to that many, never splitting a tie.
+            Standard Motion decides {matched.target} of {matched.episodes} Episodes; Spark alone is
+            held to its most confident Episodes up to that many, never splitting a tie.
           </>
         }
       />
@@ -73,8 +73,8 @@ function Discordant(props: { mcnemar: McNemar }) {
       />
       <dl className="mt-2 flex gap-8 text-sm">
         <div>
-          <dt className="text-xs text-muted-foreground">Only Winnow right</dt>
-          <dd className="text-2xl font-medium">{m.winnow_only_right}</dd>
+          <dt className="text-xs text-muted-foreground">Only Standard Motion right</dt>
+          <dd className="text-2xl font-medium">{m.standard_motion_only_right}</dd>
         </div>
         <div>
           <dt className="text-xs text-muted-foreground">Only Spark alone right</dt>
@@ -103,7 +103,7 @@ function PhraseTable(props: { phrases: PhraseFailures[] }) {
           <TableRow>
             <TableHead>Phrase</TableHead>
             <TableHead className="text-right">Failures</TableHead>
-            <TableHead className="text-right">Winnow rejects</TableHead>
+            <TableHead className="text-right">Standard Motion rejects</TableHead>
             <TableHead className="text-right">Spark alone rejects</TableHead>
             <TableHead />
           </TableRow>
@@ -113,7 +113,7 @@ function PhraseTable(props: { phrases: PhraseFailures[] }) {
             <TableRow key={p.phrase} className={p.too_few ? "text-muted-foreground" : undefined}>
               <TableCell className="whitespace-normal">“{p.phrase}”</TableCell>
               <TableCell className="text-right tabular-nums">{p.failures}</TableCell>
-              <TableCell className="text-right tabular-nums">{p.winnow_rejects}</TableCell>
+              <TableCell className="text-right tabular-nums">{p.standard_motion_rejects}</TableCell>
               <TableCell className="text-right tabular-nums">{p.spark_alone_rejects}</TableCell>
               <TableCell className="text-xs">{p.too_few ? "Too few to score" : ""}</TableCell>
             </TableRow>

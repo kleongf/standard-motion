@@ -9,13 +9,13 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
+from standard_motion.meta.replay import ReplayTransport
+from standard_motion.visual.service import DRY_RUN
 from tests.helpers import reference_label, wait_for_job
 from tests.record_dry_run import DRY_RUN_ANSWERS, IN_BOWL, PLACED
 from tests.record_meta import E2E_DEV_SET, RECORDINGS
-from winnow.app import create_app
-from winnow.core.settings import Settings
-from winnow.meta.replay import ReplayTransport
-from winnow.visual.service import DRY_RUN
 
 DEV = [f"droid_100:{i}" for i in E2E_DEV_SET]
 

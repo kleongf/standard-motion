@@ -8,16 +8,16 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.calibration import service as calibration_service
+from standard_motion.criteria.facts import EpisodeFacts
+from standard_motion.criteria.models import Criterion
+from standard_motion.evaluation import service as evaluation_service
+from standard_motion.rubric.models import DraftPhrase, Rubric, RubricDraft
+from standard_motion.rubric.seed import FIRST_TRY, NO_PAUSES, SEEDED
+from standard_motion.triage.models import Label
+from standard_motion.triage.scoring import score
 from tests.conftest import OPEN_GRIPPER_EPISODE
 from tests.helpers import app_context, reference_label, wait_for_job
-from winnow.calibration import service as calibration_service
-from winnow.criteria.facts import EpisodeFacts
-from winnow.criteria.models import Criterion
-from winnow.evaluation import service as evaluation_service
-from winnow.rubric.models import DraftPhrase, Rubric, RubricDraft
-from winnow.rubric.seed import FIRST_TRY, NO_PAUSES, SEEDED
-from winnow.triage.models import Label
-from winnow.triage.scoring import score
 
 # Path efficiency on the fixture Episodes: 0.387, 0.35, 0.338 in the Dev set; 0.613 in the Test
 # set. Against ≥ 0.5 every one is crisp, with the ratio's 0.05 noise floor, at any s up to 2.

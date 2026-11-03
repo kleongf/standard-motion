@@ -1,6 +1,6 @@
 import pytest
 
-from winnow.tracking.target_words import target_words
+from standard_motion.tracking.target_words import target_words
 
 
 @pytest.mark.parametrize(

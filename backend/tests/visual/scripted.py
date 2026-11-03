@@ -5,12 +5,12 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from standard_motion.meta.models import MetaContent
+from standard_motion.meta.transport import Reply
+from standard_motion.visual.models import AnswerValue
 from tests.interview.scripted_text import TEXT_FORMATS, ScriptedText
 from tests.meta.fakes import NoTranscribe
 from tests.tracking.scripted_sam import ScriptedSam
-from winnow.meta.models import MetaContent
-from winnow.meta.transport import Reply
-from winnow.visual.models import AnswerValue
 
 USAGE = {"input_tokens": 9000, "output_tokens": 300}
 

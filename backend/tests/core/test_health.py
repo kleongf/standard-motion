@@ -3,8 +3,8 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from winnow.app import create_app
-from winnow.core.settings import Settings, get_settings
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings, get_settings
 
 
 def client_with(settings: Settings) -> TestClient:

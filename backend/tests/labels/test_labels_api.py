@@ -6,8 +6,8 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.baseline.prompts import FROZEN
 from tests.helpers import ask_visual, reference_label, track_cleanly, wait_for_job
-from winnow.baseline.prompts import FROZEN
 
 FIRST_TRY, NEVER_DROPS, _, NO_PAUSES = FROZEN.phrases
 NEAR_THRESHOLD = "droid_100:1"  # Needs review: its release height (4.4 cm) is its only unsure

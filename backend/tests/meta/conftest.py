@@ -4,12 +4,12 @@ from pathlib import Path
 
 import pytest
 
+from standard_motion.core.db import open_db
+from standard_motion.meta.client import MetaClient
+from standard_motion.meta.costs import CostLog
+from standard_motion.meta.limits import Limit
+from standard_motion.meta.pricing import SAM, SPARK_CONTRIBUTOR, VOICE_TRANSCRIBE
 from tests.meta.fakes import FakeTime, FakeTransport, MakeClient
-from winnow.core.db import open_db
-from winnow.meta.client import MetaClient
-from winnow.meta.costs import CostLog
-from winnow.meta.limits import Limit
-from winnow.meta.pricing import SAM, SPARK_CONTRIBUTOR, VOICE_TRANSCRIBE
 
 UNLIMITED = {model: Limit(in_flight=100) for model in (SAM, SPARK_CONTRIBUTOR, VOICE_TRANSCRIBE)}
 
@@ -26,7 +26,7 @@ def fake_time() -> FakeTime:
 
 @pytest.fixture
 def make_client(tmp_path: Path, transport: FakeTransport, fake_time: FakeTime) -> MakeClient:
-    db = open_db(tmp_path / "winnow.db")
+    db = open_db(tmp_path / "standard-motion.db")
 
     def make(budget_usd: float = 5.0, limits: dict[str, Limit] | None = None) -> MetaClient:
         return MetaClient(

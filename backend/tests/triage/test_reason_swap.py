@@ -3,12 +3,12 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.criteria.models import TextSpan
+from standard_motion.rubric.models import Rubric
+from standard_motion.triage.models import Triage
+from standard_motion.triage.spark_reason import reason_key
 from tests.helpers import app_context, reference_label, wait_for_job
-from winnow.baseline.prompts import FROZEN
-from winnow.criteria.models import TextSpan
-from winnow.rubric.models import Rubric
-from winnow.triage.models import Triage
-from winnow.triage.spark_reason import reason_key
 
 FIRST_TRY = FROZEN.phrases[0]
 REGRASP = "droid_100:2"  # rejected: two failed grasp attempts before the grasp

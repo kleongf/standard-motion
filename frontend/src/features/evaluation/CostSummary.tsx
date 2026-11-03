@@ -1,5 +1,5 @@
 // What a run costs: Meta spend per 1,000 Episodes, extrapolated from the set's cost log (not run
-// at 1,000), beside the human cost per Episode left, and the review minutes Winnow saves.
+// at 1,000), beside the human cost per Episode left, and the review minutes Standard Motion saves.
 import {
   Table,
   TableBody,
@@ -39,7 +39,7 @@ function StepTable(props: { cost: MetaCost }) {
           <TableRow key={s.step}>
             <TableCell>
               {s.label}
-              {s.system !== "winnow" && (
+              {s.system !== "standard_motion" && (
                 <span className="ml-2 text-xs text-muted-foreground">evaluation only</span>
               )}
             </TableCell>
@@ -72,10 +72,10 @@ export function CostSummary(props: { cost: MetaCost; time: ReviewTime }) {
       />
       <dl className="mt-3 grid grid-cols-2 gap-6 md:grid-cols-4">
         <Stat
-          testId="cost-winnow"
-          label="Winnow, Meta calls"
-          value={usdText(cost.winnow_per_1000_usd)}
-          note={`${usdText(cost.winnow_usd)} on this set`}
+          testId="cost-standard_motion"
+          label="Standard Motion, Meta calls"
+          value={usdText(cost.standard_motion_per_1000_usd)}
+          note={`${usdText(cost.standard_motion_usd)} on this set`}
         />
         <Stat
           testId="cost-spark-alone"

@@ -7,10 +7,10 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
 from tests.helpers import wait_for_job
 from tests.rubric.scripted import ScriptedCompile, criterion, phrase
-from winnow.app import create_app
-from winnow.core.settings import Settings
 
 DESCRIPTION = "Tidy pick: one grasp only, and no long pauses while holding."
 ONE_GRASP = "one grasp only"

@@ -4,13 +4,13 @@ reads 0 or 1, so its closures can't show a level between."""
 
 import numpy as np
 
-from winnow.episodes.models import EpisodeSignals
-from winnow.interview.anchor import AnchorResult, setting_points
-from winnow.interview.models import Clip, SettingName, StoredAnswer
-from winnow.interview.settings_answers import answer_setting
-from winnow.interview.settings_questions import setting_questions
-from winnow.rubric.models import RubricDraft
-from winnow.rubric.seed import SEEDED_SETTINGS
+from standard_motion.episodes.models import EpisodeSignals
+from standard_motion.interview.anchor import AnchorResult, setting_points
+from standard_motion.interview.models import Clip, SettingName, StoredAnswer
+from standard_motion.interview.settings_answers import answer_setting
+from standard_motion.interview.settings_questions import setting_questions
+from standard_motion.rubric.models import RubricDraft
+from standard_motion.rubric.seed import SEEDED_SETTINGS
 
 FPS = 10.0
 

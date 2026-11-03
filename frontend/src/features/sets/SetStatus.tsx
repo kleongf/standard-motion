@@ -1,5 +1,5 @@
 // Each set's size and whether its membership is frozen. Sets are defined and frozen with
-// `winnow sets` or the /api/sets routes.
+// `standard-motion sets` or the /api/sets routes.
 import { SET_LABELS, useSets, type EpisodeSet } from "./useSets";
 
 const FROZEN_FORMAT = new Intl.DateTimeFormat(undefined, {

@@ -2,9 +2,9 @@
 
 import pytest
 
+from standard_motion.evaluation.cost import meta_cost, review_time, step_and_episode
+from standard_motion.meta.costs import CostEntry
 from tests.evaluation.labelled import case
-from winnow.evaluation.cost import meta_cost, review_time, step_and_episode
-from winnow.meta.costs import CostEntry
 
 TEST_SET = [f"droid_100:{i}" for i in range(100)]
 
@@ -42,8 +42,8 @@ def test_cost_per_1000_episodes_is_ten_times_a_test_set_of_100():
     cost = meta_cost(LOG, TEST_SET)
 
     assert cost.episodes == 100
-    assert cost.winnow_usd == pytest.approx(0.051)
-    assert cost.winnow_per_1000_usd == pytest.approx(0.51)  # x10
+    assert cost.standard_motion_usd == pytest.approx(0.051)
+    assert cost.standard_motion_per_1000_usd == pytest.approx(0.51)  # x10
     assert cost.spark_alone_usd == pytest.approx(0.003)
     assert cost.spark_alone_per_1000_usd == pytest.approx(0.03)
     assert cost.compile_usd == pytest.approx(0.002)
@@ -53,21 +53,25 @@ def test_each_step_counts_paid_calls_and_episodes_but_not_cache_hits():
     steps = {s.step: (s.system, s.calls, s.episodes, s.usd) for s in meta_cost(LOG, TEST_SET).steps}
 
     assert list(steps) == ["track_wrist", "track_exterior", "target_box", "visual", "baseline"]
-    assert steps["track_wrist"] == ("winnow", 2, 2, pytest.approx(0.02))
-    assert steps["visual"] == ("winnow", 2, 2, pytest.approx(0.001))
+    assert steps["track_wrist"] == ("standard_motion", 2, 2, pytest.approx(0.02))
+    assert steps["visual"] == ("standard_motion", 2, 2, pytest.approx(0.001))
     assert steps["baseline"] == ("spark_alone", 1, 1, pytest.approx(0.003))
 
 
 def test_a_smaller_set_extrapolates_per_episode():
     cost = meta_cost(LOG, ["droid_100:0", "droid_100:1"])
 
-    assert cost.winnow_per_1000_usd == pytest.approx(0.051 / 2 * 1000)
+    assert cost.standard_motion_per_1000_usd == pytest.approx(0.051 / 2 * 1000)
 
 
 def test_an_empty_set_has_no_extrapolation():
     cost = meta_cost(LOG, [])
 
-    assert (cost.winnow_usd, cost.winnow_per_1000_usd, cost.steps) == (0.0, None, [])
+    assert (cost.standard_motion_usd, cost.standard_motion_per_1000_usd, cost.steps) == (
+        0.0,
+        None,
+        [],
+    )
 
 
 def test_minutes_saved_are_the_timers_minutes_per_episode_times_episodes_decided():

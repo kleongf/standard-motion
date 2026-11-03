@@ -6,9 +6,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import cast
 
+from standard_motion.meta.models import MetaContent
+from standard_motion.meta.transport import Reply
 from tests.meta.fakes import NoTranscribe
-from winnow.meta.models import MetaContent
-from winnow.meta.transport import Reply
 
 USAGE = {"input_tokens": 6000, "output_tokens": 2000}
 

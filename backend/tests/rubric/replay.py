@@ -3,10 +3,10 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from standard_motion.meta.models import MetaContent
+from standard_motion.meta.replay import ReplayTransport
+from standard_motion.meta.transport import Reply
 from tests.meta.fakes import NoTranscribe
-from winnow.meta.models import MetaContent
-from winnow.meta.replay import ReplayTransport
-from winnow.meta.transport import Reply
 
 
 @dataclass

@@ -1,6 +1,6 @@
-// Right reason and risk–coverage for Winnow and Spark alone: the headline k/n at the measured
+// Right reason and risk–coverage for Standard Motion and Spark alone: the headline k/n at the measured
 // slack, then right reason over 0–3 s of slack, and risk against coverage from each system's
-// confidence, so Winnow abstaining more can be weighed fairly.
+// confidence, so Standard Motion abstaining more can be weighed fairly.
 import { SectionHeading } from "../core/PageHeader";
 import { CurveChart, type Series } from "./CurveChart";
 import { riskSeries, slackSeries } from "./curves";
@@ -76,7 +76,9 @@ function RiskCoverageFigure(props: { report: EvaluationReport }) {
     points: riskSeries(curve),
   }));
   const operating =
-    matched.episodes > 0 ? { x: matched.target / matched.episodes, label: "Winnow decides" } : null;
+    matched.episodes > 0
+      ? { x: matched.target / matched.episodes, label: "Standard Motion decides" }
+      : null;
   return (
     <div data-testid="risk-coverage">
       <SectionHeading

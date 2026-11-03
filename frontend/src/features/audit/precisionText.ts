@@ -1,6 +1,6 @@
 // Keep precision as the Audit tab states it: the count first, then its 95% Wilson interval, plus
 // the one-sided bound when every marked Keep is good. Never "±". Marked Rejects say how many
-// good Episodes Winnow rejected.
+// good Episodes Standard Motion rejected.
 import type { components } from "../../api/schema";
 import { interval } from "../evaluation/reportText";
 import type { KeepPrecision } from "./useAudit";

@@ -1,4 +1,4 @@
-// A small line chart for the report's curves: Winnow and Spark alone on one 0–1 axis. A crosshair
+// A small line chart for the report's curves: Standard Motion and Spark alone on one 0–1 axis. A crosshair
 // snaps to the nearest plotted x and reads out every series there; the numbers are also in a
 // table under the chart, so nothing hides behind hover.
 import { useState, type PointerEvent } from "react";
@@ -17,7 +17,7 @@ export interface Series {
 // Each system keeps its own slot of the dataviz reference palette (light and dark steps), in the
 // comparison table's order, so a colour always means the same system.
 const TONES: Record<System, { stroke: string; fill: string; key: string }> = {
-  winnow: {
+  standard_motion: {
     stroke: "stroke-[#2a78d6] dark:stroke-[#3987e5]",
     fill: "fill-[#2a78d6] dark:fill-[#3987e5]",
     key: "bg-[#2a78d6] dark:bg-[#3987e5]",
@@ -27,7 +27,7 @@ const TONES: Record<System, { stroke: string; fill: string; key: string }> = {
     fill: "fill-[#eb6834] dark:fill-[#d95926]",
     key: "bg-[#eb6834] dark:bg-[#d95926]",
   },
-  winnow_review_kept: {
+  standard_motion_review_kept: {
     stroke: "stroke-[#1baf7a] dark:stroke-[#199e70]",
     fill: "fill-[#1baf7a] dark:fill-[#199e70]",
     key: "bg-[#1baf7a] dark:bg-[#199e70]",

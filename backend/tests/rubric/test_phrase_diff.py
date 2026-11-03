@@ -1,8 +1,8 @@
 """Which Phrases a Description edit leaves alone, and which changed text compile asks about."""
 
-from winnow.rubric.diff import clarify_diff, diff_description
-from winnow.rubric.models import DraftPhrase
-from winnow.rubric.phrases import locate
+from standard_motion.rubric.diff import clarify_diff, diff_description
+from standard_motion.rubric.models import DraftPhrase
+from standard_motion.rubric.phrases import locate
 
 OLD = "Tidy pick: one grasp only, never drops it, and no long pauses."
 

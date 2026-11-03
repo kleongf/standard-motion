@@ -3,6 +3,8 @@
 import numpy as np
 import pytest
 
+from standard_motion.criteria.models import Criterion, Window
+from standard_motion.triage.scoring import score
 from tests.triage.robot_data import (
     CLEAN_GRIPPER,
     PLACES,
@@ -12,8 +14,6 @@ from tests.triage.robot_data import (
     rubric,
     text,
 )
-from winnow.criteria.models import Criterion, Window
-from winnow.triage.scoring import score
 
 # Grasped at frame 15 at the object's height (0 m), carried up, released at frame 30.
 CARRY_Z = frames((0.0, 18), (0.10, 27))

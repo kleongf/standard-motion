@@ -8,6 +8,10 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
+from standard_motion.interview.models import AnswerDraw
+from standard_motion.interview.service import answer as answer_now
 from tests.helpers import app_context
 from tests.interview.client import (
     DESCRIPTION,
@@ -24,10 +28,6 @@ from tests.interview.client import (
 )
 from tests.interview.scripted_text import ScriptedText
 from tests.rubric.scripted import criterion, phrase
-from winnow.app import create_app
-from winnow.core.settings import Settings
-from winnow.interview.models import AnswerDraw
-from winnow.interview.service import answer as answer_now
 
 
 @pytest.fixture

@@ -5,12 +5,12 @@ import io
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.cli import main
+from standard_motion.core.settings import Settings
+from standard_motion.sets import protocol
+from standard_motion.sets.models import EpisodeSet, SetName
+from standard_motion.sets.protocol import SEEN_EPISODES, TEST_SET_SIZE, freeze_warnings
 from tests.helpers import wait_for_job
-from winnow.cli import main
-from winnow.core.settings import Settings
-from winnow.sets import protocol
-from winnow.sets.models import EpisodeSet, SetName
-from winnow.sets.protocol import SEEN_EPISODES, TEST_SET_SIZE, freeze_warnings
 
 
 @pytest.fixture

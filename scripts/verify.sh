@@ -14,10 +14,10 @@ backend() {
 
 frontend() {
   step "frontend: types, lint, format, tests"
-  pnpm --filter winnow-frontend run typecheck
-  pnpm --filter winnow-frontend run lint
-  pnpm --filter winnow-frontend run format:check
-  pnpm --filter winnow-frontend run test
+  pnpm --filter standard-motion-frontend run typecheck
+  pnpm --filter standard-motion-frontend run lint
+  pnpm --filter standard-motion-frontend run format:check
+  pnpm --filter standard-motion-frontend run test
 
   step "scripts and e2e: types, format"
   pnpm exec tsc -p tsconfig.json

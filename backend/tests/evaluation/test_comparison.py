@@ -1,15 +1,15 @@
-"""The comparison table, from each labelled Episode's Reference label, Winnow's Triage decision,
-Spark alone's answer and its length. Expected intervals are 95% Wilson, worked by hand."""
+"""The comparison table, from each labelled Episode's Reference label, Standard Motion's Triage
+decision, Spark alone's answer and its length. Expected intervals are 95% Wilson, worked by hand."""
 
 from dataclasses import replace
 
 import pytest
 
-from winnow.baseline.prompts import FROZEN
-from winnow.evaluation.cases import EvaluationCase, Ranking
-from winnow.evaluation.comparison import comparison, mcnemar, phrase_failures
-from winnow.reference_labels.models import FailInterval
-from winnow.triage.models import TriageDecision
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.evaluation.cases import EvaluationCase, Ranking
+from standard_motion.evaluation.comparison import comparison, mcnemar, phrase_failures
+from standard_motion.reference_labels.models import FailInterval
+from standard_motion.triage.models import TriageDecision
 
 FIRST_TRY, PLACES = FROZEN.phrases[0], FROZEN.phrases[2]
 
@@ -17,7 +17,7 @@ FIRST_TRY, PLACES = FROZEN.phrases[0], FROZEN.phrases[2]
 def case(
     n: int,
     failure: bool,
-    winnow: TriageDecision,
+    standard_motion: TriageDecision,
     spark: str | None,
     duration_s: float,
 ) -> EvaluationCase:
@@ -25,11 +25,11 @@ def case(
         episode_id=f"droid_100:{n}",
         duration_s=duration_s,
         failed={FIRST_TRY: FailInterval(start_s=0, end_s=1)} if failure else {},
-        winnow=winnow,
+        standard_motion=standard_motion,
         spark_alone=spark,  # type: ignore[arg-type]
-        winnow_claim=None,
+        standard_motion_claim=None,
         spark_alone_claim=None,
-        winnow_ranking=Ranking("reject", 0.5),
+        standard_motion_ranking=Ranking("reject", 0.5),
         spark_alone_ranking=Ranking("reject", 0.5),
     )
 
@@ -61,20 +61,29 @@ def proportion(count: int, of: int, low: float, high: float) -> dict[str, object
 
 
 def test_rows_come_in_table_order():
-    assert list(rows()) == ["winnow", "winnow_review_kept", "spark_alone", "length_alone"]
+    assert list(rows()) == [
+        "standard_motion",
+        "standard_motion_review_kept",
+        "spark_alone",
+        "length_alone",
+    ]
 
 
-def test_winnow_counts_false_keeps_on_true_failures_with_a_wilson_interval():
-    winnow = rows()["winnow"]
+def test_standard_motion_counts_false_keeps_on_true_failures_with_a_wilson_interval():
+    standard_motion = rows()["standard_motion"]
 
-    assert (winnow["keeps"], winnow["rejects"], winnow["undecided"]) == (2, 3, 2)
-    assert winnow["false_keeps"] == proportion(1, 4, 0.0456, 0.6994)
-    assert winnow["false_rejects"] == proportion(1, 3, 0.0615, 0.7923)
-    assert winnow["coverage"] == proportion(5, 7, 0.3589, 0.9178)
+    assert (standard_motion["keeps"], standard_motion["rejects"], standard_motion["undecided"]) == (
+        2,
+        3,
+        2,
+    )
+    assert standard_motion["false_keeps"] == proportion(1, 4, 0.0456, 0.6994)
+    assert standard_motion["false_rejects"] == proportion(1, 3, 0.0615, 0.7923)
+    assert standard_motion["coverage"] == proportion(5, 7, 0.3589, 0.9178)
 
 
-def test_winnows_worst_case_keeps_every_needs_review():
-    worst = rows()["winnow_review_kept"]
+def test_standard_motions_worst_case_keeps_every_needs_review():
+    worst = rows()["standard_motion_review_kept"]
 
     assert (worst["keeps"], worst["rejects"], worst["undecided"]) == (4, 3, 0)
     assert worst["false_keeps"] == proportion(2, 4, 0.1500, 0.8500)
@@ -104,7 +113,7 @@ def test_length_alone_uses_the_one_threshold_that_fits_the_set_best_in_hindsight
 
 def test_length_alone_may_keep_shorter_episodes_when_that_fits_better():
     flipped = [
-        case(i, c.description_failure, c.winnow, c.spark_alone, 20.0 - c.duration_s)
+        case(i, c.description_failure, c.standard_motion, c.spark_alone, 20.0 - c.duration_s)
         for i, c in enumerate(CASES)
     ]
 
@@ -125,25 +134,29 @@ def test_an_empty_set_has_no_intervals_and_no_length_rule():
 def test_balanced_accuracy_averages_failures_rejected_and_meeting_episodes_kept_when_decided():
     accuracy = {system: row["balanced_accuracy"] for system, row in rows().items()}
 
-    # Winnow decides failures 0, 2, 3 (rejects 2 of 3) and Episodes 4, 6 (keeps 1 of 2).
-    assert accuracy["winnow"] == pytest.approx((2 / 3 + 1 / 2) / 2)
-    assert accuracy["winnow_review_kept"] == pytest.approx((2 / 4 + 2 / 3) / 2)
+    # Standard Motion decides failures 0, 2, 3 (rejects 2 of 3) and Episodes 4, 6 (keeps 1 of 2).
+    assert accuracy["standard_motion"] == pytest.approx((2 / 3 + 1 / 2) / 2)
+    assert accuracy["standard_motion_review_kept"] == pytest.approx((2 / 4 + 2 / 3) / 2)
     assert accuracy["spark_alone"] == pytest.approx((1 / 3 + 2 / 3) / 2)
 
 
 def test_mcnemar_counts_the_episodes_only_one_system_gets_right():
     counts = mcnemar(CASES)
 
-    # Both decide Episodes 0, 2, 4 and 6: Winnow alone is right on 0, Spark alone on 2.
-    assert (counts.compared, counts.winnow_only_right, counts.spark_alone_only_right) == (4, 1, 1)
+    # Both decide Episodes 0, 2, 4 and 6: Standard Motion alone is right on 0, Spark alone on 2.
+    assert (counts.compared, counts.standard_motion_only_right, counts.spark_alone_only_right) == (
+        4,
+        1,
+        1,
+    )
 
 
 def test_failures_are_counted_per_phrase_and_under_five_are_too_few_to_score():
     places = {PLACES: FailInterval(start_s=2, end_s=3)}
     cases = [
-        *[CASES[0]] * 4,  # first-try failures Winnow rejects and Spark alone keeps
-        CASES[2],  # a first-try failure Winnow keeps and Spark alone rejects
-        replace(CASES[3], failed=places),  # Winnow rejects it; Spark alone has no answer
+        *[CASES[0]] * 4,  # first-try failures Standard Motion rejects and Spark alone keeps
+        CASES[2],  # a first-try failure Standard Motion keeps and Spark alone rejects
+        replace(CASES[3], failed=places),  # Standard Motion rejects it; Spark alone has no answer
         CASES[4],  # meets the Description
     ]
 
@@ -151,9 +164,13 @@ def test_failures_are_counted_per_phrase_and_under_five_are_too_few_to_score():
 
     assert list(by_phrase) == list(FROZEN.phrases)
     first = by_phrase[FIRST_TRY]
-    assert (first.failures, first.winnow_rejects, first.spark_alone_rejects) == (5, 4, 1)
+    assert (first.failures, first.standard_motion_rejects, first.spark_alone_rejects) == (5, 4, 1)
     assert not first.too_few
     placed = by_phrase[PLACES]
-    assert (placed.failures, placed.winnow_rejects, placed.spark_alone_rejects) == (1, 1, 0)
+    assert (placed.failures, placed.standard_motion_rejects, placed.spark_alone_rejects) == (
+        1,
+        1,
+        0,
+    )
     assert placed.too_few
     assert by_phrase[FROZEN.phrases[1]].failures == 0 and by_phrase[FROZEN.phrases[1]].too_few

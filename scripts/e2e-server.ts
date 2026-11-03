@@ -33,7 +33,14 @@ writeFileSync(
     .map((name) => readFileSync(resolve(recordings, name), "utf8"))
     .join(""),
 );
-const fixtures = ["run", "--project", "backend", "winnow", "fixtures", resolve(root, "droid_100")];
+const fixtures = [
+  "run",
+  "--project",
+  "backend",
+  "standard-motion",
+  "fixtures",
+  resolve(root, "droid_100"),
+];
 execFileSync("uv", [...fixtures, "--episodes", "24"], { stdio: "inherit" });
 
 const servers = await startServers({

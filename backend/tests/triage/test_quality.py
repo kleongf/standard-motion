@@ -5,6 +5,10 @@ from itertools import combinations, product
 
 import pytest
 
+from standard_motion.criteria.models import Comparator
+from standard_motion.triage.models import CriterionResult, Label, Triage
+from standard_motion.triage.quality import qualities
+from standard_motion.triage.scoring import score
 from tests.triage.robot_data import (
     CLEAN_GRIPPER,
     CLEAN_Z,
@@ -17,10 +21,6 @@ from tests.triage.robot_data import (
     rubric,
     still,
 )
-from winnow.criteria.models import Comparator
-from winnow.triage.models import CriterionResult, Label, Triage
-from winnow.triage.quality import qualities
-from winnow.triage.scoring import score
 
 _SCORED = score(rubric(first_try(), still(hard=False, id="pause")), facts(CLEAN_GRIPPER, CLEAN_Z))
 _HARD, _SOFT = _SCORED.criteria

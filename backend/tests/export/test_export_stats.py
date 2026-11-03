@@ -6,10 +6,10 @@ import numpy as np
 import pyarrow as pa
 import pytest
 
+from standard_motion.episodes.fixtures import write_clip
+from standard_motion.export.stats import aggregate_stats, episode_stats
+from standard_motion.export.video_stats import sampled, video_stats
 from tests.helpers import rgb
-from winnow.episodes.fixtures import write_clip
-from winnow.export.stats import aggregate_stats, episode_stats
-from winnow.export.video_stats import sampled, video_stats
 
 
 def test_an_episodes_stats_cover_its_numeric_and_boolean_columns_per_dimension():

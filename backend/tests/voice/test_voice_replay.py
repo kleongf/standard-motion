@@ -7,13 +7,13 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
+from standard_motion.meta.replay import ReplayTransport
 from tests.helpers import reference_label, wait_for_job
 from tests.meta.test_transcribe import write_wav
 from tests.record_meta import RECORDINGS
 from tests.record_voice import MARKS, SAID, VOICE_ANSWERS, VOICE_EPISODE
-from winnow.app import create_app
-from winnow.core.settings import Settings
-from winnow.meta.replay import ReplayTransport
 
 
 @pytest.fixture(scope="module")

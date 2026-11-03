@@ -1,4 +1,4 @@
-// The Review Workstation's actions: only the Phrases Winnow couldn't decide, each answered Pass or
+// The Review Workstation's actions: only the Phrases Standard Motion couldn't decide, each answered Pass or
 // Fail. Keys 1 and 2 answer the focused Phrase (the first, until another is clicked or picked with
 // the arrow keys); each answer is saved as a `review` label, which recomputes the Episode's Triage
 // decision.

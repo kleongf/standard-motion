@@ -3,11 +3,11 @@ FailBench check against the Dataset outcome."""
 
 import pytest
 
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.evaluation.cases import TrackCheck
+from standard_motion.evaluation.dataset_outcome import dataset_outcome, failbench_check
+from standard_motion.evaluation.tracking_health import tracking_health
 from tests.evaluation.labelled import case
-from winnow.baseline.prompts import FROZEN
-from winnow.evaluation.cases import TrackCheck
-from winnow.evaluation.dataset_outcome import dataset_outcome, failbench_check
-from winnow.evaluation.tracking_health import tracking_health
 
 FIRST_TRY, NEVER_DROPS = FROZEN.phrases[:2]
 HEALTHY = TrackCheck(lost=False, review_signal=False)

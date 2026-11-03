@@ -27,7 +27,7 @@ export interface Microphone {
 export type OpenMicrophone = (onEnded: () => void) => Promise<Microphone>;
 
 export const PRE_ROLL_S = 0.3;
-const PROCESSOR = "winnow-capture";
+const PROCESSOR = "standard-motion-capture";
 // Every message to the worklet is a flush, which it answers with the same message. Messages on a
 // port arrive in order, so the answer comes after every chunk rendered before it.
 const WORKLET = `

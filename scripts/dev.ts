@@ -2,5 +2,5 @@
 import { FRONTEND_URL, serveUntilInterrupted, startServers } from "./servers.ts";
 
 const servers = await startServers({ reload: true });
-console.log(`\nWinnow is up at ${FRONTEND_URL}\n`);
+console.log(`\nStandard Motion is up at ${FRONTEND_URL}\n`);
 await serveUntilInterrupted(servers);

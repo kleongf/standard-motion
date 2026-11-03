@@ -1,6 +1,6 @@
 // The workspace sidebar: the Dataset and Project it works on, then its pages grouped by the work:
 // numbered steps to set up and curate, each with where it stands and the next one marked, and the
-// pages that measure Winnow.
+// pages that measure Standard Motion.
 import {
   BarChart3,
   ClipboardCheck,
@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 
 import { useDatasetStatus } from "../dataset/useDatasetStatus";
 import { HealthStatus } from "./HealthStatus";
+import { Logo } from "./Logo";
 import { nextStep, stepNotes } from "./flow";
 import { curatePages, measurePages, pageLabels, setupPages, type Page } from "./pages";
 import { ThemeToggle } from "./ThemeToggle";
@@ -63,10 +64,8 @@ export function Sidebar(props: { page: Page; onPage: (page: Page) => void }) {
   return (
     <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r bg-sidebar">
       <div className="flex items-center gap-2 px-4 pt-4 pb-3 text-sm font-semibold">
-        <span className="grid size-6 place-items-center rounded bg-primary text-[11px] text-primary-foreground">
-          W
-        </span>
-        Winnow
+        <Logo className="size-6" />
+        Standard Motion
       </div>
       <div className="grid gap-2 px-4 text-sm">
         <div>

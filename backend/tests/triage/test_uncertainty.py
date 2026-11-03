@@ -3,6 +3,10 @@
 import numpy as np
 import pytest
 
+from standard_motion.criteria.facts import EpisodeFacts
+from standard_motion.criteria.models import Criterion, Window
+from standard_motion.triage.models import Label
+from standard_motion.triage.scoring import score
 from tests.triage.robot_data import (
     CLEAN_GRIPPER,
     CLEAN_Z,
@@ -19,10 +23,6 @@ from tests.triage.robot_data import (
     still,
     text,
 )
-from winnow.criteria.facts import EpisodeFacts
-from winnow.criteria.models import Criterion, Window
-from winnow.triage.models import Label
-from winnow.triage.scoring import score
 
 STRAIGHT = np.linspace(0, 0.3, 45).tolist()  # along x
 # Rising steadily, so the arm lifts 3.2 cm while the gripper is closed: a clean grasp, and with

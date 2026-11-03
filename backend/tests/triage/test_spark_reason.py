@@ -7,6 +7,13 @@ from pathlib import Path
 
 import pytest
 
+from standard_motion.core.db import open_db
+from standard_motion.meta.client import MetaClient
+from standard_motion.meta.costs import CostLog
+from standard_motion.meta.transport import Reply
+from standard_motion.triage.models import Label, Triage
+from standard_motion.triage.scoring import score
+from standard_motion.triage.spark_reason import ReasonAnswerError, reason_key, write_reason
 from tests.meta.fakes import FakeTransport
 from tests.triage.robot_data import (
     FIRST_TRY,
@@ -16,13 +23,6 @@ from tests.triage.robot_data import (
     first_try,
     rubric,
 )
-from winnow.core.db import open_db
-from winnow.meta.client import MetaClient
-from winnow.meta.costs import CostLog
-from winnow.meta.transport import Reply
-from winnow.triage.models import Label, Triage
-from winnow.triage.scoring import score
-from winnow.triage.spark_reason import ReasonAnswerError, reason_key, write_reason
 
 
 def regrasp(*labels: Label) -> Triage:
@@ -59,7 +59,7 @@ def answering(
 ) -> tuple[MetaClient, FakeTransport]:
     transport = FakeTransport(reply=Reply(json.dumps({"spans": spans}), {"input_tokens": 900}))
     costs = CostLog(tmp_path / "meta_costs.jsonl", 5.0)
-    return MetaClient(transport, open_db(tmp_path / "winnow.db"), costs), transport
+    return MetaClient(transport, open_db(tmp_path / "standard-motion.db"), costs), transport
 
 
 def test_spark_s_reason_is_kept_when_it_cites_only_given_times(tmp_path: Path):
@@ -95,7 +95,7 @@ def test_a_time_spark_rounded_is_read_as_the_time_it_was_given(tmp_path: Path):
     assert written.t == first
 
 
-def test_a_time_winnow_didnt_give_is_rejected(tmp_path: Path):
+def test_a_time_standard_motion_didnt_give_is_rejected(tmp_path: Path):
     meta, _ = answering(tmp_path, [{"text": "It slipped at 0.5 s.", "t": 0.5}])
 
     with pytest.raises(ReasonAnswerError, match=r"0\.5"):

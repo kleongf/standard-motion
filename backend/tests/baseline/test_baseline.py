@@ -4,13 +4,13 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.baseline.prompts import FROZEN_DESCRIPTION, Description
+from standard_motion.baseline.service import SKIPPED_NO_INSTRUCTION, run_baseline
+from standard_motion.core.settings import Settings
 from tests.baseline.scripted import REASON, ScriptedSpark
 from tests.conftest import CORRUPT_EPISODE
 from tests.helpers import app_context, wait_for_job
-from winnow.app import create_app
-from winnow.baseline.prompts import FROZEN_DESCRIPTION, Description
-from winnow.baseline.service import SKIPPED_NO_INSTRUCTION, run_baseline
-from winnow.core.settings import Settings
 
 
 @pytest.fixture

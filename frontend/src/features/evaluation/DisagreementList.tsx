@@ -1,6 +1,6 @@
-// Every Reference-labelled Episode where Spark alone and Winnow disagree, scored live (the latest
+// Every Reference-labelled Episode where Spark alone and Standard Motion disagree, scored live (the latest
 // Rubric version, labels in force, as the Workstation shows it). A row opens its Workstation,
-// which shows Winnow only: this list is the one place the contrast appears.
+// which shows Standard Motion only: this list is the one place the contrast appears.
 import type { ReactNode } from "react";
 
 import {
@@ -51,8 +51,8 @@ function Row(props: { row: Disagreement }) {
         <SetTag name={row.set_name ?? undefined} />
       </TableCell>
       <TableCell className="w-2/5">
-        <Decided reason={row.winnow_reason}>
-          <TriageBadge decision={row.winnow} />
+        <Decided reason={row.standard_motion_reason}>
+          <TriageBadge decision={row.standard_motion} />
         </Decided>
       </TableCell>
       <TableCell className="w-2/5">
@@ -77,7 +77,7 @@ export function DisagreementList() {
     <div data-testid="disagreements">
       <SectionHeading
         level={2}
-        title="Where Spark alone and Winnow disagree"
+        title="Where Spark alone and Standard Motion disagree"
         info={
           <>
             Every Episode with a Reference label whose Triage decision, as its Workstation shows it
@@ -93,12 +93,12 @@ export function DisagreementList() {
         </p>
       )}
       {data && data.length > 0 && (
-        <Table className="mt-2" aria-label="Spark alone and Winnow disagree">
+        <Table className="mt-2" aria-label="Spark alone and Standard Motion disagree">
           <TableHeader>
             <TableRow>
               <TableHead className="w-28">Episode</TableHead>
               <TableHead className="w-20">Set</TableHead>
-              <TableHead>Winnow</TableHead>
+              <TableHead>Standard Motion</TableHead>
               <TableHead>Spark alone</TableHead>
               <TableHead className="w-40">Reference label</TableHead>
             </TableRow>

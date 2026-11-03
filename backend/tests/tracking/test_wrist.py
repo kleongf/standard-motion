@@ -4,13 +4,13 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
+from standard_motion.episodes.models import EpisodeSignals
+from standard_motion.tracking.wrist import seed_frame, wrist_prompt
 from tests.conftest import OPEN_GRIPPER_EPISODE
 from tests.helpers import wait_for_job
 from tests.record_meta import RECORDINGS
-from winnow.app import create_app
-from winnow.core.settings import Settings
-from winnow.episodes.models import EpisodeSignals
-from winnow.tracking.wrist import seed_frame, wrist_prompt
 
 
 @pytest.fixture

@@ -6,9 +6,9 @@ import json
 import re
 from dataclasses import dataclass, field
 
+from standard_motion.meta.models import MetaContent
+from standard_motion.meta.transport import Reply
 from tests.visual.scripted import ScriptedVisual
-from winnow.meta.models import MetaContent
-from winnow.meta.transport import Reply
 
 USAGE = {"input_tokens": 1500, "output_tokens": 60}
 GIVEN = re.compile(r"\[t=([0-9.]+)\]")

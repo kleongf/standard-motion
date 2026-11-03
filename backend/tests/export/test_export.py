@@ -13,21 +13,21 @@ import pyarrow.parquet as pq
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.cli import main
+from standard_motion.core.settings import Settings
+from standard_motion.episodes.droid100 import CAMERAS
+from standard_motion.episodes.droid101 import CAMERA_KEYS, FPS, Droid101
+from standard_motion.episodes.droid101_files import LocalFiles
+from standard_motion.episodes.fixtures import clip_path
+from standard_motion.episodes.models import EpisodeSignals
+from standard_motion.export.service import export_kept
+from standard_motion.export.stats import QUANTILES
+from standard_motion.labels.models import LabelDraw
+from standard_motion.labels.service import save_label
+from standard_motion.rubric.models import Rubric
 from tests.helpers import app_context, decoded, reference_label, rgb, wait_for_job
-from winnow.app import create_app
-from winnow.baseline.prompts import FROZEN
-from winnow.cli import main
-from winnow.core.settings import Settings
-from winnow.episodes.droid100 import CAMERAS
-from winnow.episodes.droid101 import CAMERA_KEYS, FPS, Droid101
-from winnow.episodes.droid101_files import LocalFiles
-from winnow.episodes.fixtures import clip_path
-from winnow.episodes.models import EpisodeSignals
-from winnow.export.service import export_kept
-from winnow.export.stats import QUANTILES
-from winnow.labels.models import LabelDraw
-from winnow.labels.service import save_label
-from winnow.rubric.models import Rubric
 
 DROID100 = [0, 1, 2, 4]  # 0 grasps cleanly, 1 releases high, 2 regrasps, 4 never closes
 DROID101 = [0, 1, 2, 3]  # each grasps cleanly

@@ -4,7 +4,7 @@ from math import comb
 
 import pytest
 
-from winnow.evaluation.stats import clopper_pearson_lower, clopper_pearson_upper, wilson
+from standard_motion.evaluation.stats import clopper_pearson_lower, clopper_pearson_upper, wilson
 
 
 def test_wilson_on_14_of_15_is_0_70_to_0_99():

@@ -6,15 +6,15 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.cli import main
+from standard_motion.core.settings import Settings
+from standard_motion.episodes.droid101 import EpisodeMeta
+from standard_motion.meta.models import MetaContent
+from standard_motion.meta.transport import Reply
+from standard_motion.selection.service import sample_indices
 from tests.helpers import wait_for_job
 from tests.meta.fakes import NoTranscribe
-from winnow.app import create_app
-from winnow.cli import main
-from winnow.core.settings import Settings
-from winnow.episodes.droid101 import EpisodeMeta
-from winnow.meta.models import MetaContent
-from winnow.meta.transport import Reply
-from winnow.selection.service import sample_indices
 
 
 @dataclass

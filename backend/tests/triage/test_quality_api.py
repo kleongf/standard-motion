@@ -4,8 +4,8 @@ and never move a Triage decision."""
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.rubric.models import Rubric
 from tests.helpers import app_context, reference_label, wait_for_job
-from winnow.rubric.models import Rubric
 
 # Fixture Episodes release 1.8 cm (i % 3 == 0) and 4.4 cm (i % 6 == 1) above where they picked
 # up, and the regrasp (i % 3 == 2) 6.5 cm.

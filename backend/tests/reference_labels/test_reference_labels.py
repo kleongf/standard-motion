@@ -1,8 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.baseline.prompts import FROZEN
 from tests.helpers import wait_for_job
-from winnow.baseline.prompts import FROZEN
 
 PHRASES = FROZEN.phrases
 # droid_100:2 of the fixture source has no instruction and a failing Dataset outcome.
@@ -82,7 +82,7 @@ def test_where_an_episode_has_no_instruction_the_labeller_writes_one(ingested: T
     assert label(ingested, NO_INSTRUCTION, instruction=written).status_code == 201
     [stored] = labels(ingested)
     assert stored["instruction"] == written
-    # Winnow and Spark alone read it from the Episode, never from the Reference label.
+    # Standard Motion and Spark alone read it from the Episode, never from the Reference label.
     assert episode(ingested, NO_INSTRUCTION)["instruction"] == written
 
 

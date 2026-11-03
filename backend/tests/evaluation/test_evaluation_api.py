@@ -1,20 +1,22 @@
 """The evaluation report over fixture Episodes, their Reference labels and Spark alone's samples:
-served by a route, returned identically by `winnow eval`, and logged for every Test set run."""
+served by a route, returned identically by `standard-motion eval`, and logged for every Test set
+run."""
 
 import json
 
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.baseline.models import BaselineAnswer
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.cli import main
+from standard_motion.core.settings import Settings
+from standard_motion.evaluation.models import EvaluationReport, Proportion
 from tests.helpers import app_context, ask_visual, track_cleanly, wait_for_job
-from winnow.baseline.models import BaselineAnswer
-from winnow.baseline.prompts import FROZEN
-from winnow.cli import main
-from winnow.core.settings import Settings
-from winnow.evaluation.models import EvaluationReport, Proportion
 
 FIRST_TRY, NEVER_DROPS = FROZEN.phrases[0], FROZEN.phrases[1]
-# Winnow keeps fixture Episode 0, routes 1 to Needs review and rejects 2 (three grasp attempts).
+# Standard Motion keeps fixture Episode 0, routes 1 to Needs review and rejects 2 (three grasp
+# attempts).
 EPISODES = ["droid_100:0", "droid_100:1", "droid_100:2", "droid_100:4"]
 
 
@@ -75,7 +77,7 @@ def labelled(api: TestClient, set_name: str) -> TestClient:
     ask_visual(api)  # Spark sees each object placed on its target
     api.post(f"/api/sets/{set_name}/episodes", json={"episode_ids": EPISODES})
     reference_label(api, "droid_100:0")
-    reference_label(api, "droid_100:1", NEVER_DROPS)  # a failure Winnow can't see yet
+    reference_label(api, "droid_100:1", NEVER_DROPS)  # a failure Standard Motion can't see yet
     reference_label(api, "droid_100:2", FIRST_TRY, interval=(0.0, 2.9))  # the whole Episode
     # Its label writes its instruction, which queues Spark alone on it: let that finish before
     # its samples are scripted below.
@@ -124,12 +126,16 @@ def test_the_report_scores_only_labelled_episodes_against_their_reference_labels
 
     assert (report["set_name"], report["rubric_version"]) == ("test", 1)
     assert (report["episodes"], report["labelled"], report["description_failures"]) == (4, 3, 2)
-    winnow = rows(report)["winnow"]
-    assert (winnow["keeps"], winnow["rejects"], winnow["undecided"]) == (1, 1, 1)
-    assert winnow["false_keeps"] == interval(0, 2, 0.0, 0.6576)
-    assert winnow["false_rejects"] == interval(0, 1, 0.0, 0.7935)
-    assert winnow["coverage"] == interval(2, 3, 0.2077, 0.9385)
-    kept = rows(report)["winnow_review_kept"]
+    standard_motion = rows(report)["standard_motion"]
+    assert (standard_motion["keeps"], standard_motion["rejects"], standard_motion["undecided"]) == (
+        1,
+        1,
+        1,
+    )
+    assert standard_motion["false_keeps"] == interval(0, 2, 0.0, 0.6576)
+    assert standard_motion["false_rejects"] == interval(0, 1, 0.0, 0.7935)
+    assert standard_motion["coverage"] == interval(2, 3, 0.2077, 0.9385)
+    kept = rows(report)["standard_motion_review_kept"]
     assert (kept["keeps"], kept["rejects"], kept["undecided"]) == (2, 1, 0)
     assert kept["false_keeps"] == interval(1, 2, 0.0945, 0.9055)  # it keeps droid_100:1
     spark = rows(report)["spark_alone"]
@@ -157,8 +163,8 @@ def test_right_reason_is_scored_at_the_slack_measured_from_the_relabel_pass(
     assert right.slack.seconds == pytest.approx(0.95)
     assert (right.slack.edges, right.slack.episodes) == (2, 1)
     rows = {row.system: row for row in right.rows}
-    # Winnow rejects droid_100:2 for its grasp attempts, inside the labelled interval.
-    assert counts(rows["winnow"].at_slack) == (1, 1)
+    # Standard Motion rejects droid_100:2 for its grasp attempts, inside the labelled interval.
+    assert counts(rows["standard_motion"].at_slack) == (1, 1)
     spark = rows["spark_alone"]
     assert counts(spark.at_slack) == (1, 1)
     curve = {p.slack_s: p.right for p in spark.curve}
@@ -171,25 +177,25 @@ def test_risk_coverage_ranks_spark_alone_by_sample_agreement(test_set: TestClien
     # P_keep = (keeps + 1) / (answers + 2): droid_100:1 0.2, droid_100:2 0.75, droid_100:0 0.6.
     spark = [(p.confidence, p.covered, p.errors) for p in curves["spark_alone"].points]
     assert spark == [(pytest.approx(0.8), 1, 0), (0.75, 2, 1), (0.6, 3, 1)]
-    assert curves["winnow"].episodes == 3
-    assert curves["winnow"].points[-1].covered == 3
+    assert curves["standard_motion"].episodes == 3
+    assert curves["standard_motion"].points[-1].covered == 3
 
 
-def test_the_report_compares_keep_precision_at_winnows_coverage(test_set: TestClient):
+def test_the_report_compares_keep_precision_at_standard_motions_coverage(test_set: TestClient):
     report = typed(run(test_set, "test"))
 
     matched = report.matched_coverage
     assert matched.target == 2
     rows = {row.system: row for row in matched.rows}
-    assert counts(rows["winnow"].keep_precision) == (1, 1)
+    assert counts(rows["standard_motion"].keep_precision) == (1, 1)
     spark = rows["spark_alone"]  # its two most confident: it keeps droid_100:2, a failure
     assert (spark.covered, counts(spark.keep_precision)) == (2, (0, 1))
     m = report.mcnemar
-    assert (m.compared, m.winnow_only_right, m.spark_alone_only_right) == (2, 1, 0)
+    assert (m.compared, m.standard_motion_only_right, m.spark_alone_only_right) == (2, 1, 0)
 
-    # (failures, Winnow rejects, Spark alone rejects, too few to score)
+    # (failures, Standard Motion rejects, Spark alone rejects, too few to score)
     failures = {
-        p.phrase: (p.failures, p.winnow_rejects, p.spark_alone_rejects, p.too_few)
+        p.phrase: (p.failures, p.standard_motion_rejects, p.spark_alone_rejects, p.too_few)
         for p in report.phrase_failures
     }
     assert failures[FIRST_TRY] == (1, 1, 0, True)
@@ -225,13 +231,15 @@ def test_the_cli_prints_right_reason_matched_coverage_and_failures_per_phrase(
 
     out = capsys.readouterr().out
     assert "Right reason on correct Rejects, at 0.95 s slack" in out
-    assert "Winnow 1 of 1 (0.21–1.00) · Spark alone 1 of 1 (0.21–1.00)" in out
-    assert "Keep precision at matched coverage (Winnow decides 2 of 3)" in out
+    assert "Standard Motion 1 of 1 (0.21–1.00) · Spark alone 1 of 1 (0.21–1.00)" in out
+    assert "Keep precision at matched coverage (Standard Motion decides 2 of 3)" in out
     assert "Spark alone 0 of 1 (0.00–0.79), covering 2" in out
+    mcnemar = "McNemar, on 2 Episodes both decided: only Standard Motion right 1 · only Spark alone"
+    assert f"{mcnemar} right 0" in out
     assert (
-        "McNemar, on 2 Episodes both decided: only Winnow right 1 · only Spark alone right 0" in out
+        f"{FIRST_TRY}: 1 failure, Standard Motion rejects 1, Spark alone 0 (too few to score)"
+        in out
     )
-    assert f"{FIRST_TRY}: 1 failure, Winnow rejects 1, Spark alone 0 (too few to score)" in out
 
 
 def test_each_test_set_run_appends_one_dated_log_entry(test_set: TestClient, settings: Settings):
@@ -277,16 +285,16 @@ def test_interview_and_review_labels_never_touch_test_set_episodes(test_set: Tes
     fail_first_try(test_set)
 
     assert run(test_set, "test")["comparison"] == before["comparison"]
-    assert rows(before)["winnow"]["keeps"] == 1
+    assert rows(before)["standard_motion"]["keeps"] == 1
 
 
 def test_interview_and_review_labels_apply_to_dev_set_episodes(asked_api: TestClient):
     dev = labelled(asked_api, "dev")
     fail_first_try(dev)
 
-    winnow = rows(run(dev, "dev"))["winnow"]
+    standard_motion = rows(run(dev, "dev"))["standard_motion"]
 
-    assert (winnow["keeps"], winnow["rejects"]) == (0, 3)
+    assert (standard_motion["keeps"], standard_motion["rejects"]) == (0, 3)
 
 
 def test_the_report_crosses_the_dataset_outcome_and_times_review(test_set: TestClient):
@@ -298,7 +306,7 @@ def test_the_report_crosses_the_dataset_outcome_and_times_review(test_set: TestC
     assert [(d.episode_id, d.failed_phrases) for d in outcome.disagreements] == [
         ("droid_100:1", [NEVER_DROPS])
     ]
-    # Each label took 30 s; Winnow decided 2 of the 3 Episodes.
+    # Each label took 30 s; Standard Motion decided 2 of the 3 Episodes.
     time = report.review_time
     assert (time.minutes_per_episode, time.decided, time.minutes_saved) == (0.5, 2, 1.0)
     assert [row.kind for row in report.tracking_health] == ["wrist", "exterior"]

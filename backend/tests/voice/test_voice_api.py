@@ -7,12 +7,12 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.core.settings import Settings
 from tests.helpers import ask_visual, reference_label, track_cleanly, wait_for_job
 from tests.meta.test_transcribe import write_wav
 from tests.voice.scripted import ScriptedVoice
-from winnow.app import create_app
-from winnow.baseline.prompts import FROZEN
-from winnow.core.settings import Settings
 
 GRASPS, NEVER_DROPS, PLACES, _ = FROZEN.phrases
 UNSURE = "droid_100:1"  # unsure only on "never drops it": its release height is near threshold

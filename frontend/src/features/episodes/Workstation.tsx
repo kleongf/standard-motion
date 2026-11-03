@@ -1,7 +1,7 @@
 // The Workstation (#8, Variant A): the instruction and camera tabs over one large video, one
 // playhead driving the video, a lane per Criterion and the robot-data plots, and a right panel
 // with the Triage decision, Reason, Criterion results and a closed Details. Review and Reference label mode put their controls in
-// `actions`. `blind` (Reference label mode) hides every Winnow and baseline output: tracks,
+// `actions`. `blind` (Reference label mode) hides every Standard Motion and baseline output: tracks,
 // lanes, the Triage decision, Reason and Criterion results. An Episode without a Reference label
 // has no lanes or Triage decision to show either: the server withholds them until it's labelled.
 import { useEffect, useState, type ReactNode } from "react";

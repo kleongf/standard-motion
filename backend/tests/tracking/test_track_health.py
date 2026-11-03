@@ -1,5 +1,5 @@
-from winnow.tracking.health import track_health
-from winnow.tracking.models import TrackBox
+from standard_motion.tracking.health import track_health
+from standard_motion.tracking.models import TrackBox
 
 
 def box(frame: int, left: float = 100, top: float = 80, size: float = 40) -> TrackBox:

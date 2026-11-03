@@ -2,6 +2,11 @@
 
 import pytest
 
+from standard_motion.criteria.facts import EpisodeFacts
+from standard_motion.criteria.models import Criterion
+from standard_motion.tracking.models import TrackBox
+from standard_motion.triage.models import CriterionResult
+from standard_motion.triage.scoring import score
 from tests.triage.robot_data import CLEAN_GRIPPER, CLEAN_Z, facts
 from tests.triage.tracks import (
     DROPS,
@@ -18,11 +23,6 @@ from tests.triage.tracks import (
     track,
     with_tracks,
 )
-from winnow.criteria.facts import EpisodeFacts
-from winnow.criteria.models import Criterion
-from winnow.tracking.models import TrackBox
-from winnow.triage.models import CriterionResult
-from winnow.triage.scoring import score
 
 
 def clean() -> EpisodeFacts:

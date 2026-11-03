@@ -7,13 +7,13 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.app import create_app
+from standard_motion.core.settings import Settings
+from standard_motion.meta.replay import ReplayTransport
 from tests.helpers import ask_visual, reference_label, wait_for_job
 from tests.record_meta import RECORDINGS
 from tests.record_visual import VISUAL_ANSWERS
 from tests.rubric.replay import CountingReplay
-from winnow.app import create_app
-from winnow.core.settings import Settings
-from winnow.meta.replay import ReplayTransport
 
 SPLIT = 10  # the Episode `tests.record_visual` scripts to split 2-1
 

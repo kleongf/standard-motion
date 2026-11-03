@@ -7,10 +7,10 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from standard_motion.baseline.prompts import FROZEN
+from standard_motion.rubric.models import Rubric
 from tests.conftest import OPEN_GRIPPER_EPISODE
 from tests.helpers import app_context, ask_visual, reference_label, track_cleanly, wait_for_job
-from winnow.baseline.prompts import FROZEN
-from winnow.rubric.models import Rubric
 
 KEEP, NEEDS_REVIEW, REJECT = "droid_100:0", "droid_100:1", "droid_100:2"
 NO_GRASP = f"droid_100:{OPEN_GRIPPER_EPISODE}"  # rejected too: its gripper never closes
@@ -88,7 +88,7 @@ def test_the_sample_is_drawn_once_per_rubric_version(ingested: TestClient):
     rubrics.add(Rubric.model_validate(rubrics.latest().rubric.model_dump()))
     assert (audit(ingested)["rubric_version"], audit(ingested)["seed"]) == (2, None)
     redrawn = draw(ingested, seed=8)
-    # A Keep a human label decided isn't Winnow's own, so it isn't audited.
+    # A Keep a human label decided isn't Standard Motion's own, so it isn't audited.
     assert [i["episode_id"] for i in redrawn["items"]] == [KEEP, REJECT, NO_GRASP]
 
 
@@ -185,7 +185,7 @@ def test_a_sample_is_drawn_at_the_versions_s_and_again_once_calibration_changes_
     assert (first["s"], first["earlier_s"]) == (1.0, None)
 
     # Calibrated narrower, Episode 1's release height (0.0437 against ≤ 0.05) is no longer
-    # within its margin, so Winnow keeps it too: the old sample no longer shows its Keeps.
+    # within its margin, so Standard Motion keeps it too: the old sample no longer shows its Keeps.
     app_context(ingested).calibrations.add(1, 0.5, 12, 0, True, False)
     stale = audit(ingested)
     assert (stale["s"], stale["seed"], stale["items"], stale["earlier_s"]) == (0.5, None, [], 1.0)
@@ -212,7 +212,7 @@ def test_a_keep_counts_toward_precision_only_while_it_is_still_a_keep(ingested: 
 
     sample = audit(ingested)
     assert (sample["items"][0]["kind"], sample["items"][0]["decision"]) == ("keep", "reject")
-    assert sample["precision"]["good"]["of"] == 0  # no longer one of Winnow's Keeps
+    assert sample["precision"]["good"]["of"] == 0  # no longer one of Standard Motion's Keeps
 
 
 def test_marked_rejects_count_the_good_episodes_rejected(ingested: TestClient):

@@ -4,8 +4,8 @@ before s existed were drawn at s = 1."""
 import sqlite3
 from pathlib import Path
 
-from winnow.audit.store import AuditStore, Pick
-from winnow.core.db import open_db
+from standard_motion.audit.store import AuditStore, Pick
+from standard_motion.core.db import open_db
 
 BEFORE_S = """
 CREATE TABLE audit_samples (
@@ -23,7 +23,7 @@ INSERT INTO audit_samples VALUES (1, 7, 'droid_100:2', 'reject', '2026-10-29T00:
 
 def db_at(path: Path) -> sqlite3.Connection:
     """No Episodes are stored here, so their foreign keys aren't checked."""
-    db = open_db(path / "winnow.db")
+    db = open_db(path / "standard-motion.db")
     db.execute("PRAGMA foreign_keys=OFF")
     return db
 

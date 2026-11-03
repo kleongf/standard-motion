@@ -1,7 +1,7 @@
-// The Evaluation page: Winnow against Spark alone and length alone, scored on the Episodes with
+// The Evaluation page: Standard Motion against Spark alone and length alone, scored on the Episodes with
 // a Reference label, for a set and a Rubric version, with the source ablation, tracking health,
-// cost and the Dataset outcome; `winnow eval` returns the same report. Below it, the live list of
-// Episodes where Spark alone and Winnow disagree.
+// cost and the Dataset outcome; `standard-motion eval` returns the same report. Below it, the live list of
+// Episodes where Spark alone and Standard Motion disagree.
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -81,7 +81,7 @@ export function EvaluationPage() {
     <Page width="content">
       <PageHeader
         title="Evaluation"
-        info="Winnow against Spark alone and length alone, scored on the Episodes with a Reference label. Interview and review labels count on the Dev set only, never on the Test set."
+        info="Standard Motion against Spark alone and length alone, scored on the Episodes with a Reference label. Interview and review labels count on the Dev set only, never on the Test set."
       >
         <Tabs
           label="Set"

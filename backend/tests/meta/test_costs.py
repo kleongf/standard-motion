@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from winnow.meta.costs import BudgetExceededError, CostEntry, CostLog
-from winnow.meta.pricing import SPARK_CONTRIBUTOR, sam_cost, spark_cost
+from standard_motion.meta.costs import BudgetExceededError, CostEntry, CostLog
+from standard_motion.meta.pricing import SPARK_CONTRIBUTOR, sam_cost, spark_cost
 
 
 def entry(usd: float) -> CostEntry:

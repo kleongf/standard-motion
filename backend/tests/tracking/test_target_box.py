@@ -2,10 +2,10 @@ from typing import cast
 
 from fastapi.testclient import TestClient
 
+from standard_motion.tracking.target import chosen_target_box, episode_target
 from tests.helpers import app_context, wait_for_job
 from tests.tracking.boxing import BOX, EXTERIOR_2, save_box
 from tests.tracking.scripted_sam import SAMPLE_BOX, ScriptedSam
-from winnow.tracking.target import chosen_target_box, episode_target
 
 # Fixture instructions: Episode 0 "Put the marker in the pot", Episode 1 "Move the black remote
 # control to the left" (a direction, no target), Episode 2 none.

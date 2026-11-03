@@ -27,7 +27,9 @@ test("the Selection page explains how to draw a sample when there is none", asyn
   await page.goto("/?page=select");
 
   await expect(page.getByRole("heading", { name: "droid_1.0.1 selection" })).toBeVisible();
-  await expect(page.getByText("winnow select droid_1.0.1 --size 300 --seed 0")).toBeVisible();
+  await expect(
+    page.getByText("standard-motion select droid_1.0.1 --size 300 --seed 0"),
+  ).toBeVisible();
 });
 
 test("the theme toggle switches to dark and keeps it across a reload", async ({ page }) => {

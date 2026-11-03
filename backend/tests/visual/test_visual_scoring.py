@@ -5,12 +5,12 @@ from dataclasses import replace
 
 import pytest
 
+from standard_motion.criteria.facts import EpisodeFacts
+from standard_motion.triage.scoring import score
+from standard_motion.visual.keys import ask_key
+from standard_motion.visual.models import AnswerValue, VisualAnswers
 from tests.triage.robot_data import CLEAN_GRIPPER, CLEAN_Z, PLACES, SETTINGS, facts, rubric, text
 from tests.visual.answers import answers, placed
-from winnow.criteria.facts import EpisodeFacts
-from winnow.triage.scoring import score
-from winnow.visual.keys import ask_key
-from winnow.visual.models import AnswerValue, VisualAnswers
 
 
 def with_answers(found: VisualAnswers | None) -> EpisodeFacts:

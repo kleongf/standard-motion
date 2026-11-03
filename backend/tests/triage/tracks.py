@@ -7,11 +7,11 @@ clip. With CLEAN_GRIPPER the grasp closes on 5 fps frames 5-9 (1.0-1.9 s) and op
 from collections.abc import Iterable
 from dataclasses import replace
 
+from standard_motion.criteria.facts import EpisodeFacts
+from standard_motion.criteria.models import Criterion, Window
+from standard_motion.rubric.models import Rubric
+from standard_motion.tracking.models import FrameBox, TargetBox, Track, TrackBox, TrackKind
 from tests.triage.robot_data import SETTINGS
-from winnow.criteria.facts import EpisodeFacts
-from winnow.criteria.models import Criterion, Window
-from winnow.rubric.models import Rubric
-from winnow.tracking.models import FrameBox, TargetBox, Track, TrackBox, TrackKind
 
 FRAMES = 15  # 5 fps over 3 s
 FINGERS = (190.0, 105.0)  # the wrist seed point, between the fingertips, in a 320x180 clip
