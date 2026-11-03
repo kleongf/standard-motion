@@ -13,7 +13,8 @@ import { SectionHeading } from "../core/PageHeader";
 import { Rate } from "./Rate";
 import type { AblationRow, TrackHealthRow } from "./useEvaluation";
 
-export function AblationTable(props: { rows: AblationRow[] }) {
+/** `rightReason` is false against the Dataset outcome, which has no failure times to check. */
+export function AblationTable(props: { rows: AblationRow[]; rightReason: boolean }) {
   return (
     <div data-testid="source-ablation">
       <SectionHeading
@@ -33,7 +34,7 @@ export function AblationTable(props: { rows: AblationRow[] }) {
             <TableHead>Sources</TableHead>
             <TableHead className="text-right">Criteria</TableHead>
             <TableHead>False keeps</TableHead>
-            <TableHead>Right reason</TableHead>
+            {props.rightReason && <TableHead>Right reason</TableHead>}
             <TableHead>Coverage</TableHead>
           </TableRow>
         </TableHeader>
@@ -47,13 +48,15 @@ export function AblationTable(props: { rows: AblationRow[] }) {
               <TableCell>
                 <Rate p={row.false_keeps} />
               </TableCell>
-              <TableCell>
-                {row.right_reason ? (
-                  <Rate p={row.right_reason} />
-                ) : (
-                  <span className="text-xs text-muted-foreground">No slack yet</span>
-                )}
-              </TableCell>
+              {props.rightReason && (
+                <TableCell>
+                  {row.right_reason ? (
+                    <Rate p={row.right_reason} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">No slack yet</span>
+                  )}
+                </TableCell>
+              )}
               <TableCell>
                 <Rate p={row.coverage} />
               </TableCell>

@@ -4,7 +4,3 @@ export function formatQuality(quality: number): string {
   if (shown === "0.00") return shown;
   return `${quality > 0 ? "+" : "−"}${shown}`;
 }
-
-export const QUALITY_TITLE =
-  "Quality: how this Episode's soft Criteria rank it in the run, in robust standard deviations " +
-  "from the typical Episode (0). Higher is better; it never decides.";

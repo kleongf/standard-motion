@@ -1843,20 +1843,26 @@ export interface components {
             ablation: components["schemas"]["AblationRow"][];
             comparison: components["schemas"]["Comparison"];
             cost: components["schemas"]["MetaCost"];
-            dataset_outcome: components["schemas"]["DatasetOutcome"];
+            dataset_outcome: components["schemas"]["DatasetOutcome"] | null;
             /** Description Failures */
             description_failures: number;
             /** Episodes */
             episodes: number;
             failbench: components["schemas"]["FailBenchCheck"];
+            /**
+             * Ground Truth
+             * @default reference_labels
+             * @enum {string}
+             */
+            ground_truth: "reference_labels" | "dataset_outcome";
             /** Labelled */
             labelled: number;
             matched_coverage: components["schemas"]["MatchedCoverage"];
             mcnemar: components["schemas"]["McNemar"];
             /** Phrase Failures */
-            phrase_failures: components["schemas"]["PhraseFailures"][];
+            phrase_failures: components["schemas"]["PhraseFailures"][] | null;
             review_time: components["schemas"]["ReviewTime"];
-            right_reason: components["schemas"]["RightReason"];
+            right_reason: components["schemas"]["RightReason"] | null;
             /** Risk Coverage */
             risk_coverage: components["schemas"]["RiskCoverage"][];
             /** Rubric Version */

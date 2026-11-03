@@ -17,13 +17,13 @@ from standard_motion.baseline.prompts import (
 from standard_motion.baseline.store import SAMPLES, BaselineStore
 from standard_motion.episodes.models import Episode
 from standard_motion.episodes.store import EpisodeStore, clip_path
-from standard_motion.jobs.models import Step
+from standard_motion.jobs.models import Step, WorkItem
 from standard_motion.meta.client import MetaClient
 from standard_motion.meta.models import SparkCall, SparkRequest, Text, Video
 from standard_motion.meta.pricing import SPARK_CONTRIBUTOR
 
 MAX_OUTPUT_TOKENS = 8000  # effort `high` reasons at length; Day 1 used up to ~3,400
-SKIPPED_NO_INSTRUCTION = "skipped: no instruction; it runs once a Reference label writes one"
+SKIPPED_NO_INSTRUCTION = "skipped: no instruction; it runs once one is written"
 
 
 def _parse[T: BaseModel](
@@ -96,3 +96,20 @@ def baseline_step(meta: MetaClient, store: BaselineStore, episodes: EpisodeStore
         return await run_baseline(meta, store, episodes, episode)
 
     return step
+
+
+def unanswered_items(store: BaselineStore, episodes: list[Episode]) -> list[WorkItem]:
+    """A `baseline` item for each Episode with an instruction that lacks an answer (an interrupted
+    run, or one skipped before its instruction was written). Answers already in are cached."""
+
+    def complete(episode: Episode) -> bool:
+        baseline = store.answers(episode.id, FROZEN.text)
+        answered = [s for s in baseline.samples if s.answer is not None]
+        failbench = baseline.failbench is not None and baseline.failbench.answer is not None
+        return len(answered) == SAMPLES and failbench
+
+    return [
+        WorkItem("baseline", {"episode_id": e.id}, e.id)
+        for e in episodes
+        if e.instruction is not None and not complete(e)
+    ]

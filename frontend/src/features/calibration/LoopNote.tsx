@@ -32,9 +32,7 @@ export function LoopNote() {
       aria-label="Your answers and the Rubric"
       className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm"
     >
-      <span className="min-w-0 flex-1">
-        Your answers can retune the Rubric: <span className="font-medium">{summary.text}</span>.
-      </span>
+      <span className="min-w-0 flex-1 font-medium">{summary.text}</span>
       {summary.fresh > 0 && <RecalibrateButton />}
       {summary.suggested > 0 && (
         <Button

@@ -16,28 +16,13 @@ import { navigate } from "../core/url";
 import { DryRunProgress } from "./DryRunProgress";
 import { scrollToRubric } from "./RubricCard";
 import { warningCount } from "./sanity";
-import { type RubricDraft, useAnchorPool } from "./useDraft";
+import type { RubricDraft } from "./useDraft";
 import type { AnchorPreview } from "./useDraftEdits";
 import { useDryRun } from "./useDryRun";
 import { useVersions } from "./useRubric";
 
 function plural(n: number, word: string): string {
   return `${String(n)} ${word}${n === 1 ? "" : "s"}`;
-}
-
-/** The Episodes every number comes from: the Dev set, never the Test set. */
-export function AnchorPoolLine() {
-  const pool = useAnchorPool().data;
-  if (!pool) return null;
-  return (
-    <p className="text-xs text-muted-foreground" data-testid="anchor-pool">
-      Anchor pool: <span className="font-medium text-foreground">Dev set</span> ·{" "}
-      {plural(pool.episode_ids.length, "Episode")} ·{" "}
-      {plural(pool.hidden_test_episodes, "Test set Episode")} hidden
-      {pool.awaiting_reference_label > 0 &&
-        ` · ${String(pool.awaiting_reference_label)} awaiting a Reference label, so not counted`}
-    </p>
-  );
 }
 
 function AnchorSort(props: { preview?: AnchorPreview | undefined }) {

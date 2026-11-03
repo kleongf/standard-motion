@@ -59,7 +59,6 @@ test("an Episode with no instruction starts from the task the selection pass nam
 
   const field = screen.getByLabelText(/^Instruction/);
   expect(field).toHaveValue("Put the red mug in or on the shelf");
-  expect(screen.getByText(/suggested from the task the selection pass named/)).toBeInTheDocument();
 
   fireEvent.change(field, { target: { value: "Put the red mug on the top shelf" } });
   expect(field).toHaveValue("Put the red mug on the top shelf");

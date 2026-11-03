@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { goTo, type Page } from "./pages";
 
 export function NextStep(props: {
-  children: ReactNode;
+  children?: ReactNode;
   page: Page;
   action: string;
   /** The target page's own params, e.g. the Episode to open there. */
@@ -22,7 +22,7 @@ export function NextStep(props: {
         props.className,
       )}
     >
-      <span className="min-w-0 flex-1">{props.children}</span>
+      {props.children && <span className="min-w-0 flex-1">{props.children}</span>}
       <Button
         size="sm"
         variant="outline"

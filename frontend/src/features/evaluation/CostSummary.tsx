@@ -83,18 +83,22 @@ export function CostSummary(props: { cost: MetaCost; time: ReviewTime }) {
           value={usdText(cost.spark_alone_per_1000_usd)}
           note={`${usdText(cost.spark_alone_usd)} on this set, with the FailBench check`}
         />
-        <Stat
-          testId="human-cost"
-          label="Human cost per Episode"
-          value={minutesText(time.needs_review_minutes_per_episode)}
-          note={`Needs review (${reviewed}), plus one hand-drawn box, timed within labelling`}
-        />
-        <Stat
-          testId="minutes-saved"
-          label="Review minutes saved"
-          value={minutesText(time.minutes_saved)}
-          note={`${minutesText(time.minutes_per_episode)} per Episode on the label-mode timer × ${String(time.decided)} decided automatically`}
-        />
+        {time.timed > 0 && (
+          <Stat
+            testId="human-cost"
+            label="Human cost per Episode"
+            value={minutesText(time.needs_review_minutes_per_episode)}
+            note={`Needs review (${reviewed}), plus one hand-drawn box, timed within labelling`}
+          />
+        )}
+        {time.timed > 0 && (
+          <Stat
+            testId="minutes-saved"
+            label="Review minutes saved"
+            value={minutesText(time.minutes_saved)}
+            note={`${minutesText(time.minutes_per_episode)} per Episode on the label-mode timer × ${String(time.decided)} decided automatically`}
+          />
+        )}
       </dl>
       {cost.steps.length > 0 && <StepTable cost={cost} />}
     </div>

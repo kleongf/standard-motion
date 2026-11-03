@@ -71,7 +71,7 @@ function QueueStatus(props: { queue: ReturnType<typeof useReviewQueue> }) {
   if (flow.labelled === 0) {
     return (
       <NextStep page="reference" action="Go to Reference labels">
-        Nothing to review yet: an Episode joins the queue only once it has a Reference label.
+        Nothing to review yet.
       </NextStep>
     );
   }
@@ -82,11 +82,7 @@ function QueueStatus(props: { queue: ReturnType<typeof useReviewQueue> }) {
       </NextStep>
     );
   }
-  return (
-    <p className="text-sm text-muted-foreground">
-      The queue is empty: every Episode with a Reference label is decided.
-    </p>
-  );
+  return <p className="text-sm text-muted-foreground">The queue is empty.</p>;
 }
 
 function ReviewHeader(props: { reviewed: number; left: number; current: ReviewItem | undefined }) {
@@ -95,7 +91,7 @@ function ReviewHeader(props: { reviewed: number; left: number; current: ReviewIt
   return (
     <PageHeader
       title="Review"
-      subtitle={`${String(reviewed)} of ${String(total)} reviewed · least confident first`}
+      subtitle={`${String(reviewed)} of ${String(total)} reviewed`}
       progress={total > 0 ? reviewed / total : undefined}
       actions={
         current && (

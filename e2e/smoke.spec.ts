@@ -7,7 +7,8 @@ test("app loads and reaches the backend", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "Pick-and-place · Prepare" })).toBeVisible();
-  await expect(page.getByTestId("health-status")).toContainText("Backend ok");
+  await expect(page.getByText("Connecting to backend…")).toHaveCount(0);
+  await expect(page.getByText("Backend unreachable")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

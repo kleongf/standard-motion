@@ -24,10 +24,6 @@ export function AwaitingLabelNote(props: { episodeId: string }) {
   return (
     <section aria-label="Triage" className="grid gap-2">
       <AwaitingLabelTag />
-      <p className="text-sm text-muted-foreground">
-        Its Triage decision, Reason and Criterion results stay hidden until it has a Reference
-        label, so that label is given blind.
-      </p>
       <Button
         size="sm"
         className="justify-self-start"
@@ -41,7 +37,7 @@ export function AwaitingLabelNote(props: { episodeId: string }) {
   );
 }
 
-/** Above the Episodes table: how many show no results yet, and where to label them. */
+/** Above the Episodes table: a button to label the Episodes that show no results yet. */
 export function AwaitingLabelBanner() {
   const episodes = useEpisodes().data ?? [];
   const waiting = episodes.filter((e) => !e.reference_labelled).length;
@@ -50,8 +46,6 @@ export function AwaitingLabelBanner() {
     <NextStep
       page="reference"
       action={`Label ${String(waiting)} Episode${waiting === 1 ? "" : "s"}`}
-    >
-      An Episode shows no results until it has a Reference label, given blind.
-    </NextStep>
+    />
   );
 }

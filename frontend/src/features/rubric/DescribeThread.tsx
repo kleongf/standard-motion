@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 
 import { InterviewThread } from "../interview/InterviewThread";
 import { CalibrationTurn } from "./CalibrationTurn";
-import { AnchorPoolLine } from "./DescribeHeader";
 import { DescriptionText } from "./DescriptionText";
 import { recompileNote } from "./recompileNote";
 import { RubricCard } from "./RubricCard";
@@ -27,14 +26,7 @@ function plural(n: number, one: string, many: string): string {
 function Greeting() {
   return (
     <AgentRow>
-      <p>
-        Describe what an expert Episode looks like, in your own words. I’ll compile it into Criteria
-        that code checks on every Episode, then check anything I had to assume against a real
-        moment.
-      </p>
-      <div className="mt-1">
-        <AnchorPoolLine />
-      </div>
+      <p>Describe what an expert Episode looks like, in your own words.</p>
     </AgentRow>
   );
 }
@@ -54,11 +46,6 @@ function CompileSummary(props: { draft: RubricDraft; compiling: boolean }) {
         {assumed > 0 &&
           `I assumed ${plural(assumed, "value", "values")} the Description doesn’t state; I’ll check them with you below.`}
       </p>
-      {draft.uncovered.length > 0 && (
-        <p className="mt-1 text-sm text-muted-foreground">
-          Wavy underlines mark words in no Phrase: nothing checks them.
-        </p>
-      )}
       {draft.rejected.map((r) => (
         <p key={r.text} className="mt-1 text-sm text-destructive" data-testid="rejected-phrase">
           I proposed “{r.text}”, refused: {r.reason}
@@ -138,9 +125,7 @@ export function DescribeThread(props: {
           />
         </>
       )}
-      {props.compiling && (
-        <TypingIndicator label="Spark is reading it against the catalog; this can take a minute." />
-      )}
+      {props.compiling && <TypingIndicator label="Spark is reading it…" />}
       {props.ran !== null && (
         <AgentRow>
           <RunCard version={props.ran} />

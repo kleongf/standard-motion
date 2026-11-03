@@ -84,7 +84,6 @@ function ExportLink() {
     <Button
       size="sm"
       variant="outline"
-      title="Write the kept Episodes in LeRobot format, with a Reason for each one left out"
       onClick={() => {
         goTo("export");
       }}

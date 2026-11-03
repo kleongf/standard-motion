@@ -31,9 +31,7 @@ function Counts(props: { version: number }) {
   const count = (d: TriageDecision) => list.rows.filter((r) => r.decision === d).length;
   if (list.rows.length === 0) {
     return (
-      <p className="mt-3 text-sm text-muted-foreground">
-        No Episode has a Reference label yet, so none shows its Triage decision.
-      </p>
+      <p className="mt-3 text-sm text-muted-foreground">No Episode has a Reference label yet.</p>
     );
   }
   return (
@@ -52,9 +50,6 @@ export function RunCard(props: { version: number }) {
   return (
     <section aria-label="Run" className="rounded-xl border bg-card p-4 shadow-sm">
       <p className="font-medium">Rubric v{props.version} ran</p>
-      <p className="text-xs text-muted-foreground" data-testid="run-result">
-        v{props.version} frozen; every Episode is scored against it
-      </p>
       <Counts version={props.version} />
       <div className="mt-3 flex justify-end gap-2">
         <Button

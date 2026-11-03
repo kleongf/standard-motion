@@ -143,17 +143,16 @@ function TalkButton(props: {
           <kbd className="text-muted-foreground">V</kbd>
         </Button>
         <span className="text-xs text-muted-foreground" role="status">
-          {props.hearing ? "Hearing…" : "Narrate while it plays"}
+          {props.hearing && "Hearing…"}
         </span>
       </div>
       {micOn && (
         <p
           className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"
-          title="It stays open between turns, so each press records at once, and closes after 2 minutes without a turn or when you leave Review"
           data-testid="mic-on"
         >
           <span aria-hidden className="size-1.5 rounded-full bg-red-500" />
-          Mic on · closes after 2 min idle
+          Mic on
         </p>
       )}
     </>

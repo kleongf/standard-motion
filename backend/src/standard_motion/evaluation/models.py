@@ -1,4 +1,5 @@
-"""The evaluation report: Standard Motion and the baselines scored against Reference labels.
+"""The evaluation report: Standard Motion and the baselines scored against Reference labels, or,
+with none given, against the Dataset outcome (`ground_truth`).
 
 Each metric family is one section of `EvaluationReport`; later sections (right reason,
 risk–coverage, the source ablation, cost) join as fields beside `comparison`.
@@ -8,6 +9,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from standard_motion.core.settings import GroundTruth
 from standard_motion.evaluation.protocol_models import (
     AblationRow,
     DatasetOutcome,
@@ -139,20 +141,24 @@ class EvaluationRequest(BaseModel):
 class EvaluationReport(BaseModel):
     set_name: SetName
     rubric_version: int
+    ground_truth: GroundTruth = "reference_labels"  # logged runs from before it are labelled
     episodes: int  # in the set
-    labelled: int  # with a first-pass Reference label; only these are scored
-    description_failures: int  # labelled Episodes whose Reference label fails a Phrase
+    # Scored: with a first-pass Reference label, or against the Dataset outcome, with one.
+    labelled: int
+    # Scored Episodes whose Reference label fails a Phrase, or whose Dataset outcome is a failure
+    description_failures: int
     comparison: Comparison
-    right_reason: RightReason
+    # The next three need Reference labels (a failure's Phrase and time); None without them.
+    right_reason: RightReason | None
     risk_coverage: list[RiskCoverage]  # Standard Motion, then Spark alone
     matched_coverage: MatchedCoverage
     mcnemar: McNemar
-    phrase_failures: list[PhraseFailures]  # in the frozen Description's order
+    phrase_failures: list[PhraseFailures] | None  # in the frozen Description's order
     ablation: list[AblationRow]  # robot data only; + SAM; + Spark visual; all
     tracking_health: list[TrackHealthRow]  # wrist, then exterior
     cost: MetaCost
     review_time: ReviewTime
-    dataset_outcome: DatasetOutcome
+    dataset_outcome: DatasetOutcome | None  # against the Reference labels
     failbench: FailBenchCheck
 
 

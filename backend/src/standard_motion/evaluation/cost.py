@@ -76,12 +76,14 @@ def meta_cost(entries: Iterable[CostEntry], members: Sequence[str]) -> MetaCost:
 
 
 def review_time(cases: Sequence[EvaluationCase]) -> ReviewTime:
-    """Minutes saved: the timer's minutes per Episode x Episodes decided automatically."""
-    minutes = statistics.fmean(c.elapsed_s / 60 for c in cases) if cases else None
+    """Minutes saved: the timer's minutes per Episode x Episodes decided automatically. Against
+    the Dataset outcome no label was timed, so there are no minutes."""
+    timed = [c.elapsed_s / 60 for c in cases if c.elapsed_s > 0]
+    minutes = statistics.fmean(timed) if timed else None
     decided = sum(c.standard_motion != "needs_review" for c in cases)
     review = wilson(len(cases) - decided, len(cases))
     return ReviewTime(
-        timed=len(cases),
+        timed=len(timed),
         minutes_per_episode=minutes,
         decided=decided,
         minutes_saved=None if minutes is None else minutes * decided,

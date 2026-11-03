@@ -23,7 +23,6 @@ export function NeedsBox(props: { episodes: Episode[] }) {
       <SectionHeading
         title="Needs a box"
         meta={`${String(missing.length)} Episodes`}
-        info="One box per Episode, around the task object on frame 0. It seeds the exterior track that placement Criteria read; without one, they come back unsure and nothing blocks."
         actions={
           <Button
             size="sm"

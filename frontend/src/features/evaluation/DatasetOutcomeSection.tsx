@@ -114,11 +114,19 @@ function FailBench(props: { check: FailBenchCheck }) {
   );
 }
 
+/** Against the Dataset outcome itself there is nothing to cross, so only the FailBench check. */
 export function DatasetOutcomeSection(props: {
-  outcome: DatasetOutcome;
+  outcome: DatasetOutcome | null;
   failbench: FailBenchCheck;
 }) {
   const { outcome } = props;
+  if (!outcome) {
+    return (
+      <div className="mt-8 grid gap-8 lg:grid-cols-2">
+        <FailBench check={props.failbench} />
+      </div>
+    );
+  }
   return (
     <div className="mt-8 grid gap-8 lg:grid-cols-2">
       <div data-testid="dataset-outcome">

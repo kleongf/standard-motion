@@ -15,7 +15,6 @@ export const draftKey = ["rubric", "draft"] as const;
 export function underDraft(query: { queryKey: readonly unknown[] }): boolean {
   return query.queryKey.length > draftKey.length;
 }
-const anchorPoolKey = ["anchor-pool"] as const;
 const compileKey = ["compile"] as const;
 
 /** The Rubric draft on the Describe page; null until a Description is compiled. */
@@ -58,16 +57,4 @@ export function useCompile() {
 /** Whether a compile is under way, wherever on the page it was started. */
 export function useCompiling(): boolean {
   return useIsMutating({ mutationKey: compileKey }) > 0;
-}
-
-/** The Episodes the Rubric is written against: the Dev set, never the Test set. */
-export function useAnchorPool() {
-  return useQuery({
-    queryKey: anchorPoolKey,
-    queryFn: async () => {
-      const { data, response } = await api.GET("/api/anchor-pool");
-      if (!response.ok || !data) throw new Error(`Anchor pool failed: ${String(response.status)}`);
-      return data;
-    },
-  });
 }

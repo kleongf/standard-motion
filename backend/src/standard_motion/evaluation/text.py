@@ -84,11 +84,15 @@ def phrase_text(p: PhraseFailures) -> str:
 
 
 def report_text(report: EvaluationReport) -> str:
-    header = (
-        f"{SET_LABELS[report.set_name]} · Rubric v{report.rubric_version} · "
+    failures = report.description_failures
+    scored = (
         f"{report.labelled} of {report.episodes} Episodes labelled · "
-        f"{report.description_failures} description failures"
+        f"{failures} description failures"
+        if report.ground_truth == "reference_labels"
+        else f"Ground truth: the Dataset outcome · {report.labelled} of {report.episodes} "
+        f"Episodes have one · {failures} {'failure' if failures == 1 else 'failures'}"
     )
+    header = f"{SET_LABELS[report.set_name]} · Rubric v{report.rubric_version} · {scored}"
     table = [COLUMNS, *(_cells(row) for row in report.comparison.rows)]
     widths = [max(len(line[i]) for line in table) for i in range(len(COLUMNS))]
     lines = [
@@ -96,11 +100,14 @@ def report_text(report: EvaluationReport) -> str:
     ]
     rule = length_rule_text(report.comparison.length_rule)
     sections = [
-        *right_reason_text(report.right_reason),
+        *(right_reason_text(report.right_reason) if report.right_reason else []),
         matched_text(report.matched_coverage),
         mcnemar_text(report.mcnemar),
-        "Failures per Phrase:",
-        *(phrase_text(p) for p in report.phrase_failures),
+        *(
+            ["Failures per Phrase:", *(phrase_text(p) for p in report.phrase_failures)]
+            if report.phrase_failures is not None
+            else ["Right reason and failures per Phrase need Reference labels: not measured."]
+        ),
         *protocol_text(report),
     ]
     table_lines = [line.rstrip() for line in lines]

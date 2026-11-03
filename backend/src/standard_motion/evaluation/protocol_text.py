@@ -2,7 +2,12 @@
 health, cost, review minutes, the Dataset outcome and the FailBench check."""
 
 from standard_motion.evaluation.models import EvaluationReport
-from standard_motion.evaluation.protocol_models import MetaCost, OutcomeDisagreement, ReviewTime
+from standard_motion.evaluation.protocol_models import (
+    DatasetOutcome,
+    MetaCost,
+    OutcomeDisagreement,
+    ReviewTime,
+)
 from standard_motion.evaluation.stats import Proportion
 
 
@@ -63,13 +68,21 @@ def _disagreement(d: OutcomeDisagreement) -> str:
     return f"  {d.episode_id}: Dataset {outcome}, Reference label {label}"
 
 
-def outcome_text(report: EvaluationReport) -> list[str]:
-    o, f = report.dataset_outcome, report.failbench
+def _against_labels(o: DatasetOutcome | None) -> list[str]:
+    if o is None:
+        return []  # scored against the Dataset outcome itself
     return [
         f"Dataset outcome against Reference labels, on {o.compared} Episodes: success and meets "
         f"{o.success_meets} · success but fails {o.success_fails} · failure but meets "
         f"{o.failure_meets} · failure and fails {o.failure_fails}",
         *(_disagreement(d) for d in o.disagreements),
+    ]
+
+
+def outcome_text(report: EvaluationReport) -> list[str]:
+    f = report.failbench
+    return [
+        *_against_labels(report.dataset_outcome),
         f"FailBench check against the Dataset outcome: agrees on {_counted(f.agrees)} · "
         f"catches {_counted(f.failures_caught)} failures"
         + (

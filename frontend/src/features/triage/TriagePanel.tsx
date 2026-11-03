@@ -5,7 +5,7 @@ import { Sparkles } from "lucide-react";
 
 import { ClampedReason } from "./ClampedReason";
 import { CriterionResultRow } from "./CriterionResultRow";
-import { formatQuality, QUALITY_TITLE } from "./formatQuality";
+import { formatQuality } from "./formatQuality";
 import { DecisionPill, Pill, StatusCounts } from "./Pill";
 import { useQuality, type CriterionResult, type EpisodeTriage } from "./useTriage";
 
@@ -37,12 +37,8 @@ export function TriagePanel(props: {
           </span>
         </div>
         {quality !== null && (
-          <p
-            className="mt-1 text-xs text-muted-foreground tabular-nums"
-            data-testid="quality"
-            title={QUALITY_TITLE}
-          >
-            Quality {formatQuality(quality)} · from soft Criteria, relative to the run
+          <p className="mt-1 text-xs text-muted-foreground tabular-nums" data-testid="quality">
+            Quality {formatQuality(quality)}
           </p>
         )}
         <ClampedReason spans={triage.reason} onSeek={props.onSeek} />
@@ -50,7 +46,6 @@ export function TriagePanel(props: {
           <p
             className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground"
             data-testid="reason-source"
-            title="Spark rewrote the template Reason from this Episode's Evidence"
           >
             <Sparkles aria-hidden className="size-3" />
             written by Spark

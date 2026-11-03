@@ -16,9 +16,6 @@ test("a Description compiles into a Rubric draft: Phrases tinted and linked to C
   await freezeDevSet(request);
 
   await page.goto("/?page=describe");
-  await expect(page.getByTestId("anchor-pool")).toHaveText(
-    /^Anchor pool: Dev set · 1 Episode · \d+ Test set Episodes? hidden$/,
-  );
   await openDescription(page);
   await page.getByLabel("Description", { exact: true }).fill(FROZEN);
   await clickCompile(page, request, FROZEN);

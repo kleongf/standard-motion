@@ -10,6 +10,7 @@ export type Proportion = components["schemas"]["Proportion"];
 export type LengthRule = components["schemas"]["LengthRule"];
 export type TestRun = components["schemas"]["TestRun"];
 export type Slack = components["schemas"]["Slack"];
+export type RightReason = components["schemas"]["RightReason"];
 export type RightReasonRow = components["schemas"]["RightReasonRow"];
 export type RiskCoverage = components["schemas"]["RiskCoverage"];
 export type MatchedCoverage = components["schemas"]["MatchedCoverage"];

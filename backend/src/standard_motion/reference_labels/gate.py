@@ -8,7 +8,10 @@ Every route serving a per-Episode output goes through here: one Episode's output
 Episode facts (video, robot data, object tracks) aren't outputs and stay visible.
 
 The export is the one exception: it writes every Episode outside the Test set by its Triage
-decision (export/plan.py), after the UI says how many aren't labelled yet."""
+decision (export/plan.py), after the UI says how many aren't labelled yet.
+
+With `GROUND_TRUTH=dataset_outcome` no Reference label is given: the Dataset outcome is the
+reference, so every Episode counts as labelled and the gate is open."""
 
 from typing import Annotated, Any
 
@@ -18,7 +21,13 @@ from standard_motion.core.context import AppContext, get_context
 from standard_motion.episodes.models import Episode
 
 
+def gate_open(ctx: AppContext) -> bool:
+    return ctx.settings.ground_truth == "dataset_outcome"
+
+
 def revealed_ids(ctx: AppContext) -> set[str]:
+    if gate_open(ctx):
+        return {e.id for e in ctx.episodes.list()}
     return ctx.reference_labels.labelled_ids()
 
 

@@ -83,11 +83,6 @@ export function ChatInput(props: {
         }
       />
       <div className="mt-1.5 flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
-        <span>
-          {replying
-            ? "Spark picks the answer you mean, or recompiles just that Phrase."
-            : "Spark edits the Description; only the Phrases it changes recompile."}
-        </span>
         <Button
           type="button"
           size="xs"

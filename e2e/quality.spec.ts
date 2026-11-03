@@ -65,8 +65,6 @@ test("the table sorts by quality, and the Workstation shows it", async ({ page, 
   await expect(page).not.toHaveURL(/sort=/);
 
   await row(page, BETTER).click();
-  await expect(page.getByTestId("quality")).toHaveText(
-    "Quality +0.67 · from soft Criteria, relative to the run",
-  );
+  await expect(page.getByTestId("quality")).toHaveText("Quality +0.67");
   expect(errors).toEqual([]);
 });

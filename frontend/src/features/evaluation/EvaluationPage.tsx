@@ -1,5 +1,5 @@
 // The Evaluation page: Standard Motion against Spark alone and length alone, scored on the Episodes with
-// a Reference label, for a set and a Rubric version, with the source ablation, tracking health,
+// a Reference label (or against the Dataset outcome, with GROUND_TRUTH=dataset_outcome), for a set and a Rubric version, with the source ablation, tracking health,
 // cost and the Dataset outcome; `standard-motion eval` returns the same report. Below it, the live list of
 // Episodes where Spark alone and Standard Motion disagree.
 import { useState } from "react";
@@ -24,12 +24,21 @@ const SETS: SetName[] = ["dev", "test"];
 
 function summary(report: EvaluationReport): string {
   const failures = report.description_failures;
-  return [
-    SET_LABELS[report.set_name],
-    `Rubric v${String(report.rubric_version)}`,
-    `${String(report.labelled)} of ${String(report.episodes)} Episodes labelled`,
-    `${String(failures)} description ${failures === 1 ? "failure" : "failures"}`,
-  ].join(" · ");
+  const plural = failures === 1 ? "failure" : "failures";
+  const scored =
+    report.ground_truth === "dataset_outcome"
+      ? [
+          "Against the Dataset outcome",
+          `${String(report.labelled)} of ${String(report.episodes)} Episodes have one`,
+          `${String(failures)} ${plural}`,
+        ]
+      : [
+          `${String(report.labelled)} of ${String(report.episodes)} Episodes labelled`,
+          `${String(failures)} description ${plural}`,
+        ];
+  return [SET_LABELS[report.set_name], `Rubric v${String(report.rubric_version)}`, ...scored].join(
+    " · ",
+  );
 }
 
 /** Any Rubric version, newest first; null runs the latest. */
@@ -111,7 +120,10 @@ export function EvaluationPage() {
           <ReportCurves report={shown.report} />
           <ReportBreakdown report={shown.report} />
           <div className="mt-8 grid gap-8 lg:grid-cols-[3fr_2fr]">
-            <AblationTable rows={shown.report.ablation} />
+            <AblationTable
+              rows={shown.report.ablation}
+              rightReason={shown.report.right_reason !== null}
+            />
             <TrackingHealthTable rows={shown.report.tracking_health} />
           </div>
           <div className="mt-8">

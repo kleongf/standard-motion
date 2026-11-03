@@ -42,7 +42,8 @@ class Episode(BaseModel):
     index: int
     instruction: str | None
     dataset_outcome: bool | None  # None in the API until the Episode has a Reference label
-    # Has a first-pass Reference label, so its outputs show; set by the blind gate.
+    # Has a first-pass Reference label (or the Dataset outcome is the reference), so its outputs
+    # show; set by the blind gate.
     reference_labelled: bool = False
     frames: int
     fps: float

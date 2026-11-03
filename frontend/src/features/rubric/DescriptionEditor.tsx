@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-import { InfoTip } from "../core/InfoTip";
 import { ComposerBox } from "./ComposerBox";
 import { ConfirmAfresh } from "./ConfirmAfresh";
 import { useCompile, useDraft } from "./useDraft";
@@ -35,29 +34,13 @@ function useFocusOnOpen(open: boolean, selection: Selection | null) {
   return box;
 }
 
-function EditorHint(props: { drafted: boolean; onCancel?: (() => void) | undefined }) {
+function CancelEditing(props: { onCancel?: (() => void) | undefined }) {
+  if (!props.onCancel) return null;
   return (
-    <div className="mt-1.5 flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
-      <span>
-        {props.drafted
-          ? "Editing the Description: only the Phrases you change recompile."
-          : "Spark compiles it into Criteria that code checks on every Episode."}
-      </span>
-      <InfoTip label="the Description">
-        What an expert Episode looks like, in plain English. Spark compiles it into Criteria; after
-        an edit, only the Phrases you changed.
-      </InfoTip>
-      {props.onCancel && (
-        <Button
-          type="button"
-          size="xs"
-          variant="ghost"
-          className="ml-auto"
-          onClick={props.onCancel}
-        >
-          Cancel editing
-        </Button>
-      )}
+    <div className="mt-1.5 flex items-center px-1">
+      <Button type="button" size="xs" variant="ghost" className="ml-auto" onClick={props.onCancel}>
+        Cancel editing
+      </Button>
     </div>
   );
 }
@@ -106,7 +89,7 @@ export function DescriptionEditor(props: {
         }}
         ref={box}
       />
-      <EditorHint drafted={Boolean(draft)} onCancel={props.onCancel} />
+      <CancelEditing onCancel={props.onCancel} />
     </form>
   );
 }

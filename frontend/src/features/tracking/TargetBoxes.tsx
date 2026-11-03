@@ -26,11 +26,7 @@ export function TargetBoxes(props: { episodes: Episode[] }) {
   if (boxes.length === 0) return null;
   return (
     <section className="mt-8">
-      <SectionHeading
-        title="Target boxes"
-        meta={`${String(missing)} without one`}
-        info="Where the object should end up, found by SAM from the instruction on frame 0 of the boxed view. Draw it where SAM missed; a drawn box wins."
-      />
+      <SectionHeading title="Target boxes" meta={`${String(missing)} without one`} />
       <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
         {boxes.map((box) => {
           const episode = episodes.get(box.episode_id);
