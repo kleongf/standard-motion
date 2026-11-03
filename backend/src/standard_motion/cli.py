@@ -11,6 +11,10 @@ standard-motion reasons  (Spark's Reason for every Reject and Needs review whose
                  run it after `standard-motion ask`, which, unlike the API, doesn't queue them)
 standard-motion export <dir> [--include keep|keep_and_review]  (the kept Episodes, or the Keeps
                  and Needs review, as LeRobot datasets, the rest's Reasons beside them)
+standard-motion instructions fill  (each Episode without one, from Spark's object and target)
+                 | write droid_100:3 "Put the cup in the sink"
+standard-motion baseline [droid_100:42 ...]  (Spark alone wherever an answer is missing; default
+                 every Episode with an instruction)
 """
 
 import argparse
@@ -19,10 +23,16 @@ import sys
 from pathlib import Path
 from typing import get_args
 
+from standard_motion.baseline.service import unanswered_items
 from standard_motion.core.context import AppContext, build_context
 from standard_motion.core.settings import Settings, get_settings
 from standard_motion.episodes.droid101 import Droid101
 from standard_motion.episodes.fixtures import write_fixture_source
+from standard_motion.episodes.instructions import (
+    InstructionError,
+    fill_instructions,
+    write_instruction,
+)
 from standard_motion.episodes.service import ingest_items
 from standard_motion.evaluation.models import EvaluationRequest
 from standard_motion.evaluation.service import UnknownRubricVersionError, run_evaluation
@@ -74,6 +84,14 @@ def _parser() -> argparse.ArgumentParser:
     ask = commands.add_parser("ask", help="ask Spark the latest Rubric's visual Criteria")
     ask.add_argument("episode_ids", nargs="*", help="default: every ingested Episode")
     commands.add_parser("reasons", help="have Spark write each out-of-date Reason")
+    instructions = commands.add_parser("instructions", help="instructions for Episodes with none")
+    how = instructions.add_subparsers(dest="action", required=True)
+    how.add_parser("fill", help="from the object and target Spark named at selection")
+    write = how.add_parser("write", help="one Episode's, by hand")
+    write.add_argument("episode_id")
+    write.add_argument("instruction")
+    baseline = commands.add_parser("baseline", help="run Spark alone where an answer is missing")
+    baseline.add_argument("episode_ids", nargs="*", help="default: every Episode")
     export = commands.add_parser("export", help="write the kept Episodes in LeRobot format")
     export.add_argument("out", type=Path, help="a new or empty folder")
     export.add_argument(
@@ -138,6 +156,26 @@ def _sets(ctx: AppContext, args: argparse.Namespace) -> int:
     return 0
 
 
+def _instructions(ctx: AppContext, args: argparse.Namespace) -> int:
+    """Writes instructions only; run `standard-motion baseline` after, for Spark alone."""
+    if args.action == "write":
+        try:
+            write_instruction(ctx.episodes, args.episode_id, args.instruction)
+        except InstructionError as error:
+            sys.stderr.write(f"{error}\n")
+            return 1
+        sys.stdout.write(f"{args.episode_id}: {args.instruction.strip()}\n")
+        return 0
+    filled = fill_instructions(ctx.episodes)
+    sys.stdout.write(f"wrote {len(filled.written)} instructions from Spark's names\n")
+    if filled.left:
+        sys.stdout.write(
+            f"{len(filled.left)} still without one (no object or target named): "
+            f"{' '.join(filled.left)}\n"
+        )
+    return 0
+
+
 def _eval(ctx: AppContext, args: argparse.Namespace) -> int:
     """The Evaluation page's report; a Test set run is logged like one from the page."""
     request = EvaluationRequest(set_name=args.set_name, rubric_version=args.rubric_version)
@@ -158,6 +196,10 @@ def _items(ctx: AppContext, args: argparse.Namespace) -> list[WorkItem]:
         return visual_items(ctx.rubrics.latest(), ids)
     if args.command == "reasons":
         return reason_items(ctx)
+    if args.command == "baseline":
+        chosen = set(args.episode_ids)
+        episodes = [e for e in ctx.episodes.list() if not chosen or e.id in chosen]
+        return unanswered_items(ctx.baseline, episodes)
     if args.command == "export":
         return export_items(ctx, args.out.resolve(), args.include)
     source = ctx.sources[args.source]
@@ -182,7 +224,9 @@ def main(
             return _sets(ctx, args)
         if args.command == "eval":
             return _eval(ctx, args)
-        if args.command in ("select", "ask", "reasons") and ctx.meta is None:
+        if args.command == "instructions":
+            return _instructions(ctx, args)
+        if args.command in ("select", "ask", "reasons", "baseline") and ctx.meta is None:
             sys.stderr.write(
                 f"`standard-motion {args.command}` calls Spark: set MODEL_API_KEY in .env\n"
             )

@@ -1,10 +1,15 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
+
+# What Standard Motion is scored against: blind Reference labels, or, with none given, the
+# success flag each source ships (the Dataset outcome), which also lifts the blind gate.
+GroundTruth = Literal["reference_labels", "dataset_outcome"]
 
 
 class Settings(BaseSettings):
@@ -21,6 +26,7 @@ class Settings(BaseSettings):
     # Serve Meta calls from responses recorded by `RecordingTransport` instead of the network
     # (e2e does); no API key needed.
     meta_replay: Path | None = None
+    ground_truth: GroundTruth = "reference_labels"
 
     @field_validator("model_api_key", mode="before")
     @classmethod

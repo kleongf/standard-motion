@@ -131,9 +131,11 @@ export function ReportBreakdown(props: { report: EvaluationReport }) {
         <Matched matched={props.report.matched_coverage} />
         <Discordant mcnemar={props.report.mcnemar} />
       </div>
-      <div className="mt-8">
-        <PhraseTable phrases={props.report.phrase_failures} />
-      </div>
+      {props.report.phrase_failures && (
+        <div className="mt-8">
+          <PhraseTable phrases={props.report.phrase_failures} />
+        </div>
+      )}
     </>
   );
 }

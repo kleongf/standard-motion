@@ -1,11 +1,12 @@
 // Right reason and risk–coverage for Standard Motion and Spark alone: the headline k/n at the measured
 // slack, then right reason over 0–3 s of slack, and risk against coverage from each system's
-// confidence, so Standard Motion abstaining more can be weighed fairly.
+// confidence, so Standard Motion abstaining more can be weighed fairly. Right reason needs
+// Reference labels, so a report against the Dataset outcome has none.
 import { SectionHeading } from "../core/PageHeader";
 import { CurveChart, type Series } from "./CurveChart";
 import { riskSeries, slackSeries } from "./curves";
 import { countOf, interval, slackText } from "./reportText";
-import type { EvaluationReport, RightReasonRow } from "./useEvaluation";
+import type { EvaluationReport, RightReason, RightReasonRow } from "./useEvaluation";
 
 function AtSlack(props: { row: RightReasonRow }) {
   const p = props.row.at_slack;
@@ -19,8 +20,8 @@ function AtSlack(props: { row: RightReasonRow }) {
   );
 }
 
-function RightReasonFigure(props: { report: EvaluationReport }) {
-  const { slack, rows } = props.report.right_reason;
+function RightReasonFigure(props: { right: RightReason }) {
+  const { slack, rows } = props.right;
   const series: Series[] = rows.map((row) => ({
     system: row.system,
     label: row.label,
@@ -111,7 +112,7 @@ function RiskCoverageFigure(props: { report: EvaluationReport }) {
 export function ReportCurves(props: { report: EvaluationReport }) {
   return (
     <div className="mt-8 grid gap-8 lg:grid-cols-2">
-      <RightReasonFigure report={props.report} />
+      {props.report.right_reason && <RightReasonFigure right={props.report.right_reason} />}
       <RiskCoverageFigure report={props.report} />
     </div>
   );

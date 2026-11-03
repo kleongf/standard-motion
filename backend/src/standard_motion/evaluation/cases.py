@@ -1,5 +1,6 @@
 """One labelled Episode as the report sees it: its Reference label's failing Phrases and their
-intervals, and what each system decided, what its Reason claims went wrong, and how sure it was.
+intervals (or, scored against the Dataset outcome, only whether it failed), and what each system
+decided, what its Reason claims went wrong, and how sure it was.
 This is the narrow seam between scoring and the report: only these cross it, so new Criteria and
 signals leave the report alone."""
 
@@ -60,11 +61,13 @@ class EvaluationCase:
     elapsed_s: float = 0.0  # the label-mode timer on its first-pass Reference label
     tracks: Mapping[TrackKind, TrackCheck] = field(default_factory=dict[TrackKind, TrackCheck])
     too_small: bool = False  # excluded at selection as "object too small to see"
+    # Scored against the Dataset outcome: its success flag is False. None: read `failed`.
+    outcome_failure: bool | None = None
 
     @property
     def description_failure(self) -> bool:
-        """Its Reference label fails at least one Phrase."""
-        return bool(self.failed)
+        """Its Reference label fails at least one Phrase, or its Dataset outcome is a failure."""
+        return bool(self.failed) if self.outcome_failure is None else self.outcome_failure
 
 
 def failed_phrases(label: ReferenceLabel) -> dict[str, FailInterval]:

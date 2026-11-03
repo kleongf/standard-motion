@@ -160,6 +160,7 @@ def test_right_reason_is_scored_at_the_slack_measured_from_the_relabel_pass(
 
     right = typed(run(test_set, "test")).right_reason
 
+    assert right is not None
     assert right.slack.seconds == pytest.approx(0.95)
     assert (right.slack.edges, right.slack.episodes) == (2, 1)
     rows = {row.system: row for row in right.rows}
@@ -196,7 +197,7 @@ def test_the_report_compares_keep_precision_at_standard_motions_coverage(test_se
     # (failures, Standard Motion rejects, Spark alone rejects, too few to score)
     failures = {
         p.phrase: (p.failures, p.standard_motion_rejects, p.spark_alone_rejects, p.too_few)
-        for p in report.phrase_failures
+        for p in report.phrase_failures or []
     }
     assert failures[FIRST_TRY] == (1, 1, 0, True)
     assert failures[NEVER_DROPS] == (1, 0, 1, True)
@@ -302,6 +303,7 @@ def test_the_report_crosses_the_dataset_outcome_and_times_review(test_set: TestC
 
     # Fixture Episode 2 ships a failing Dataset outcome, 0 and 1 a success; 1 fails a Phrase.
     outcome = report.dataset_outcome
+    assert outcome is not None
     assert (outcome.success_meets, outcome.success_fails, outcome.failure_fails) == (1, 1, 1)
     assert [(d.episode_id, d.failed_phrases) for d in outcome.disagreements] == [
         ("droid_100:1", [NEVER_DROPS])
