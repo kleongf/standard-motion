@@ -52,6 +52,8 @@ const servers = await startServers({
     DROID100_ROOT: resolve(root, "droid_100"),
     MODEL_API_KEY: "",
     META_REPLAY: replay,
+    // The specs assume the blind gate, whatever the developer's .env says.
+    GROUND_TRUTH: "reference_labels",
   },
 });
 await serveUntilInterrupted(servers);

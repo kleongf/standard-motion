@@ -47,6 +47,7 @@ def settings(tmp_path: Path, droid100_root: Path, droid101_root: Path) -> Settin
         data_dir=tmp_path / "data",
         droid100_root=droid100_root,
         droid101_root=droid101_root,
+        ground_truth="reference_labels",  # whatever the developer's .env says
     )
 
 

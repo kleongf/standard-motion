@@ -47,6 +47,7 @@ def settings(
         data_dir=tmp_path_factory.mktemp("export") / "data",
         droid100_root=droid100_root,
         droid101_root=droid101_root,
+        ground_truth="reference_labels",
     )
 
 

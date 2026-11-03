@@ -14,12 +14,14 @@ from tests.triage.robot_data import (
     DOWN,
     FIRST_TRY,
     NO_PAUSES,
+    PLACES,
     REGRASP_GRIPPER,
     REGRASP_Z,
     UP,
     facts,
     first_try,
     frames,
+    release,
     rubric,
     still,
     text,
@@ -123,7 +125,7 @@ def test_a_phrase_passes_only_when_all_its_criteria_pass():
     assert both.decision == "keep"
 
 
-def test_a_phrase_with_a_pass_and_an_unsure_is_unsure_and_needs_review():
+def test_a_phrase_with_a_pass_and_an_unsure_passes_on_the_one_that_passed():
     # The grasp never opens, so there is no after-release window.
     holds_to_the_end = facts(frames((0, 15), (1, 30)), frames((DOWN, 20), (UP, 25)))
     after = still(phrase=FIRST_TRY, window=Window(kind="after_release"))
@@ -131,9 +133,20 @@ def test_a_phrase_with_a_pass_and_an_unsure_is_unsure_and_needs_review():
     triage = score(rubric(first_try(), after), holds_to_the_end)
 
     assert [r.status for r in triage.criteria] == ["pass", "unsure"]
-    assert triage.phrases[0].status == "unsure"
+    assert triage.phrases[0].status == "pass"
+    assert triage.phrases[0].p_pass == triage.criteria[0].p_pass
+    assert triage.decision == "keep"
+
+
+def test_a_phrase_with_a_pass_and_an_unconfirmed_fail_is_unsure_and_needs_review():
+    released_high = facts(CLEAN_GRIPPER, frames((DOWN, 18), (0.3, 27)))
+    placed_first_try = first_try().model_copy(update={"phrase": PLACES, "id": "places-grasp"})
+
+    triage = score(rubric(placed_first_try, release()), released_high)
+
+    assert [r.status for r in triage.criteria] == ["pass", "fail"]
+    assert triage.phrases[1].status == "unsure"
     assert triage.decision == "needs_review"
-    assert text(triage) == f'Needs review: "{FIRST_TRY}": window empty (after release).'
 
 
 def test_a_phrase_with_a_crisp_fail_fails_even_beside_an_unsure():
