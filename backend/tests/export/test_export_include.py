@@ -23,7 +23,12 @@ UNLABELLED, TEST_SET = "droid_100:2", "droid_100:4"
 @pytest.fixture(scope="module")
 def settings(tmp_path_factory: pytest.TempPathFactory, droid100_root: Path) -> Settings:
     data_dir = tmp_path_factory.mktemp("export-include") / "data"
-    return Settings(model_api_key=None, data_dir=data_dir, droid100_root=droid100_root)
+    return Settings(
+        model_api_key=None,
+        data_dir=data_dir,
+        droid100_root=droid100_root,
+        ground_truth="reference_labels",
+    )
 
 
 @pytest.fixture(scope="module")

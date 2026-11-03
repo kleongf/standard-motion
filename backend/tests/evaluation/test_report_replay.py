@@ -24,7 +24,8 @@ from tests.rubric.replay import CountingReplay
 
 FIRST_TRY = FROZEN.phrases[0]
 # Fixture Episode 0 grasps cleanly, 2 is rejected after failed grasps, and 10's scripted visual
-# samples split. Unboxed, 0 and 10 need review; Spark alone's recorded answers reject all three.
+# samples split. Unboxed, 0 is kept on Spark's placement alone and 10 needs review; Spark alone's
+# recorded answers reject all three.
 EPISODES = ["droid_100:0", "droid_100:2", "droid_100:10"]
 
 
@@ -109,7 +110,7 @@ def test_each_disagreement_names_both_decisions_and_the_reference_label(labelled
 
     # Episode 2: both reject, so it isn't listed.
     assert [(r.episode_id, r.standard_motion, r.spark_alone, r.set_name) for r in rows] == [
-        ("droid_100:0", "needs_review", "reject", "test"),
+        ("droid_100:0", "keep", "reject", "test"),
         ("droid_100:10", "needs_review", "reject", "test"),
     ]
     assert all(r.spark_alone_reason and r.standard_motion_reason for r in rows)

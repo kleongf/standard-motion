@@ -22,10 +22,8 @@ test("Prepare shows each set's size and frozen state; Episodes show their set", 
 
   await page.goto("/?page=episodes");
   const row = `^${String(INDEX)} `;
-  // Never boxed (compile's recording expects the Dev set unboxed), so placement needs review.
-  await expect(
-    page.getByRole("row", { name: new RegExp(`${row}.* Dev set Needs review`) }),
-  ).toBeVisible();
+  // Never boxed (compile's recording expects the Dev set unboxed): Spark's answer alone places it.
+  await expect(page.getByRole("row", { name: new RegExp(`${row}.* Dev set Keep`) })).toBeVisible();
   await page.getByRole("row", { name: new RegExp(row) }).click();
   await expect(page.getByTestId("episode-set")).toHaveText("Dev set");
 });

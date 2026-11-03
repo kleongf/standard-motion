@@ -130,8 +130,17 @@ def conclusive_fail(result: CriterionResult) -> bool:
     return result.status == "fail" and PRIMITIVES[result.primitive].conclusive
 
 
+def _outvoted(result: CriterionResult) -> bool:
+    """Whether a passing Criterion beside it can pass its Phrase anyway."""
+    if result.status == "pass":
+        return True
+    return result.status == "unsure" and PRIMITIVES[result.primitive].conclusive
+
+
 def phrase_result(phrase: str, results: list[CriterionResult], label: Label | None) -> PhraseResult:
-    """Fails on any crisp conclusive fail, passes only when all its Criteria pass, else unsure.
+    """Fails on any crisp conclusive fail; passes when one of its Criteria passes and the rest
+    are only unsure, counting only the passing ones' p; else unsure. An inconclusive primitive
+    can't fail a Phrase, so its fail or unsure always blocks a pass: that is its whole say.
     Only hard Criteria decide a Phrase that has any; a human label overrides them all."""
     hard = [r for r in results if r.hard]
     deciding = hard or results
@@ -142,8 +151,11 @@ def phrase_result(phrase: str, results: list[CriterionResult], label: Label | No
         p = 1.0 if label.value == "pass" else 0.0
     elif any(conclusive_fail(r) for r in deciding):
         status = "fail"
+    elif any(r.status == "pass" for r in deciding) and all(map(_outvoted, deciding)):
+        status = "pass"
+        p = phrase_p([r.p_pass for r in deciding if r.status == "pass"])
     elif deciding:
-        status = "pass" if all(r.status == "pass" for r in deciding) else "unsure"
+        status = "unsure"
     return PhraseResult(phrase=phrase, hard=bool(hard), status=status, label=label, p_pass=p)
 
 
